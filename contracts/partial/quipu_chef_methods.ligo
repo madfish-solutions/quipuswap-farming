@@ -1,6 +1,11 @@
 function test(
+  const action          : action_type;
   const s               : storage_type)
-                        : storage_type is
+                        : return_type is
   block {
-    skip;
-  } with s
+    case action of
+      Test(_test_params) -> {
+        skip;
+      }
+    end
+  } with (no_operations, s)

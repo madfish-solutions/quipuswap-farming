@@ -1,0 +1,43 @@
+{
+  "name": "quipuswap-farming",
+  "version": "0.0.1",
+  "license": "MIT",
+  "description": "Quipuswap Farming",
+  "scripts": {
+    "postinstall": "patch-package",
+    "start-sandbox": "docker run --rm --name my-sandbox -e flextesa_node_cors_origin='*' --detach -p 8732:20000 tqtezos/flextesa:20210602 flobox start",
+    "clean": "rm -rf ./build",
+    "compile": "yarn clean && node scripts/cli.js compile -c quipu_chef -f json",
+    "migrate": "yarn compile && node scripts/cli.js migrate",
+    "migrate-granadanet": "yarn compile && node scripts/cli.js migrate -n granadanet"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/madfish-solutions/quipuswap-farming.git"
+  },
+  "dependencies": {
+    "@taquito/michelson-encoder": "^9.1.1",
+    "@taquito/rpc": "^9.1.1",
+    "@taquito/signer": "^9.1.1",
+    "@taquito/taquito": "^9.1.1",
+    "child_process": "^1.0.2",
+    "dotenv": "^10.0.0",
+    "fs": "^0.0.1-security",
+    "ganache-cli": "^6.12.1-tezos.0",
+    "mocha": "^9.0.1",
+    "patch-package": "^6.4.7",
+    "truffle": "^5.5.0-tezos.4",
+    "ts-node": "^10.0.0",
+    "typescript": "^4.3.5",
+    "yargs": "^17.0.1"
+  },
+  "bugs": {
+    "url": "https://github.com/madfish-solutions/quipuswap-farming/issues"
+  },
+  "homepage": "https://github.com/madfish-solutions/quipuswap-farming#readme",
+  "keywords": [
+    "tezos",
+    "ligo",
+    "blockchain"
+  ]
+}

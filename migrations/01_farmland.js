@@ -8,8 +8,8 @@ const { confirmOperation } = require("../scripts/confirmation");
 
 const { alice, dev } = require("../scripts/sandbox/accounts");
 
-const quipuChefStorage = require("../storage/QuipuChef");
-const quipuChefFunctions = require("../storage/QuipuChefFunctions");
+const farmlandStorage = require("../storage/Farmland");
+const farmlandFunctions = require("../storage/FarmlandFunctions");
 
 const env = require("../env");
 
@@ -25,22 +25,22 @@ module.exports = async (tezos) => {
     signer: await InMemorySigner.fromSecretKey(secretKey),
   });
 
-  const quipuChefAddress = await migrate(tezos, "quipu_chef", quipuChefStorage);
+  const farmlandAddress = await migrate(tezos, "farmland", farmlandStorage);
 
-  console.log(`Quipu Chef: ${quipuChefAddress}`);
+  console.log(`Farmland: ${farmlandAddress}`);
 
   const ligo = getLigo(true);
 
-  for (quipuChefFunction of quipuChefFunctions) {
+  for (farmlandFunction of farmlandFunctions) {
     const stdout = execSync(
-      `${ligo} compile-parameter --michelson-format=json $PWD/contracts/main/quipu_chef.ligo main 'Set_quipu_chef_function(record index=${quipuChefFunction.index}n; func=${quipuChefFunction.name}; end)'`,
+      `${ligo} compile-parameter --michelson-format=json $PWD/contracts/main/farmland.ligo main 'Setup_func(record index=${farmlandFunction.index}n; func=${farmlandFunction.name}; end)'`,
       { maxBuffer: 1024 * 500 }
     );
     const operation = await tezos.contract.transfer({
-      to: quipuChefAddress,
+      to: farmlandAddress,
       amount: 0,
       parameter: {
-        entrypoint: "set_quipu_chef_function",
+        entrypoint: "setup_func",
         value: JSON.parse(stdout.toString()).args[0],
       },
     });

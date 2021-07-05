@@ -5,5 +5,5 @@ module.exports = {
     tmp1: "0",
     tmp2: "0",
   },
-  quipu_chef_lambdas: MichelsonMap.fromLiteral({}),
+  farmland_lambdas: MichelsonMap.fromLiteral({}),
 };

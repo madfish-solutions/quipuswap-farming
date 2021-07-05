@@ -1,4 +1,5 @@
 #include "../partial/i_farmland.ligo"
+#include "../partial/farmland_helpers.ligo"
 #include "../partial/farmland_methods.ligo"
 #include "../partial/farmland_lambdas.ligo"
 

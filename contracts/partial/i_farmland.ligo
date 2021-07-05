@@ -5,23 +5,27 @@ type fees_type is [@layout:comb] record [
   withdrawal_fee        : nat;
 ]
 
-type farm_type is [@layout:comb] record [
-  reward_token          : address;
-  timelock              : bool;
-  lp_farm               : bool;
-  fees                  : fees_type;
-  rpb                   : nat;
-]
-
 type user_info_type is [@layout:comb] record [
   staked                : nat;
   earned                : nat;
   prev_earned           : nat;
 ]
 
+type farm_type is [@layout:comb] record [
+  users_info            : map(address, user_info_type);
+  fees                  : fees_type;
+  updated               : timestamp;
+  staked_token          : address;
+  reward_token          : address;
+  is_lp_farm            : bool;
+  timelock              : bool;
+  rps                   : nat;
+  share_reward          : nat;
+  staked                : nat;
+]
+
 type storage_type is [@layout:comb] record [
   farms                 : big_map(fid_type, farm_type);
-  users                 : big_map(fid_type, map(address, user_info_type));
   qugo_token            : address;
   admin                 : address;
   pending_admin         : address;

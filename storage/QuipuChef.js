@@ -1,4 +1,9 @@
+const { MichelsonMap } = require("@taquito/michelson-encoder");
+
 module.exports = {
-  tmp1: "0",
-  tmp2: "0",
+  storage: {
+    tmp1: "0",
+    tmp2: "0",
+  },
+  quipu_chef_lambdas: MichelsonMap.fromLiteral({}),
 };

@@ -22,7 +22,13 @@ type full_storage_type        is [@layout:comb] record [
 
 type full_return_type         is (list(operation) * full_storage_type)
 
+type set_quipu_chef_function_params_type is [@layout:comb] record [
+  index                       : nat;
+  func                        : quipu_chef_func_type;
+]
+
 type full_action_type         is
-| Use                         of action_type
+  Use                         of action_type
+| Set_quipu_chef_function     of set_quipu_chef_function_params_type
 
 [@inline] const no_operations : list(operation) = nil;

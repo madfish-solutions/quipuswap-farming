@@ -8,4 +8,5 @@ function main(
                         : full_return_type is
   case action of
     Use(params)         -> call_quipu_chef(params, s)
+  | Set_quipu_chef_function(params) -> set_quipu_chef_function(params, s)
   end

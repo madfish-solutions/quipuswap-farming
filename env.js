@@ -9,7 +9,7 @@ module.exports = {
   migrationsDir: "migrations",
   contractsDir: "contracts/main",
   ligoVersion: "0.19.0",
-  network: "granadanet",
+  network: "development",
   networks: {
     development: {
       rpc: "http://localhost:8732",

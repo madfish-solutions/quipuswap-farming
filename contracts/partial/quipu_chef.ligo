@@ -13,3 +13,14 @@
 
     s.storage := res.1;
   } with (res.0, s)
+
+[@inline] function set_quipu_chef_function(
+  const params          : set_quipu_chef_function_params_type;
+  var s                 : full_storage_type)
+                        : full_return_type is
+  block {
+    case s.quipu_chef_lambdas[params.index] of
+      Some(_n) -> failwith("QuipuChef/function-set")
+    | None -> s.quipu_chef_lambdas[params.index] := params.func
+    end;
+  } with (no_operations, s)

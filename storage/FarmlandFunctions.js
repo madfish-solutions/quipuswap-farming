@@ -1,6 +1,10 @@
 module.exports = [
   {
     index: 0,
-    name: "test",
+    name: "set_admin",
+  },
+  {
+    index: 1,
+    name: "confirm_admin",
   },
 ];

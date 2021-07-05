@@ -4,7 +4,8 @@
                         : full_return_type is
   block {
     const id : nat = case action of
-      Test(_params) -> 0n
+      Set_admin(_params) -> 0n
+    | Confirm_admin(_params) -> 1n
     end;
     const res : return_type = case s.farmland_lambdas[id] of
         Some(f) -> f(action, s.storage)

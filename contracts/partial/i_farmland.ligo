@@ -1,15 +1,40 @@
-type storage_type is [@layout:comb] record [
-  tmp1                  : nat;
-  tmp2                  : nat;
+type fid_type is nat
+
+type fees_type is [@layout:comb] record [
+  interface_fee         : nat;
+  withdrawal_fee        : nat;
 ]
 
-type test_type is [@layout:comb] record [
-  tmp1                  : nat;
-  tmp2                  : nat;
+type farm_type is [@layout:comb] record [
+  reward_token          : address;
+  timelock              : bool;
+  lp_farm               : bool;
+  fees                  : fees_type;
+  rpb                   : nat;
 ]
+
+type user_info_type is [@layout:comb] record [
+  staked                : nat;
+  earned                : nat;
+  prev_earned           : nat;
+]
+
+type storage_type is [@layout:comb] record [
+  farms                 : big_map(fid_type, farm_type);
+  users                 : big_map(fid_type, map(address, user_info_type));
+  qugo_token            : address;
+  admin                 : address;
+  pending_admin         : address;
+  farms_count           : nat;
+]
+
+type set_admin_type is address
+
+type confirm_admin_type is unit
 
 type action_type is
-  Test                  of test_type
+  Set_admin             of set_admin_type
+| Confirm_admin         of confirm_admin_type
 
 type return_type is (list(operation) * storage_type)
 
@@ -32,3 +57,12 @@ type full_action_type is
 | Setup_func            of setup_func_type
 
 [@inline] const no_operations : list(operation) = nil;
+
+[@inline] const zero_address : address =
+  ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
+
+[@inline] const default_qugo_id : nat = 0n;
+
+[@inline] const farmland_methods_count : nat = 1n;
+
+[@inline] const timelock_period : nat = 2_592_000n; (* 30 days *)

@@ -15,6 +15,7 @@ const env = require("../env");
 
 module.exports = async (tezos) => {
   const secretKey = env.network === "development" ? alice.sk : dev.sk;
+  const deployer = env.network === "development" ? alice.pkh : dev.pkh;
 
   tezos = new TezosToolkit(tezos.rpc.url);
 
@@ -24,6 +25,12 @@ module.exports = async (tezos) => {
     },
     signer: await InMemorySigner.fromSecretKey(secretKey),
   });
+
+  const zeroAddress = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";
+
+  farmlandStorage.storage.qugo_token = zeroAddress;
+  farmlandStorage.storage.admin = deployer;
+  farmlandStorage.storage.pending_admin = zeroAddress;
 
   const farmlandAddress = await migrate(tezos, "farmland", farmlandStorage);
 

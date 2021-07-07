@@ -17,6 +17,7 @@ function get_user_info(
     const user_info : user_info_type = case farm.users_info[user] of
       Some(info) -> info
     | None -> record [
+      last_staked = 0n;
       staked      = 0n;
       earned      = 0n;
       prev_earned = 0n;
@@ -24,3 +25,19 @@ function get_user_info(
     end;
   } with user_info
 
+function only_farmland_admin(
+  const user            : address;
+  const s               : storage_type)
+                        : unit is
+  block {
+    if user =/= s.admin
+    then failwith("Farmland/not-admin")
+    else skip;
+  } with unit
+
+function update_farm_rewards(
+  var farm              : farm_type)
+                        : farm_type is
+  block {
+    skip;
+  } with farm

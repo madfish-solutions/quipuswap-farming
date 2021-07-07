@@ -9,6 +9,6 @@ module.exports = [
   },
   {
     index: 2,
-    name: "set_rps",
+    name: "set_alloc_points",
   },
 ];

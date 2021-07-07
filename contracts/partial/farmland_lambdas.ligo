@@ -55,6 +55,14 @@ function set_alloc_points(
           then farm := update_farm_rewards(farm)
           else skip;
 
+          if s.total_alloc_point >= farm.alloc_point
+          then {
+            s.total_alloc_point := abs(
+              s.total_alloc_point - farm.alloc_point
+            ) + params.alloc_point;
+          }
+          else skip;
+
           farm.alloc_point := params.alloc_point;
           s.farms[params.fid] := farm;
         } with s;

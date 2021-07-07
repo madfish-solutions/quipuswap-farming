@@ -11,4 +11,16 @@ module.exports = [
     index: 2,
     name: "set_alloc_points",
   },
+  {
+    index: 3,
+    name: "deposit",
+  },
+  {
+    index: 4,
+    name: "withdraw",
+  },
+  {
+    index: 5,
+    name: "harvest",
+  },
 ];

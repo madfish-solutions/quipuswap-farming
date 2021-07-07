@@ -36,8 +36,22 @@ function only_farmland_admin(
   } with unit
 
 function update_farm_rewards(
-  var farm              : farm_type)
-                        : farm_type is
+  const fid             : fid_type;
+  var s                 : storage_type)
+                        : storage_type is
   block {
-    skip;
-  } with farm
+    var farm : farm_type := get_farm(fid, s);
+
+    if farm.staked =/= 0n
+    then {
+      const time_diff : nat = abs(Tezos.now - farm.upd);
+      const reward : nat = time_diff * s.qugo_per_second * farm.alloc_point /
+        s.total_alloc_point;
+
+      farm.rps := farm.rps + reward / farm.staked;
+    }
+    else skip;
+
+    farm.upd := Tezos.now;
+    s.farms[fid] := farm;
+  } with s

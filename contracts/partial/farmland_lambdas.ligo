@@ -11,6 +11,9 @@ function set_admin(
       }
     | Confirm_admin -> skip
     | Set_alloc_points(_) -> skip
+    | Deposit(_) -> skip
+    | Withdraw(_) -> skip
+    | Harvest(_) -> skip
     end
   } with (no_operations, s)
 
@@ -30,6 +33,9 @@ function confirm_admin(
       };
     }
     | Set_alloc_points(_) -> skip
+    | Deposit(_) -> skip
+    | Withdraw(_) -> skip
+    | Harvest(_) -> skip
     end
   } with (no_operations, s)
 
@@ -52,7 +58,7 @@ function set_alloc_points(
           var farm : farm_type := get_farm(params.fid, s);
 
           if params.with_update
-          then farm := update_farm_rewards(farm)
+          then s := update_farm_rewards(params.fid, s)
           else skip;
 
           if s.total_alloc_point >= farm.alloc_point
@@ -68,6 +74,60 @@ function set_alloc_points(
         } with s;
 
       s := List.fold(set_alloc_point, params, s);
+    }
+    | Deposit(_) -> skip
+    | Withdraw(_) -> skip
+    | Harvest(_) -> skip
+    end
+  } with (no_operations, s)
+
+function deposit(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    case action of
+      Set_admin(_) -> skip
+    | Confirm_admin -> skip
+    | Set_alloc_points(_) -> skip
+    | Deposit(params) -> {
+      s := update_farm_rewards(params.fid, s);
+    }
+    | Withdraw(_) -> skip
+    | Harvest(_) -> skip
+    end
+  } with (no_operations, s)
+
+function withdraw(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    case action of
+      Set_admin(_) -> skip
+    | Confirm_admin -> skip
+    | Set_alloc_points(_) -> skip
+    | Deposit(_) -> skip
+    | Withdraw(params) -> {
+      s := update_farm_rewards(params.fid, s);
+    }
+    | Harvest(_) -> skip
+    end
+  } with (no_operations, s)
+
+function harvest(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    case action of
+      Set_admin(_) -> skip
+    | Confirm_admin -> skip
+    | Set_alloc_points(_) -> skip
+    | Deposit(_) -> skip
+    | Withdraw(_) -> skip
+    | Harvest(params) -> {
+      s := update_farm_rewards(params.fid, s);
     }
     end
   } with (no_operations, s)

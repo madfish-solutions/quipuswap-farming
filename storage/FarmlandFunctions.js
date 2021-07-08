@@ -13,14 +13,22 @@ module.exports = [
   },
   {
     index: 3,
-    name: "deposit",
+    name: "set_fees",
   },
   {
     index: 4,
-    name: "withdraw",
+    name: "set_reward_per_second",
   },
   {
     index: 5,
+    name: "deposit",
+  },
+  {
+    index: 6,
+    name: "withdraw",
+  },
+  {
+    index: 7,
     name: "harvest",
   },
 ];

@@ -3,7 +3,10 @@ const { MichelsonMap } = require("@taquito/michelson-encoder");
 module.exports = {
   storage: {
     farms: MichelsonMap.fromLiteral({}),
-    qugo_token: null,
+    qugo_token: {
+      token: null,
+      id: "0",
+    },
     admin: null,
     pending_admin: null,
     farms_count: "0",

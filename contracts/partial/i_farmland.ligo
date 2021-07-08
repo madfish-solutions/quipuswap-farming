@@ -25,9 +25,14 @@ type farm_type          is [@layout:comb] record [
   staked                  : nat; (* Total count of staked tokens in the farm *)
 ]
 
+type qugo_token_type    is [@layout:comb] record [
+  token                   : address;
+  id                      : nat;
+]
+
 type storage_type       is [@layout:comb] record [
   farms                   : big_map(fid_type, farm_type); (* Farms data *)
-  qugo_token              : address; (* Quipuswap GOV token address *)
+  qugo_token              : qugo_token_type; (* Quipuswap GOV token address *)
   admin                   : address; (* Contract's actual admin address *)
   pending_admin           : address; (* Contract's pending admin address *)
   farms_count             : nat; (* Number of farms registered on contract *)
@@ -47,6 +52,15 @@ type set_alloc_type     is [@layout:comb] record [
 
 type set_allocs_type    is list(set_alloc_type)
 
+type set_fee_type       is [@layout:comb] record [
+  fid                     : fid_type; (* Farm ID *)
+  fees                    : fees_type; (* Fees data *)
+]
+
+type set_fees_type      is list(set_fee_type)
+
+type set_rps_type       is nat (* Quipuswap GOV tokens (reward) per second *)
+
 type deposit_type       is [@layout:comb] record [
   fid                     : fid_type; (* Farm ID *)
   amount                  : nat; (* Amount of tokens to deposit *)
@@ -65,6 +79,8 @@ type action_type        is
   Set_admin               of set_admin_type
 | Confirm_admin           of confirm_admin_type
 | Set_alloc_points        of set_allocs_type
+| Set_fees                of set_fees_type
+| Set_reward_per_second   of set_rps_type
 | Deposit                 of deposit_type
 | Withdraw                of withdraw_type
 | Harvest                 of harvest_type
@@ -96,6 +112,6 @@ type full_action_type   is
 
 [@inline] const default_qugo_id : nat = 0n;
 
-[@inline] const farmland_methods_max_index : nat = 5n;
+[@inline] const farmland_methods_max_index : nat = 7n;
 
 [@inline] const timelock_period : nat = 2_592_000n; (* 30 days *)

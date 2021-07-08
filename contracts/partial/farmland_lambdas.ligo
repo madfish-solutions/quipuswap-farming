@@ -11,6 +11,8 @@ function set_admin(
       }
     | Confirm_admin -> skip
     | Set_alloc_points(_) -> skip
+    | Set_fees(_) -> skip
+    | Set_reward_per_second(_) -> skip
     | Deposit(_) -> skip
     | Withdraw(_) -> skip
     | Harvest(_) -> skip
@@ -33,6 +35,8 @@ function confirm_admin(
       };
     }
     | Set_alloc_points(_) -> skip
+    | Set_fees(_) -> skip
+    | Set_reward_per_second(_) -> skip
     | Deposit(_) -> skip
     | Withdraw(_) -> skip
     | Harvest(_) -> skip
@@ -75,6 +79,61 @@ function set_alloc_points(
 
       s := List.fold(set_alloc_point, params, s);
     }
+    | Set_fees(_) -> skip
+    | Set_reward_per_second(_) -> skip
+    | Deposit(_) -> skip
+    | Withdraw(_) -> skip
+    | Harvest(_) -> skip
+    end
+  } with (no_operations, s)
+
+function set_fees(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    case action of
+      Set_admin(_) -> skip
+    | Confirm_admin -> skip
+    | Set_alloc_points(_) -> skip
+    | Set_fees(params) -> {
+      only_farmland_admin(Tezos.sender, s);
+
+      function set_fee(
+        var s           : storage_type;
+        const params    : set_fee_type)
+                        : storage_type is
+        block {
+          var farm : farm_type := get_farm(params.fid, s);
+
+          farm.fees := params.fees;
+          s.farms[params.fid] := farm;
+        } with s;
+
+      s := List.fold(set_fee, params, s);
+    }
+    | Set_reward_per_second(_) -> skip
+    | Deposit(_) -> skip
+    | Withdraw(_) -> skip
+    | Harvest(_) -> skip
+    end
+  } with (no_operations, s)
+
+function set_reward_per_second(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    case action of
+      Set_admin(_) -> skip
+    | Confirm_admin -> skip
+    | Set_alloc_points(_) -> skip
+    | Set_fees(_) -> skip
+    | Set_reward_per_second(new_rps) -> {
+      only_farmland_admin(Tezos.sender, s);
+
+      s.qugo_per_second := new_rps;
+    }
     | Deposit(_) -> skip
     | Withdraw(_) -> skip
     | Harvest(_) -> skip
@@ -90,6 +149,8 @@ function deposit(
       Set_admin(_) -> skip
     | Confirm_admin -> skip
     | Set_alloc_points(_) -> skip
+    | Set_fees(_) -> skip
+    | Set_reward_per_second(_) -> skip
     | Deposit(params) -> {
       s := update_farm_rewards(params.fid, s);
     }
@@ -107,6 +168,8 @@ function withdraw(
       Set_admin(_) -> skip
     | Confirm_admin -> skip
     | Set_alloc_points(_) -> skip
+    | Set_fees(_) -> skip
+    | Set_reward_per_second(_) -> skip
     | Deposit(_) -> skip
     | Withdraw(params) -> {
       s := update_farm_rewards(params.fid, s);
@@ -124,6 +187,8 @@ function harvest(
       Set_admin(_) -> skip
     | Confirm_admin -> skip
     | Set_alloc_points(_) -> skip
+    | Set_fees(_) -> skip
+    | Set_reward_per_second(_) -> skip
     | Deposit(_) -> skip
     | Withdraw(_) -> skip
     | Harvest(params) -> {

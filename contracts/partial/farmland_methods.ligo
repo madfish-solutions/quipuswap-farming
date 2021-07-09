@@ -9,9 +9,10 @@
     | Set_alloc_points(_) -> 2n
     | Set_fees(_) -> 3n
     | Set_reward_per_second(_) -> 4n
-    | Deposit(_) -> 5n
-    | Withdraw(_) -> 6n
-    | Harvest(_) -> 7n
+    | Add_new_farm(_) -> 5n
+    | Deposit(_) -> 6n
+    | Withdraw(_) -> 7n
+    | Harvest(_) -> 8n
     end;
     const res : return_type = case s.farmland_lambdas[id] of
         Some(f) -> f(action, s.storage)

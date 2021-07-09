@@ -61,6 +61,14 @@ type set_fees_type      is list(set_fee_type)
 
 type set_rps_type       is nat (* Quipuswap GOV tokens (reward) per second *)
 
+type add_new_farm_type  is [@layout:comb] record [
+  fees                    : fees_type;
+  staked_token            : address;
+  is_lp_farm              : bool;
+  timelocked              : bool;
+  alloc_point             : nat;
+]
+
 type deposit_type       is [@layout:comb] record [
   fid                     : fid_type; (* Farm ID *)
   amount                  : nat; (* Amount of tokens to deposit *)
@@ -81,6 +89,7 @@ type action_type        is
 | Set_alloc_points        of set_allocs_type
 | Set_fees                of set_fees_type
 | Set_reward_per_second   of set_rps_type
+| Add_new_farm            of add_new_farm_type
 | Deposit                 of deposit_type
 | Withdraw                of withdraw_type
 | Harvest                 of harvest_type
@@ -112,6 +121,6 @@ type full_action_type   is
 
 [@inline] const default_qugo_id : nat = 0n;
 
-[@inline] const farmland_methods_max_index : nat = 7n;
+[@inline] const farmland_methods_max_index : nat = 8n;
 
 [@inline] const timelock_period : nat = 2_592_000n; (* 30 days *)

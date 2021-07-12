@@ -35,6 +35,7 @@ type storage_type       is [@layout:comb] record [
   qugo_token              : qugo_token_type; (* Quipuswap GOV token address *)
   admin                   : address; (* Contract's actual admin address *)
   pending_admin           : address; (* Contract's pending admin address *)
+  burner                  : address; (* Burner contract address *)
   farms_count             : nat; (* Number of farms registered on contract *)
   qugo_per_second         : nat; (* Reward per second for all farms *)
   total_alloc_point       : nat; (* Sum of all allocation points in farms *)
@@ -60,6 +61,8 @@ type set_fee_type       is [@layout:comb] record [
 type set_fees_type      is list(set_fee_type)
 
 type set_rps_type       is nat (* Quipuswap GOV tokens (reward) per second *)
+
+type set_burner_type    is address (* New burner contract address *)
 
 type add_new_farm_type  is [@layout:comb] record [
   fees                    : fees_type;
@@ -91,6 +94,7 @@ type action_type        is
 | Set_alloc_points        of set_allocs_type
 | Set_fees                of set_fees_type
 | Set_reward_per_second   of set_rps_type
+| Set_burner              of set_burner_type
 | Add_new_farm            of add_new_farm_type
 | Deposit                 of deposit_type
 | Withdraw                of withdraw_type
@@ -123,6 +127,6 @@ type full_action_type   is
 
 [@inline] const default_qugo_id : nat = 0n;
 
-[@inline] const farmland_methods_max_index : nat = 8n;
+[@inline] const farmland_methods_max_index : nat = 9n;
 
 [@inline] const timelock_period : nat = 2_592_000n; (* 30 days *)

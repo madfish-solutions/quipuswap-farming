@@ -9,6 +9,7 @@ module.exports = {
     },
     admin: null,
     pending_admin: null,
+    burner: null,
     farms_count: "0",
     qugo_per_second: "0",
     total_alloc_point: "0",

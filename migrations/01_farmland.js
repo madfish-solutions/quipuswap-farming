@@ -31,6 +31,7 @@ module.exports = async (tezos) => {
   farmlandStorage.storage.qugo_token.token = zeroAddress;
   farmlandStorage.storage.admin = deployer;
   farmlandStorage.storage.pending_admin = zeroAddress;
+  farmlandStorage.storage.burner = zeroAddress;
 
   const farmlandAddress = await migrate(tezos, "farmland", farmlandStorage);
 

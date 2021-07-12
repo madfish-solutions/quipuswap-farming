@@ -21,18 +21,22 @@ module.exports = [
   },
   {
     index: 5,
-    name: "add_new_farm",
+    name: "set_burner",
   },
   {
     index: 6,
-    name: "deposit",
+    name: "add_new_farm",
   },
   {
     index: 7,
-    name: "withdraw",
+    name: "deposit",
   },
   {
     index: 8,
+    name: "withdraw",
+  },
+  {
+    index: 9,
     name: "harvest",
   },
 ];

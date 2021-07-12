@@ -77,10 +77,12 @@ type deposit_type       is [@layout:comb] record [
 type withdraw_type      is [@layout:comb] record [
   fid                     : fid_type; (* Farm ID *)
   amount                  : nat; (* Amount of tokens to withdraw *)
+  receiver                : address; (* Receiver of unstaked tokens *)
 ]
 
 type harvest_type       is [@layout:comb] record [
   fid                     : fid_type; (* Farm ID *)
+  receiver                : address; (* Receiver of earned tokens *)
 ]
 
 type action_type        is

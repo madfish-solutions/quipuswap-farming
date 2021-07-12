@@ -194,6 +194,19 @@ function deposit(
     | Add_new_farm(_) -> skip
     | Deposit(params) -> {
       s := update_farm_rewards(params.fid, s);
+
+      var farm : farm_type := get_farm(params.fid, s);
+      var user : user_info_type := get_user_info(params.fid, Tezos.sender, s);
+
+      user.earned := user.earned +
+        abs(user.staked * farm.rps - user.prev_earned);
+      user.staked := user.staked + params.amount;
+      user.prev_earned := user.staked * farm.rps;
+
+      farm.users_info[Tezos.sender] := user;
+      farm.staked := farm.staked + params.amount;
+
+      s.farms[params.fid] := farm;
     }
     | Withdraw(_) -> skip
     | Harvest(_) -> skip
@@ -215,6 +228,29 @@ function withdraw(
     | Deposit(_) -> skip
     | Withdraw(params) -> {
       s := update_farm_rewards(params.fid, s);
+
+      var farm : farm_type := get_farm(params.fid, s);
+      var user : user_info_type := get_user_info(params.fid, Tezos.sender, s);
+      var value : nat := params.amount;
+
+      user.earned := user.earned +
+        abs(user.staked * farm.rps - user.prev_earned);
+
+      if value = 0n
+      then value := user.staked
+      else skip;
+
+      if value <= user.staked
+      then skip
+      else failwith("Farmland/balance-too-low");
+
+      user.staked := abs(user.staked - params.amount);
+      user.prev_earned := user.staked * farm.rps;
+
+      farm.users_info[Tezos.sender] := user;
+      farm.staked := abs(farm.staked - params.amount);
+
+      s.farms[params.fid] := farm;
     }
     | Harvest(_) -> skip
     end
@@ -236,6 +272,17 @@ function harvest(
     | Withdraw(_) -> skip
     | Harvest(params) -> {
       s := update_farm_rewards(params.fid, s);
+
+      var farm : farm_type := get_farm(params.fid, s);
+      var user : user_info_type := get_user_info(params.fid, Tezos.sender, s);
+
+      user.earned := user.earned +
+        abs(user.staked * farm.rps - user.prev_earned);
+      user.prev_earned := user.staked * farm.rps;
+
+      farm.users_info[Tezos.sender] := user;
+
+      s.farms[params.fid] := farm;
     }
     end
   } with (no_operations, s)

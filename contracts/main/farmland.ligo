@@ -2,6 +2,7 @@
 #include "../lib/i_fa2.ligo"
 
 #include "../partial/i_common.ligo"
+#include "../partial/common.ligo"
 
 #include "../partial/farmland/i_farmland.ligo"
 #include "../partial/farmland/farmland_helpers.ligo"

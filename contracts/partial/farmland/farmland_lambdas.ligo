@@ -5,7 +5,7 @@ function set_admin(
   block {
     case action of
       Set_admin(new_admin) -> {
-        only_farmland_admin(Tezos.sender, s);
+        only_admin(Tezos.sender, s.admin);
 
         s.pending_admin := new_admin;
       }
@@ -29,12 +29,10 @@ function confirm_admin(
     case action of
       Set_admin(_) -> skip
     | Confirm_admin -> {
-      if Tezos.sender =/= s.pending_admin
-      then failwith("Farmland/not-pending-admin")
-      else {
-        s.admin := s.pending_admin;
-        s.pending_admin := zero_address;
-      };
+      only_pending_admin(Tezos.sender, s.pending_admin);
+
+      s.admin := s.pending_admin;
+      s.pending_admin := zero_address;
     }
     | Set_alloc_points(_) -> skip
     | Set_fees(_) -> skip
@@ -56,7 +54,7 @@ function set_alloc_points(
       Set_admin(_) -> skip
     | Confirm_admin -> skip
     | Set_alloc_points(params) -> {
-      only_farmland_admin(Tezos.sender, s);
+      only_admin(Tezos.sender, s.admin);
 
       function set_alloc_point(
         var s           : storage_type;
@@ -103,7 +101,7 @@ function set_fees(
     | Confirm_admin -> skip
     | Set_alloc_points(_) -> skip
     | Set_fees(params) -> {
-      only_farmland_admin(Tezos.sender, s);
+      only_admin(Tezos.sender, s.admin);
 
       function set_fee(
         var s           : storage_type;
@@ -138,7 +136,7 @@ function set_reward_per_second(
     | Set_alloc_points(_) -> skip
     | Set_fees(_) -> skip
     | Set_reward_per_second(new_rps) -> {
-      only_farmland_admin(Tezos.sender, s);
+      only_admin(Tezos.sender, s.admin);
 
       s.qugo_per_second := new_rps;
     }
@@ -162,7 +160,7 @@ function set_burner(
     | Set_fees(_) -> skip
     | Set_reward_per_second(_) -> skip
     | Set_burner(new_burner) -> {
-      only_farmland_admin(Tezos.sender, s);
+      only_admin(Tezos.sender, s.admin);
 
       s.burner := new_burner;
     }
@@ -186,7 +184,7 @@ function add_new_farm(
     | Set_reward_per_second(_) -> skip
     | Set_burner(_) -> skip
     | Add_new_farm(params) -> {
-      only_farmland_admin(Tezos.sender, s);
+      only_admin(Tezos.sender, s.admin);
 
       s.total_alloc_point := s.total_alloc_point + params.alloc_point;
       s.farms[s.farms_count] := record [
@@ -258,7 +256,8 @@ function deposit(
           0mutez,
           get_fa2_token_transfer_entrypoint(farm.staked_token.token)
         ) # operations;
-      } else {
+      }
+      else {
         operations := Tezos.transaction(
           FA12_transfer_type(Tezos.sender, (Tezos.self_address, params.amt)),
           0mutez,
@@ -330,7 +329,8 @@ function withdraw(
           0mutez,
           get_fa2_token_transfer_entrypoint(farm.staked_token.token)
         ) # operations;
-      } else {
+      }
+      else {
         operations := Tezos.transaction(
           FA12_transfer_type(Tezos.self_address, (params.receiver, value)),
           0mutez,

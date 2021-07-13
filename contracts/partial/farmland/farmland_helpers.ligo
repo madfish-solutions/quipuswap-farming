@@ -25,16 +25,6 @@ function get_user_info(
     end;
   } with user_info
 
-function only_farmland_admin(
-  const user            : address;
-  const s               : storage_type)
-                        : unit is
-  block {
-    if user =/= s.admin
-    then failwith("Farmland/not-admin")
-    else skip;
-  } with unit
-
 function update_farm_rewards(
   const fid             : fid_type;
   var s                 : storage_type)
@@ -55,31 +45,3 @@ function update_farm_rewards(
     farm.upd := Tezos.now;
     s.farms[fid] := farm;
   } with s
-
-function get_fa12_token_transfer_entrypoint(
-  const token           : address)
-                        : contract(fa12_transfer_type) is
-  case (
-    Tezos.get_entrypoint_opt("%transfer", token)
-                        : option(contract(fa12_transfer_type))
-  ) of
-    Some(contr) -> contr
-  | None -> (
-    failwith("FA1.2/transfer-entrypoint-404")
-                        : contract(fa12_transfer_type)
-  )
-  end
-
-function get_fa2_token_transfer_entrypoint(
-  const token           : address)
-                        : contract(fa2_transfer_type) is
-  case (
-    Tezos.get_entrypoint_opt("%transfer", token)
-                        : option(contract(fa2_transfer_type))
-  ) of
-    Some(contr) -> contr
-  | None -> (
-    failwith("FA2/transfer-entrypoint-404")
-                        : contract(fa2_transfer_type)
-  )
-  end

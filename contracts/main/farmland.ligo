@@ -1,7 +1,12 @@
-#include "../partial/i_farmland.ligo"
-#include "../partial/farmland_helpers.ligo"
-#include "../partial/farmland_methods.ligo"
-#include "../partial/farmland_lambdas.ligo"
+#include "../lib/i_fa12.ligo"
+#include "../lib/i_fa2.ligo"
+
+#include "../partial/i_common.ligo"
+
+#include "../partial/farmland/i_farmland.ligo"
+#include "../partial/farmland/farmland_helpers.ligo"
+#include "../partial/farmland/farmland_methods.ligo"
+#include "../partial/farmland/farmland_lambdas.ligo"
 
 function main(
   const action          : full_action_type;

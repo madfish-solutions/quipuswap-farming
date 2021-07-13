@@ -46,7 +46,7 @@ type veto_type          is record [
 type withdraw_type      is address
 
 type dex_action_type    is
-| InitializeExchange      of init_exchange_type
+  InitializeExchange      of init_exchange_type
 | TezToTokenPayment       of tez_to_tok_type
 | TokenToTezPayment       of tok_to_tez_type
 | InvestLiquidity         of invest_liq_type

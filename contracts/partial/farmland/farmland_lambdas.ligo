@@ -189,19 +189,20 @@ function add_new_farm(
       only_farmland_admin(Tezos.sender, s);
 
       s.total_alloc_point := s.total_alloc_point + params.alloc_point;
-      s.farms_count := s.farms_count + 1n;
       s.farms[s.farms_count] := record [
         users_info   = (Map.empty : map(address, user_info_type));
         fees         = params.fees;
         upd          = Tezos.now;
         staked_token = params.staked_token;
-        reward_token = s.qugo_token.token;
+        reward_token = s.qugo_token;
         is_lp_farm   = params.is_lp_farm;
+        is_fa2_token = params.is_fa2_token;
         timelocked   = params.timelocked;
         alloc_point  = params.alloc_point;
         rps          = 0n;
         staked       = 0n;
       ];
+      s.farms_count := s.farms_count + 1n;
     }
     | Deposit(_) -> skip
     | Withdraw(_) -> skip
@@ -214,6 +215,8 @@ function deposit(
   var s                 : storage_type)
                         : return_type is
   block {
+    var operations : list(operation) := no_operations;
+
     case action of
       Set_admin(_) -> skip
     | Confirm_admin -> skip
@@ -230,24 +233,51 @@ function deposit(
 
       user.earned := user.earned +
         abs(user.staked * farm.rps - user.prev_earned);
-      user.staked := user.staked + params.amount;
+      user.staked := user.staked + params.amt;
       user.prev_earned := user.staked * farm.rps;
 
       farm.users_info[Tezos.sender] := user;
-      farm.staked := farm.staked + params.amount;
+      farm.staked := farm.staked + params.amt;
 
       s.farms[params.fid] := farm;
+
+      if farm.is_fa2_token
+      then {
+        const dst : transfer_dst_type = record [
+          to_      = Tezos.self_address;
+          token_id = farm.staked_token.id;
+          amount   = params.amt;
+        ];
+        const fa2_transfer_param : fa2_send_type = record [
+          from_ = Tezos.sender;
+          txs   = list [dst];
+        ];
+
+        operations := Tezos.transaction(
+          FA2_transfer_type(list [fa2_transfer_param]),
+          0mutez,
+          get_fa2_token_transfer_entrypoint(farm.staked_token.token)
+        ) # operations;
+      } else {
+        operations := Tezos.transaction(
+          FA12_transfer_type(Tezos.sender, (Tezos.self_address, params.amt)),
+          0mutez,
+          get_fa12_token_transfer_entrypoint(farm.staked_token.token)
+        ) # operations;
+      };
     }
     | Withdraw(_) -> skip
     | Harvest(_) -> skip
     end
-  } with (no_operations, s)
+  } with (operations, s)
 
 function withdraw(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
   block {
+    var operations : list(operation) := no_operations;
+
     case action of
       Set_admin(_) -> skip
     | Confirm_admin -> skip
@@ -262,7 +292,7 @@ function withdraw(
 
       var farm : farm_type := get_farm(params.fid, s);
       var user : user_info_type := get_user_info(params.fid, Tezos.sender, s);
-      var value : nat := params.amount;
+      var value : nat := params.amt;
 
       user.earned := user.earned +
         abs(user.staked * farm.rps - user.prev_earned);
@@ -275,23 +305,50 @@ function withdraw(
       then skip
       else failwith("Farmland/balance-too-low");
 
-      user.staked := abs(user.staked - params.amount);
+      user.staked := abs(user.staked - value);
       user.prev_earned := user.staked * farm.rps;
 
       farm.users_info[Tezos.sender] := user;
-      farm.staked := abs(farm.staked - params.amount);
+      farm.staked := abs(farm.staked - value);
 
       s.farms[params.fid] := farm;
+
+      if farm.is_fa2_token
+      then {
+        const dst : transfer_dst_type = record [
+          to_      = params.receiver;
+          token_id = farm.staked_token.id;
+          amount   = value;
+        ];
+        const fa2_transfer_param : fa2_send_type = record [
+          from_ = Tezos.self_address;
+          txs   = list [dst];
+        ];
+
+        operations := Tezos.transaction(
+          FA2_transfer_type(list [fa2_transfer_param]),
+          0mutez,
+          get_fa2_token_transfer_entrypoint(farm.staked_token.token)
+        ) # operations;
+      } else {
+        operations := Tezos.transaction(
+          FA12_transfer_type(Tezos.self_address, (params.receiver, value)),
+          0mutez,
+          get_fa12_token_transfer_entrypoint(farm.staked_token.token)
+        ) # operations;
+      };
     }
     | Harvest(_) -> skip
     end
-  } with (no_operations, s)
+  } with (operations, s)
 
 function harvest(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
   block {
+    var operations : list(operation) := no_operations;
+
     case action of
       Set_admin(_) -> skip
     | Confirm_admin -> skip
@@ -317,4 +374,4 @@ function harvest(
       s.farms[params.fid] := farm;
     }
     end
-  } with (no_operations, s)
+  } with (operations, s)

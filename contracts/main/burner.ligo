@@ -1,5 +1,9 @@
-#include "../partial/i_burner.ligo"
-#include "../partial/burner_methods.ligo"
+#include "../lib/i_dex.ligo"
+
+#include "../partial/i_common.ligo"
+
+#include "../partial/burner/i_burner.ligo"
+#include "../partial/burner/burner_methods.ligo"
 
 function main(
   const action          : action_type;

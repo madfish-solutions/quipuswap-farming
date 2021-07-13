@@ -7,7 +7,7 @@
     "postinstall": "patch-package",
     "start-sandbox": "docker run --rm --name my-sandbox -e flextesa_node_cors_origin='*' --detach -p 8732:20000 tqtezos/flextesa:20210602 flobox start",
     "clean": "rm -rf ./build",
-    "compile": "yarn clean && node scripts/cli.js compile -c farmland -f json && node scripts/cli.js compile -c burner -f json",
+    "compile": "yarn clean && node scripts/cli.js compile -c farmland -f json && node scripts/cli.js compile -c burner -f json && node scripts/cli.js compile -c proxy_minter -f json",
     "migrate": "yarn compile && node scripts/cli.js migrate",
     "migrate-granadanet": "yarn compile && node scripts/cli.js migrate -n granadanet"
   },

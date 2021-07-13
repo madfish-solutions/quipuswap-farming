@@ -1,5 +1,3 @@
-#include "../partial/i_dex.ligo"
-
 type burn_type          is Burn             of (address * nat)
 
 type use_type           is dex_action_type
@@ -10,6 +8,6 @@ type storage_type       is [@layout:comb] record [
 ]
 
 type action_type        is
-| Default
+  Default
 
 type return_type        is (list(operation) * storage_type)

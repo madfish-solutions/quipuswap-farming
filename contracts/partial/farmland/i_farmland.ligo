@@ -12,27 +12,28 @@ type user_info_type     is [@layout:comb] record [
   prev_earned             : nat; (* Previous earned amount of tokens by user *)
 ]
 
+type token_type         is [@layout:comb] record [
+  token                   : address; (* Token address *)
+  id                      : nat; (* Token ID *)
+]
+
 type farm_type          is [@layout:comb] record [
   users_info              : map(address, user_info_type); (* Users data *)
   fees                    : fees_type; (* Fees data *)
   upd                     : timestamp; (* Last farm updated timestamp *)
-  staked_token            : address; (* Token to stake *)
-  reward_token            : address; (* Token in which rewards are paid *)
+  staked_token            : token_type; (* Token to stake *)
+  reward_token            : token_type; (* Token in which rewards are paid *)
   is_lp_farm              : bool; (* Flag: LP token staked or not *)
+  is_fa2_token            : bool; (* Flag: staked tok standard is FA2 or not *)
   timelocked              : bool; (* Flag: farm with timelock or not *)
   alloc_point             : nat; (* Farm allocation point *)
   rps                     : nat; (* Reward per share *)
   staked                  : nat; (* Total count of staked tokens in the farm *)
 ]
 
-type qugo_token_type    is [@layout:comb] record [
-  token                   : address;
-  id                      : nat;
-]
-
 type storage_type       is [@layout:comb] record [
   farms                   : big_map(fid_type, farm_type); (* Farms data *)
-  qugo_token              : qugo_token_type; (* Quipuswap GOV token address *)
+  qugo_token              : token_type; (* Quipuswap GOV token *)
   admin                   : address; (* Contract's actual admin address *)
   pending_admin           : address; (* Contract's pending admin address *)
   burner                  : address; (* Burner contract address *)
@@ -65,21 +66,22 @@ type set_rps_type       is nat (* Quipuswap GOV tokens (reward) per second *)
 type set_burner_type    is address (* New burner contract address *)
 
 type add_new_farm_type  is [@layout:comb] record [
-  fees                    : fees_type;
-  staked_token            : address;
-  is_lp_farm              : bool;
-  timelocked              : bool;
-  alloc_point             : nat;
+  fees                    : fees_type; (* Fees data *)
+  staked_token            : token_type; (* Token to stake *)
+  is_lp_farm              : bool; (* Flag: LP token staked or not *)
+  is_fa2_token            : bool; (* Flag: staked tok standard is FA2 or not *)
+  timelocked              : bool; (* Flag: farm with timelock or not *)
+  alloc_point             : nat; (* Farm allocation point *)
 ]
 
 type deposit_type       is [@layout:comb] record [
   fid                     : fid_type; (* Farm ID *)
-  amount                  : nat; (* Amount of tokens to deposit *)
+  amt                     : nat; (* Amount of tokens to deposit *)
 ]
 
 type withdraw_type      is [@layout:comb] record [
   fid                     : fid_type; (* Farm ID *)
-  amount                  : nat; (* Amount of tokens to withdraw *)
+  amt                     : nat; (* Amount of tokens to withdraw *)
   receiver                : address; (* Receiver of unstaked tokens *)
 ]
 
@@ -119,11 +121,6 @@ type setup_func_type    is [@layout:comb] record [
 type full_action_type   is
   Use                     of action_type
 | Setup_func              of setup_func_type
-
-[@inline] const no_operations : list(operation) = nil;
-
-[@inline] const zero_address : address =
-  ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
 
 [@inline] const default_qugo_id : nat = 0n;
 

@@ -24,7 +24,7 @@ type bal_response_type  is [@layout:comb] record [
   balance                 : nat; (* Balance of tokens *)
 ]
 
-type balance_type       is [@layout:comb] record [
+type balance_of_type    is [@layout:comb] record [
   requests                : list(bal_request_type); (* Balance of requests *)
   callback                : contract(list(bal_response_type)); (* Callback *)
 ]

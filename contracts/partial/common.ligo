@@ -45,3 +45,27 @@ function get_fa2_token_transfer_entrypoint(
                         : contract(fa2_transfer_type)
   )
   end
+
+function get_quipuswap_use_entrypoint(
+  const pool            : address)
+                        : contract(use_type) is
+  case (
+    Tezos.get_entrypoint_opt("%use", pool) : option(contract(use_type))
+  ) of
+    Some(contr) -> contr
+  | None -> (failwith("QS/use-entrypoint-404") : contract(use_type))
+  end
+
+function get_qsqov_token_balance_of_entrypoint(
+  const token           : address)
+                        : contract(balance_of_type) is
+  case (
+    Tezos.get_entrypoint_opt("%balance_of", token)
+                        : option(contract(balance_of_type))
+  ) of
+    Some(contr) -> contr
+  | None -> (
+    failwith("QSGOV/balance-of-entrypoint-404")
+                        : contract(balance_of_type)
+  )
+  end

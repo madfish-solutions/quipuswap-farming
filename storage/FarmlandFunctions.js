@@ -39,4 +39,8 @@ module.exports = [
     index: 9,
     name: "harvest",
   },
+  {
+    index: 10,
+    name: "burn",
+  },
 ];

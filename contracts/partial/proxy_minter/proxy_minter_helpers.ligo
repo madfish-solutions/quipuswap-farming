@@ -1,4 +1,4 @@
-function get_mint_gov_tokens_entrypoint(
+function get_mint_qsgov_tokens_entrypoint(
   const token           : address)
                         : contract(mint_gov_tok_type) is
   case (
@@ -7,7 +7,7 @@ function get_mint_gov_tokens_entrypoint(
   ) of
     Some(contr) -> contr
   | None -> (
-    failwith("QUGO/mint-gov-token-entrypoint-404")
+    failwith("QSGOV/mint-gov-token-entrypoint-404")
                         : contract(mint_gov_tok_type)
   )
   end
@@ -23,19 +23,5 @@ function get_withdraw_callback_entrypoint(
   | None -> (
     failwith("ProxyMinter/withdraw-callback-entrypoint-404")
                         : contract(list(bal_response_type))
-  )
-  end
-
-function get_qugo_token_balance_of_entrypoint(
-  const token           : address)
-                        : contract(balance_type) is
-  case (
-    Tezos.get_entrypoint_opt("%balance_of", token)
-                        : option(contract(balance_type))
-  ) of
-    Some(contr) -> contr
-  | None -> (
-    failwith("QGOV/balance-of-entrypoint-404")
-                        : contract(balance_type)
   )
   end

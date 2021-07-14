@@ -14,6 +14,7 @@
     | Deposit(_) -> 7n
     | Withdraw(_) -> 8n
     | Harvest(_) -> 9n
+    | Burn(_) -> 10n
     end;
     const res : return_type = case s.farmland_lambdas[id] of
         Some(f) -> f(action, s.storage)

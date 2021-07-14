@@ -18,6 +18,7 @@ function set_admin(
     | Deposit(_) -> skip
     | Withdraw(_) -> skip
     | Harvest(_) -> skip
+    | Burn(_) -> skip
     end
   } with (no_operations, s)
 
@@ -42,6 +43,7 @@ function confirm_admin(
     | Deposit(_) -> skip
     | Withdraw(_) -> skip
     | Harvest(_) -> skip
+    | Burn(_) -> skip
     end
   } with (no_operations, s)
 
@@ -88,6 +90,7 @@ function set_alloc_points(
     | Deposit(_) -> skip
     | Withdraw(_) -> skip
     | Harvest(_) -> skip
+    | Burn(_) -> skip
     end
   } with (no_operations, s)
 
@@ -122,6 +125,7 @@ function set_fees(
     | Deposit(_) -> skip
     | Withdraw(_) -> skip
     | Harvest(_) -> skip
+    | Burn(_) -> skip
     end
   } with (no_operations, s)
 
@@ -138,13 +142,14 @@ function set_reward_per_second(
     | Set_reward_per_second(new_rps) -> {
       only_admin(Tezos.sender, s.admin);
 
-      s.qugo_per_second := new_rps;
+      s.qsgov_per_second := new_rps;
     }
     | Set_burner(_) -> skip
     | Add_new_farm(_) -> skip
     | Deposit(_) -> skip
     | Withdraw(_) -> skip
     | Harvest(_) -> skip
+    | Burn(_) -> skip
     end
   } with (no_operations, s)
 
@@ -168,6 +173,7 @@ function set_burner(
     | Deposit(_) -> skip
     | Withdraw(_) -> skip
     | Harvest(_) -> skip
+    | Burn(_) -> skip
     end
   } with (no_operations, s)
 
@@ -192,7 +198,7 @@ function add_new_farm(
         fees         = params.fees;
         upd          = Tezos.now;
         staked_token = params.staked_token;
-        reward_token = s.qugo_token;
+        reward_token = s.qsgov;
         is_lp_farm   = params.is_lp_farm;
         is_fa2_token = params.is_fa2_token;
         timelocked   = params.timelocked;
@@ -205,6 +211,7 @@ function add_new_farm(
     | Deposit(_) -> skip
     | Withdraw(_) -> skip
     | Harvest(_) -> skip
+    | Burn(_) -> skip
     end
   } with (no_operations, s)
 
@@ -267,6 +274,7 @@ function deposit(
     }
     | Withdraw(_) -> skip
     | Harvest(_) -> skip
+    | Burn(_) -> skip
     end
   } with (operations, s)
 
@@ -339,6 +347,7 @@ function withdraw(
       };
     }
     | Harvest(_) -> skip
+    | Burn(_) -> skip
     end
   } with (operations, s)
 
@@ -372,6 +381,43 @@ function harvest(
       farm.users_info[Tezos.sender] := user;
 
       s.farms[params.fid] := farm;
+    }
+    | Burn(_) -> skip
+    end
+  } with (operations, s)
+
+function burn(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    var operations : list(operation) := no_operations;
+
+    case action of
+      Set_admin(_) -> skip
+    | Confirm_admin -> skip
+    | Set_alloc_points(_) -> skip
+    | Set_fees(_) -> skip
+    | Set_reward_per_second(_) -> skip
+    | Set_burner(_) -> skip
+    | Add_new_farm(_) -> skip
+    | Deposit(_) -> skip
+    | Withdraw(_) -> skip
+    | Harvest(_) -> skip
+    | Burn(fid) -> {
+      only_admin(Tezos.sender, s.admin);
+
+      const farm : farm_type = get_farm(fid, s);
+
+      if not farm.is_lp_farm
+      then failwith("Farmland/not-LP-farm")
+      else skip;
+
+      operations := Tezos.transaction(
+        WithdrawProfit(s.burner),
+        0mutez,
+        get_quipuswap_use_entrypoint(farm.staked_token.token)
+      ) # operations;
     }
     end
   } with (operations, s)

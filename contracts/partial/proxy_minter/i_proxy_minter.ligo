@@ -1,16 +1,6 @@
-type qugo_balance_type  is [@layout:comb] record [
-  balance                 : nat; (* GOV token balance *)
-  flag                    : bool; (* GOV token was found in response or not *)
-];
-
-type token_type         is [@layout:comb] record [
-  token                   : address; (* Token address *)
-  id                      : nat; (* Token ID *)
-]
-
 type storage_type       is [@layout:comb] record [
   farms                   : set(address); (* Set of registered farms *)
-  qugo_token              : token_type; (* Quipuswap GOV token *)
+  qsgov                   : token_type; (* QS GOV token *)
   admin                   : address; (* Contract's actual admin address *)
   pending_admin           : address; (* Contract's pending admin address *)
 ]
@@ -35,8 +25,8 @@ type confirm_admin_type is unit
 
 type action_type        is
   Register_farm           of register_farm_type
-| Mint_gov_tokens         of mint_tokens_type
-| Withdraw_gov_tokens     of withdraw_type_1
+| Mint_qsgov_tokens       of mint_tokens_type
+| Withdraw_qsgov_tokens   of withdraw_type_1
 | Withdraw_callback       of withdraw_type_2
 | Set_admin               of set_admin_type
 | Confirm_admin           of confirm_admin_type

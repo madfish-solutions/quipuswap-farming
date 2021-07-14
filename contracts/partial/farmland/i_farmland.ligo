@@ -12,11 +12,6 @@ type user_info_type     is [@layout:comb] record [
   prev_earned             : nat; (* Previous earned amount of tokens by user *)
 ]
 
-type token_type         is [@layout:comb] record [
-  token                   : address; (* Token address *)
-  id                      : nat; (* Token ID *)
-]
-
 type farm_type          is [@layout:comb] record [
   users_info              : map(address, user_info_type); (* Users data *)
   fees                    : fees_type; (* Fees data *)
@@ -33,12 +28,12 @@ type farm_type          is [@layout:comb] record [
 
 type storage_type       is [@layout:comb] record [
   farms                   : big_map(fid_type, farm_type); (* Farms data *)
-  qugo_token              : token_type; (* Quipuswap GOV token *)
+  qsgov                   : token_type; (* QS GOV token *)
   admin                   : address; (* Contract's actual admin address *)
   pending_admin           : address; (* Contract's pending admin address *)
   burner                  : address; (* Burner contract address *)
   farms_count             : nat; (* Number of farms registered on contract *)
-  qugo_per_second         : nat; (* Reward per second for all farms *)
+  qsgov_per_second        : nat; (* Reward per second for all farms *)
   total_alloc_point       : nat; (* Sum of all allocation points in farms *)
 ]
 
@@ -61,7 +56,7 @@ type set_fee_type       is [@layout:comb] record [
 
 type set_fees_type      is list(set_fee_type)
 
-type set_rps_type       is nat (* Quipuswap GOV tokens (reward) per second *)
+type set_rps_type       is nat (* QS GOV tokens (reward) per second *)
 
 type set_burner_type    is address (* New burner contract address *)
 
@@ -90,6 +85,8 @@ type harvest_type       is [@layout:comb] record [
   receiver                : address; (* Receiver of earned tokens *)
 ]
 
+type burn_type          is nat (* Farm ID *)
+
 type action_type        is
   Set_admin               of set_admin_type
 | Confirm_admin           of confirm_admin_type
@@ -101,6 +98,7 @@ type action_type        is
 | Deposit                 of deposit_type
 | Withdraw                of withdraw_type
 | Harvest                 of harvest_type
+| Burn                    of burn_type
 
 type return_type        is (list(operation) * storage_type)
 
@@ -122,8 +120,8 @@ type full_action_type   is
   Use                     of action_type
 | Setup_func              of setup_func_type
 
-[@inline] const default_qugo_id : nat = 0n;
+[@inline] const default_qsgov_id : nat = 0n;
 
-[@inline] const farmland_methods_max_index : nat = 9n;
+[@inline] const farmland_methods_max_index : nat = 10n;
 
 [@inline] const timelock_period : nat = 2_592_000n; (* 30 days *)

@@ -35,7 +35,7 @@ function update_farm_rewards(
     if farm.staked =/= 0n
     then {
       const time_diff : nat = abs(Tezos.now - farm.upd);
-      const reward : nat = time_diff * s.qugo_per_second * farm.alloc_point /
+      const reward : nat = time_diff * s.qsgov_per_second * farm.alloc_point /
         s.total_alloc_point;
 
       farm.rps := farm.rps + reward / farm.staked;

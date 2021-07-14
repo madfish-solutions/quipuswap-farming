@@ -8,7 +8,7 @@ function register_farm(
     s.farms := Set.update(params.farm, params.register, s.farms);
   } with (no_operations, s)
 
-function mint_gov_tokens(
+function mint_qsgov_tokens(
   const params          : mint_tokens_type;
   var s                 : storage_type)
                         : return_type is
@@ -23,50 +23,55 @@ function mint_gov_tokens(
           amount   = params.amt;
         ],
         0mutez,
-        get_mint_gov_tokens_entrypoint(s.qugo_token.token)
+        get_mint_qsgov_tokens_entrypoint(s.qsgov.token)
       )
     ], s)
 
-function withdraw_gov_tokens(
+function withdraw_qsgov_tokens(
   var s                 : storage_type)
                         : return_type is
   block {
     only_admin(Tezos.sender, s.admin);
 
-    const balance_params : balance_type = record [
+    const balance_of_params : balance_of_type = record [
       requests = list [
         record [
           owner    = Tezos.self_address;
-          token_id = s.qugo_token.id;
+          token_id = s.qsgov.id;
         ]
       ];
       callback = get_withdraw_callback_entrypoint(Tezos.self_address)
     ];
   } with (list [
     Tezos.transaction(
-      balance_params,
+      balance_of_params,
       0mutez,
-      get_qugo_token_balance_of_entrypoint(s.qugo_token.token)
+      get_qsqov_token_balance_of_entrypoint(s.qsgov.token)
     )
   ], s)
 
-function withdraw_gov_tokens_callback(
+function withdraw_qsgov_tokens_callback(
   const params          : withdraw_type_2;
   var s                 : storage_type)
                         : return_type is
   block {
-    if Tezos.sender =/= s.qugo_token.token
-    then failwith("ProxyMinter/not-qugo-token")
+    if Tezos.sender =/= s.qsgov.token
+    then failwith("ProxyMinter/not-GS-GOV-token")
     else skip;
 
-    const qugo_token_id : token_id_type = s.qugo_token.id;
+    const qsgov_token_id : token_id_type = s.qsgov.id;
 
-    function get_qugo_balance(
-      var tmp           : qugo_balance_type;
+    function get_qsgov_balance(
+      var tmp           : qsgov_balance_type;
       const v           : bal_response_type)
-                        : qugo_balance_type is
+                        : qsgov_balance_type is
       block {
-        if not tmp.flag and v.request.token_id = qugo_token_id
+        const request : bal_request_type = record [
+          token_id = qsgov_token_id;
+          owner    = Tezos.self_address;
+        ];
+
+        if not tmp.flag and v.request = request
         then {
           tmp.balance := v.balance;
           tmp.flag := True;
@@ -74,8 +79,8 @@ function withdraw_gov_tokens_callback(
         else skip;
       } with tmp;
 
-    const tmp : qugo_balance_type = List.fold(
-      get_qugo_balance,
+    const tmp : qsgov_balance_type = List.fold(
+      get_qsgov_balance,
       params,
       record [
         balance = 0n;
@@ -88,7 +93,7 @@ function withdraw_gov_tokens_callback(
     then {
       const dst : transfer_dst_type = record [
         to_      = s.admin;
-        token_id = s.qugo_token.id;
+        token_id = s.qsgov.id;
         amount   = tmp.balance;
       ];
       const fa2_transfer_param : fa2_send_type = record [
@@ -99,7 +104,7 @@ function withdraw_gov_tokens_callback(
       operations := Tezos.transaction(
         FA2_transfer_type(list [fa2_transfer_param]),
         0mutez,
-        get_fa2_token_transfer_entrypoint(s.qugo_token.token)
+        get_fa2_token_transfer_entrypoint(s.qsgov.token)
       ) # operations;
     }
     else skip;

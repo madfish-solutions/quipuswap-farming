@@ -5,16 +5,15 @@ const { InMemorySigner } = require("@taquito/signer");
 
 const { migrate } = require("../scripts/helpers");
 
-const { confirmOperation } = require("../scripts/confirmation");
-
 const { alice, dev } = require("../scripts/sandbox/accounts");
 
-const burnerStorage = require("../storage/Burner");
+const proxyMinterStorage = require("../storage/ProxyMinter");
 
 const env = require("../env");
 
 module.exports = async (tezos) => {
   const secretKey = env.network === "development" ? alice.sk : dev.sk;
+  const deployer = env.network === "development" ? alice.pkh : dev.pkh;
 
   tezos = new TezosToolkit(tezos.rpc.url);
 
@@ -27,18 +26,17 @@ module.exports = async (tezos) => {
 
   const zeroAddress = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";
 
-  burnerStorage.qsgov_lp = zeroAddress;
-  burnerStorage.qsgov.token = zeroAddress;
-  burnerStorage.qsgov.id = "0";
+  proxyMinterStorage.farms = [Farmland["networks"][env.network]["farmland"]];
+  proxyMinterStorage.qsgov.token = zeroAddress;
+  proxyMinterStorage.qsgov.id = "0";
+  proxyMinterStorage.admin = deployer;
+  proxyMinterStorage.pending_admin = zeroAddress;
 
-  const burnerAddress = await migrate(tezos, "burner", burnerStorage);
-
-  console.log(`Burner: ${burnerAddress}`);
-
-  const farmland = await tezos.contract.at(
-    Farmland["networks"][env.network]["farmland"]
+  const proxyMinterAddress = await migrate(
+    tezos,
+    "proxy_minter",
+    proxyMinterStorage
   );
-  const operation = await farmland.methods.set_burner(burnerAddress).send();
 
-  await confirmOperation(tezos, operation.hash);
+  console.log(`ProxyMinter: ${proxyMinterAddress}`);
 };

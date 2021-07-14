@@ -29,6 +29,7 @@ module.exports = async (tezos) => {
   const zeroAddress = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";
 
   farmlandStorage.storage.qsgov.token = zeroAddress;
+  farmlandStorage.storage.qsgov.id = "0";
   farmlandStorage.storage.admin = deployer;
   farmlandStorage.storage.pending_admin = zeroAddress;
   farmlandStorage.storage.burner = zeroAddress;

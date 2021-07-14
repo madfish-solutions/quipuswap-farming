@@ -45,3 +45,17 @@ function update_farm_rewards(
     farm.upd := Tezos.now;
     s.farms[fid] := farm;
   } with s
+
+function get_proxy_minter_mint_entrypoint(
+  const proxy_minter    : address)
+                        : contract(mint_tokens_type) is
+  case (
+    Tezos.get_entrypoint_opt("%mint_qsgov_tokens", proxy_minter)
+                        : option(contract(mint_tokens_type))
+  ) of
+    Some(contr) -> contr
+  | None -> (
+    failwith("ProxyMinter/mint-qsgov-tokens-entrypoint-404")
+                        : contract(mint_tokens_type)
+  )
+  end

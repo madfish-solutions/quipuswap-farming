@@ -10,11 +10,6 @@ type register_farm_type is [@layout:comb] record [
   register                : bool; (* Flag: register or unregister *)
 ]
 
-type mint_tokens_type   is [@layout:comb] record [
-  amt                     : nat; (* Number of tokens to mint *)
-  recipient               : address; (* Tokens recipient address *)
-]
-
 type withdraw_type_1    is unit
 
 type withdraw_type_2    is list(bal_response_type)

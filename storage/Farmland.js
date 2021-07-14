@@ -10,6 +10,7 @@ module.exports = {
     admin: null,
     pending_admin: null,
     burner: null,
+    proxy_minter: null,
     farms_count: "0",
     qsgov_per_second: "0",
     total_alloc_point: "0",

@@ -25,22 +25,26 @@ module.exports = [
   },
   {
     index: 6,
-    name: "add_new_farm",
+    name: "set_proxy_minter",
   },
   {
     index: 7,
-    name: "deposit",
+    name: "add_new_farm",
   },
   {
     index: 8,
-    name: "withdraw",
+    name: "deposit",
   },
   {
     index: 9,
-    name: "harvest",
+    name: "withdraw",
   },
   {
     index: 10,
+    name: "harvest",
+  },
+  {
+    index: 11,
     name: "burn",
   },
 ];

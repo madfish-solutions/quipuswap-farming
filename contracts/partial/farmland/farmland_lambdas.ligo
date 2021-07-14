@@ -14,6 +14,7 @@ function set_admin(
     | Set_fees(_) -> skip
     | Set_reward_per_second(_) -> skip
     | Set_burner(_) -> skip
+    | Set_proxy_minter(_) -> skip
     | Add_new_farm(_) -> skip
     | Deposit(_) -> skip
     | Withdraw(_) -> skip
@@ -39,6 +40,7 @@ function confirm_admin(
     | Set_fees(_) -> skip
     | Set_reward_per_second(_) -> skip
     | Set_burner(_) -> skip
+    | Set_proxy_minter(_) -> skip
     | Add_new_farm(_) -> skip
     | Deposit(_) -> skip
     | Withdraw(_) -> skip
@@ -86,6 +88,7 @@ function set_alloc_points(
     | Set_fees(_) -> skip
     | Set_reward_per_second(_) -> skip
     | Set_burner(_) -> skip
+    | Set_proxy_minter(_) -> skip
     | Add_new_farm(_) -> skip
     | Deposit(_) -> skip
     | Withdraw(_) -> skip
@@ -121,6 +124,7 @@ function set_fees(
     }
     | Set_reward_per_second(_) -> skip
     | Set_burner(_) -> skip
+    | Set_proxy_minter(_) -> skip
     | Add_new_farm(_) -> skip
     | Deposit(_) -> skip
     | Withdraw(_) -> skip
@@ -145,6 +149,7 @@ function set_reward_per_second(
       s.qsgov_per_second := new_rps;
     }
     | Set_burner(_) -> skip
+    | Set_proxy_minter(_) -> skip
     | Add_new_farm(_) -> skip
     | Deposit(_) -> skip
     | Withdraw(_) -> skip
@@ -169,6 +174,32 @@ function set_burner(
 
       s.burner := new_burner;
     }
+    | Set_proxy_minter(_) -> skip
+    | Add_new_farm(_) -> skip
+    | Deposit(_) -> skip
+    | Withdraw(_) -> skip
+    | Harvest(_) -> skip
+    | Burn(_) -> skip
+    end
+  } with (no_operations, s)
+
+function set_proxy_minter(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    case action of
+      Set_admin(_) -> skip
+    | Confirm_admin -> skip
+    | Set_alloc_points(_) -> skip
+    | Set_fees(_) -> skip
+    | Set_reward_per_second(_) -> skip
+    | Set_burner(_) -> skip
+    | Set_proxy_minter(new_proxy_minter) -> {
+      only_admin(Tezos.sender, s.admin);
+
+      s.proxy_minter := new_proxy_minter;
+    }
     | Add_new_farm(_) -> skip
     | Deposit(_) -> skip
     | Withdraw(_) -> skip
@@ -189,6 +220,7 @@ function add_new_farm(
     | Set_fees(_) -> skip
     | Set_reward_per_second(_) -> skip
     | Set_burner(_) -> skip
+    | Set_proxy_minter(_) -> skip
     | Add_new_farm(params) -> {
       only_admin(Tezos.sender, s.admin);
 
@@ -229,6 +261,7 @@ function deposit(
     | Set_fees(_) -> skip
     | Set_reward_per_second(_) -> skip
     | Set_burner(_) -> skip
+    | Set_proxy_minter(_) -> skip
     | Add_new_farm(_) -> skip
     | Deposit(params) -> {
       s := update_farm_rewards(params.fid, s);
@@ -292,6 +325,7 @@ function withdraw(
     | Set_fees(_) -> skip
     | Set_reward_per_second(_) -> skip
     | Set_burner(_) -> skip
+    | Set_proxy_minter(_) -> skip
     | Add_new_farm(_) -> skip
     | Deposit(_) -> skip
     | Withdraw(params) -> {
@@ -365,6 +399,7 @@ function harvest(
     | Set_fees(_) -> skip
     | Set_reward_per_second(_) -> skip
     | Set_burner(_) -> skip
+    | Set_proxy_minter(_) -> skip
     | Add_new_farm(_) -> skip
     | Deposit(_) -> skip
     | Withdraw(_) -> skip
@@ -377,6 +412,19 @@ function harvest(
       user.earned := user.earned +
         abs(user.staked * farm.rps - user.prev_earned);
       user.prev_earned := user.staked * farm.rps;
+
+      if user.earned = 0n
+      then skip
+      else {
+        operations := Tezos.transaction(
+          record [
+            amt       = user.earned;
+            recipient = params.receiver;
+          ],
+          0mutez,
+          get_proxy_minter_mint_entrypoint(s.proxy_minter)
+        ) # operations;
+      };
 
       farm.users_info[Tezos.sender] := user;
 
@@ -400,6 +448,7 @@ function burn(
     | Set_fees(_) -> skip
     | Set_reward_per_second(_) -> skip
     | Set_burner(_) -> skip
+    | Set_proxy_minter(_) -> skip
     | Add_new_farm(_) -> skip
     | Deposit(_) -> skip
     | Withdraw(_) -> skip

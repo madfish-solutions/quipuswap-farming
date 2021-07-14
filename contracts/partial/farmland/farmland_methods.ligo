@@ -10,11 +10,12 @@
     | Set_fees(_) -> 3n
     | Set_reward_per_second(_) -> 4n
     | Set_burner(_) -> 5n
-    | Add_new_farm(_) -> 6n
-    | Deposit(_) -> 7n
-    | Withdraw(_) -> 8n
-    | Harvest(_) -> 9n
-    | Burn(_) -> 10n
+    | Set_proxy_minter(_) -> 6n
+    | Add_new_farm(_) -> 7n
+    | Deposit(_) -> 8n
+    | Withdraw(_) -> 9n
+    | Harvest(_) -> 10n
+    | Burn(_) -> 11n
     end;
     const res : return_type = case s.farmland_lambdas[id] of
         Some(f) -> f(action, s.storage)

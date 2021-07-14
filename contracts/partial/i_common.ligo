@@ -10,6 +10,11 @@ type qsgov_balance_type is [@layout:comb] record [
   flag                    : bool; (* GOV token was found in response or not *)
 ];
 
+type mint_tokens_type   is [@layout:comb] record [
+  amt                     : nat; (* Number of tokens to mint *)
+  recipient               : address; (* Tokens recipient address *)
+]
+
 [@inline] const zero_address : address =
   ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
 

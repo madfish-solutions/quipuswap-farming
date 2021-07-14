@@ -33,6 +33,7 @@ module.exports = async (tezos) => {
   farmlandStorage.storage.admin = deployer;
   farmlandStorage.storage.pending_admin = zeroAddress;
   farmlandStorage.storage.burner = zeroAddress;
+  farmlandStorage.storage.proxy_minter = zeroAddress;
 
   const farmlandAddress = await migrate(tezos, "farmland", farmlandStorage);
 

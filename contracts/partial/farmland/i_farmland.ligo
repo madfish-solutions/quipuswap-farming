@@ -32,6 +32,7 @@ type storage_type       is [@layout:comb] record [
   admin                   : address; (* Contract's actual admin address *)
   pending_admin           : address; (* Contract's pending admin address *)
   burner                  : address; (* Burner contract address *)
+  proxy_minter            : address; (* Proxy minter contract address *)
   farms_count             : nat; (* Number of farms registered on contract *)
   qsgov_per_second        : nat; (* Reward per second for all farms *)
   total_alloc_point       : nat; (* Sum of all allocation points in farms *)
@@ -59,6 +60,8 @@ type set_fees_type      is list(set_fee_type)
 type set_rps_type       is nat (* QS GOV tokens (reward) per second *)
 
 type set_burner_type    is address (* New burner contract address *)
+
+type set_proxy_type     is address (* New proxy minter contract address *)
 
 type add_new_farm_type  is [@layout:comb] record [
   fees                    : fees_type; (* Fees data *)
@@ -94,6 +97,7 @@ type action_type        is
 | Set_fees                of set_fees_type
 | Set_reward_per_second   of set_rps_type
 | Set_burner              of set_burner_type
+| Set_proxy_minter        of set_proxy_type
 | Add_new_farm            of add_new_farm_type
 | Deposit                 of deposit_type
 | Withdraw                of withdraw_type
@@ -122,6 +126,6 @@ type full_action_type   is
 
 [@inline] const default_qsgov_id : nat = 0n;
 
-[@inline] const farmland_methods_max_index : nat = 10n;
+[@inline] const farmland_methods_max_index : nat = 11n;
 
 [@inline] const timelock_period : nat = 2_592_000n; (* 30 days *)

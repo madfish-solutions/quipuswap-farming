@@ -5,6 +5,8 @@ const { InMemorySigner } = require("@taquito/signer");
 
 const { migrate } = require("../scripts/helpers");
 
+const { confirmOperation } = require("../scripts/confirmation");
+
 const { alice, dev } = require("../scripts/sandbox/accounts");
 
 const proxyMinterStorage = require("../storage/ProxyMinter");
@@ -39,4 +41,13 @@ module.exports = async (tezos) => {
   );
 
   console.log(`ProxyMinter: ${proxyMinterAddress}`);
+
+  const farmland = await tezos.contract.at(
+    Farmland["networks"][env.network]["farmland"]
+  );
+  const operation = await farmland.methods
+    .set_proxy_minter(proxyMinterAddress)
+    .send();
+
+  await confirmOperation(tezos, operation.hash);
 };

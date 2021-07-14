@@ -224,6 +224,10 @@ function add_new_farm(
     | Add_new_farm(params) -> {
       only_admin(Tezos.sender, s.admin);
 
+      if params.start_block < Tezos.level
+      then failwith("Farmland/wrong-start-block")
+      else skip;
+
       s.total_alloc_point := s.total_alloc_point + params.alloc_point;
       s.farms[s.farms_count] := record [
         users_info   = (Map.empty : map(address, user_info_type));
@@ -237,6 +241,7 @@ function add_new_farm(
         alloc_point  = params.alloc_point;
         rps          = 0n;
         staked       = 0n;
+        start_block  = params.start_block;
       ];
       s.farms_count := s.farms_count + 1n;
     }

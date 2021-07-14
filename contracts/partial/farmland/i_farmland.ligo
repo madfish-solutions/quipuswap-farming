@@ -24,6 +24,7 @@ type farm_type          is [@layout:comb] record [
   alloc_point             : nat; (* Farm allocation point *)
   rps                     : nat; (* Reward per share *)
   staked                  : nat; (* Total count of staked tokens in the farm *)
+  start_block             : nat; (* Farm start block *)
 ]
 
 type storage_type       is [@layout:comb] record [
@@ -70,6 +71,7 @@ type add_new_farm_type  is [@layout:comb] record [
   is_fa2_token            : bool; (* Flag: staked tok standard is FA2 or not *)
   timelocked              : bool; (* Flag: farm with timelock or not *)
   alloc_point             : nat; (* Farm allocation point *)
+  start_block             : nat; (* Farm start block *)
 ]
 
 type deposit_type       is [@layout:comb] record [

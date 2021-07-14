@@ -32,18 +32,22 @@ function update_farm_rewards(
   block {
     var farm : farm_type := get_farm(fid, s);
 
-    if farm.staked =/= 0n
-    then {
-      const time_diff : nat = abs(Tezos.now - farm.upd);
-      const reward : nat = time_diff * s.qsgov_per_second * farm.alloc_point /
-        s.total_alloc_point;
+    if Tezos.level <= farm.start_block
+    then skip
+    else {
+      if farm.staked =/= 0n
+      then {
+        const time_diff : nat = abs(Tezos.now - farm.upd);
+        const reward : nat = time_diff * s.qsgov_per_second *
+          farm.alloc_point / s.total_alloc_point;
 
-      farm.rps := farm.rps + reward / farm.staked;
-    }
-    else skip;
+        farm.rps := farm.rps + reward / farm.staked;
+      }
+      else skip;
 
-    farm.upd := Tezos.now;
-    s.farms[fid] := farm;
+      farm.upd := Tezos.now;
+      s.farms[fid] := farm;
+    };
   } with s
 
 function get_proxy_minter_mint_entrypoint(

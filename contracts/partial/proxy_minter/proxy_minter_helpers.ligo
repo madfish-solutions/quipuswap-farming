@@ -1,14 +1,14 @@
 function get_mint_qsgov_tokens_entrypoint(
   const token           : address)
-                        : contract(mint_gov_tok_type) is
+                        : contract(mint_gov_toks_type) is
   case (
     Tezos.get_entrypoint_opt("%mint_gov_token", token)
-                        : option(contract(mint_gov_tok_type))
+                        : option(contract(mint_gov_toks_type))
   ) of
     Some(contr) -> contr
   | None        -> (
     failwith("QSGOV/mint-gov-token-entrypoint-404")
-                        : contract(mint_gov_tok_type)
+                        : contract(mint_gov_toks_type)
   )
   end
 

@@ -21,6 +21,7 @@ function get_user_info(
       staked      = 0n;
       earned      = 0n;
       prev_earned = 0n;
+      referrer    = (None : option(address));
     ]
     end;
   } with user_info
@@ -52,41 +53,64 @@ function update_farm_rewards(
 
 function get_proxy_minter_mint_entrypoint(
   const proxy_minter    : address)
-                        : contract(mint_tokens_type) is
+                        : contract(mint_gov_toks_type) is
   case (
     Tezos.get_entrypoint_opt("%mint_qsgov_tokens", proxy_minter)
-                        : option(contract(mint_tokens_type))
+                        : option(contract(mint_gov_toks_type))
   ) of
     Some(contr) -> contr
   | None        -> (
     failwith("ProxyMinter/mint-qsgov-tokens-entrypoint-404")
-                        : contract(mint_tokens_type)
+                        : contract(mint_gov_toks_type)
   )
   end
 
 function claim_rewards(
   var user              : user_info_type;
+  const farm            : farm_type;
   const receiver        : address;
-  const proxy_minter    : address)
-                        : (option(operation) * user_info_type) is
+  const s               : storage_type)
+                        : (list(operation) * user_info_type) is
   block {
     const earned : nat = user.earned / precision;
-    var op : option(operation) := (None : option(operation));
+    var operations : list(operation) := no_operations;
 
     if user.earned = 0n
     then skip
     else {
       user.earned := abs(user.earned - earned * precision);
 
-      op := Some(
-        Tezos.transaction(
-          record [
-            amt       = user.earned;
-            recipient = receiver;
-          ],
-          0mutez,
-          get_proxy_minter_mint_entrypoint(proxy_minter)
-        )
-      );
+      const actual_earned : nat = earned *
+        abs(10000n - farm.fees.harvest_fee) / 10000n;
+      const earn_fee : nat = abs(earned - actual_earned);
+
+      var mint_data : mint_gov_toks_type := list [
+        record [
+          receiver = receiver;
+          amount   = actual_earned;
+        ]
+      ];
+
+      if earn_fee > 0n
+      then {
+        const receiver : address = case user.referrer of
+          None           -> zero_address
+        | Some(referrer) -> referrer
+        end;
+
+        const earn_fee_mint_data : mint_gov_tok_type = record [
+          receiver = receiver;
+          amount   = earn_fee;
+        ];
+
+        mint_data := earn_fee_mint_data # mint_data;
+      }
+      else skip;
+
+      operations := Tezos.transaction(
+        mint_data,
+        0mutez,
+        get_proxy_minter_mint_entrypoint(s.proxy_minter)
+      ) # operations;
     };
-  } with (op, user)
+  } with (operations, user)

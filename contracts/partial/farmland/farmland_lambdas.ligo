@@ -277,13 +277,19 @@ function deposit(
       user.earned := user.earned +
         abs(user.staked * farm.rps - user.prev_earned);
 
-      const res : (option(operation) * user_info_type) = claim_rewards(
+      const res : (list(operation) * user_info_type) = claim_rewards(
         user,
+        farm,
         params.rewards_receiver,
-        s.proxy_minter
+        s
       );
 
       user := res.1;
+
+      case params.referrer of
+        None    -> skip
+      | Some(_) -> user.referrer := params.referrer
+      end;
 
       user.staked := user.staked + params.amt;
       user.prev_earned := user.staked * farm.rps;
@@ -319,10 +325,7 @@ function deposit(
         ) # operations;
       };
 
-      case res.0 of
-        Some(op) -> operations := op # operations
-      | None     -> skip
-      end;
+      operations := concat_op_lists(operations, res.0);
     }
     | Withdraw(_)                       -> skip
     | Harvest(_)                        -> skip
@@ -357,10 +360,11 @@ function withdraw(
       user.earned := user.earned +
         abs(user.staked * farm.rps - user.prev_earned);
 
-      const res : (option(operation) * user_info_type) = claim_rewards(
+      const res : (list(operation) * user_info_type) = claim_rewards(
         user,
+        farm,
         params.rewards_receiver,
-        s.proxy_minter
+        s
       );
 
       user := res.1;
@@ -407,10 +411,7 @@ function withdraw(
         ) # operations;
       };
 
-      case res.0 of
-        Some(op) -> operations := op # operations
-      | None     -> skip
-      end;
+      operations := concat_op_lists(operations, res.0);
     }
     | Harvest(_)                        -> skip
     | Burn(_)                           -> skip
@@ -444,16 +445,14 @@ function harvest(
       user.earned := user.earned +
         abs(user.staked * farm.rps - user.prev_earned);
 
-      const res : (option(operation) * user_info_type) = claim_rewards(
+      const res : (list(operation) * user_info_type) = claim_rewards(
         user,
+        farm,
         params.rewards_receiver,
-        s.proxy_minter
+        s
       );
 
-      case res.0 of
-        Some(op) -> operations := op # operations
-      | None     -> skip
-      end;
+      operations := concat_op_lists(operations, res.0);
 
       user := res.1;
 

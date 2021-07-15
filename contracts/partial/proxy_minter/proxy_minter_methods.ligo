@@ -9,7 +9,7 @@ function register_farm(
   } with (no_operations, s)
 
 function mint_qsgov_tokens(
-  const params          : mint_tokens_type;
+  const params          : mint_gov_toks_type;
   var s                 : storage_type)
                         : return_type is
   block {
@@ -18,10 +18,7 @@ function mint_qsgov_tokens(
     else skip;
   } with (list [
       Tezos.transaction(
-        record [
-          receiver = params.recipient;
-          amount   = params.amt;
-        ],
+        params,
         0mutez,
         get_mint_qsgov_tokens_entrypoint(s.qsgov.token)
       )

@@ -10,6 +10,7 @@ type user_info_type     is [@layout:comb] record [
   staked                  : nat; (* Total amount of tokens staked by user *)
   earned                  : nat; (* Earned amount of tokens by user *)
   prev_earned             : nat; (* Previous earned amount of tokens by user *)
+  referrer                : option(address); (* User's referrer *)
 ]
 
 type farm_type          is [@layout:comb] record [
@@ -77,6 +78,7 @@ type add_new_farm_type  is [@layout:comb] record [
 type deposit_type       is [@layout:comb] record [
   fid                     : fid_type; (* Farm ID *)
   amt                     : nat; (* Amount of tokens to deposit *)
+  referrer                : option(address); (* User's referrer *)
   rewards_receiver        : address; (* Receiver of unstaked tokens *)
 ]
 

@@ -20,7 +20,7 @@ type confirm_admin_type is unit
 
 type action_type        is
   Register_farm           of register_farm_type
-| Mint_qsgov_tokens       of mint_tokens_type
+| Mint_qsgov_tokens       of mint_gov_toks_type
 | Withdraw_qsgov_tokens   of withdraw_type_1
 | Withdraw_callback       of withdraw_type_2
 | Set_admin               of set_admin_type

@@ -19,3 +19,5 @@ type mint_tokens_type   is [@layout:comb] record [
   ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
 
 [@inline] const no_operations : list(operation) = nil;
+
+[@inline] const precision : nat = 1000000000000000000n;

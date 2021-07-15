@@ -77,17 +77,19 @@ type add_new_farm_type  is [@layout:comb] record [
 type deposit_type       is [@layout:comb] record [
   fid                     : fid_type; (* Farm ID *)
   amt                     : nat; (* Amount of tokens to deposit *)
+  rewards_receiver        : address; (* Receiver of unstaked tokens *)
 ]
 
 type withdraw_type      is [@layout:comb] record [
   fid                     : fid_type; (* Farm ID *)
   amt                     : nat; (* Amount of tokens to withdraw *)
   receiver                : address; (* Receiver of unstaked tokens *)
+  rewards_receiver        : address; (* Receiver of unstaked tokens *)
 ]
 
 type harvest_type       is [@layout:comb] record [
   fid                     : fid_type; (* Farm ID *)
-  receiver                : address; (* Receiver of earned tokens *)
+  rewards_receiver        : address; (* Receiver of earned tokens *)
 ]
 
 type burn_type          is nat (* Farm ID *)

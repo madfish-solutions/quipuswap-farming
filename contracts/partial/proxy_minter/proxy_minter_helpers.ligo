@@ -6,7 +6,7 @@ function get_mint_qsgov_tokens_entrypoint(
                         : option(contract(mint_gov_tok_type))
   ) of
     Some(contr) -> contr
-  | None -> (
+  | None        -> (
     failwith("QSGOV/mint-gov-token-entrypoint-404")
                         : contract(mint_gov_tok_type)
   )
@@ -20,7 +20,7 @@ function get_withdraw_callback_entrypoint(
                         : option(contract(list(bal_response_type)))
   ) of
     Some(contr) -> contr
-  | None -> (
+  | None        -> (
     failwith("ProxyMinter/withdraw-callback-entrypoint-404")
                         : contract(list(bal_response_type))
   )

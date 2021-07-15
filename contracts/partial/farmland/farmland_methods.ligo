@@ -4,22 +4,22 @@
                         : full_return_type is
   block {
     const id : nat = case action of
-      Set_admin(_) -> 0n
-    | Confirm_admin(_) -> 1n
-    | Set_alloc_points(_) -> 2n
-    | Set_fees(_) -> 3n
+      Set_admin(_)             -> 0n
+    | Confirm_admin(_)         -> 1n
+    | Set_alloc_points(_)      -> 2n
+    | Set_fees(_)              -> 3n
     | Set_reward_per_second(_) -> 4n
-    | Set_burner(_) -> 5n
-    | Set_proxy_minter(_) -> 6n
-    | Add_new_farm(_) -> 7n
-    | Deposit(_) -> 8n
-    | Withdraw(_) -> 9n
-    | Harvest(_) -> 10n
-    | Burn(_) -> 11n
+    | Set_burner(_)            -> 5n
+    | Set_proxy_minter(_)      -> 6n
+    | Add_new_farm(_)          -> 7n
+    | Deposit(_)               -> 8n
+    | Withdraw(_)              -> 9n
+    | Harvest(_)               -> 10n
+    | Burn(_)                  -> 11n
     end;
     const res : return_type = case s.farmland_lambdas[id] of
         Some(f) -> f(action, s.storage)
-      | None -> (failwith("Farmland/func-not-set") : return_type)
+      | None    -> (failwith("Farmland/func-not-set") : return_type)
     end;
 
     s.storage := res.1;
@@ -36,6 +36,6 @@
 
     case s.farmland_lambdas[params.index] of
       Some(_n) -> failwith("Farmland/func-set")
-    | None -> s.farmland_lambdas[params.index] := params.func
+    | None     -> s.farmland_lambdas[params.index] := params.func
     end;
   } with (no_operations, s)

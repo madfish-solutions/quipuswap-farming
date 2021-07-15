@@ -4,22 +4,22 @@ function set_admin(
                         : return_type is
   block {
     case action of
-      Set_admin(new_admin) -> {
+      Set_admin(admin)                  -> {
         only_admin(Tezos.sender, s.admin);
 
-        s.pending_admin := new_admin;
+        s.pending_admin := admin;
       }
-    | Confirm_admin -> skip
-    | Set_alloc_points(_) -> skip
-    | Set_fees(_) -> skip
-    | Set_reward_per_second(_) -> skip
-    | Set_burner(_) -> skip
-    | Set_proxy_minter(_) -> skip
-    | Add_new_farm(_) -> skip
-    | Deposit(_) -> skip
-    | Withdraw(_) -> skip
-    | Harvest(_) -> skip
-    | Burn(_) -> skip
+    | Confirm_admin                     -> skip
+    | Set_alloc_points(_)               -> skip
+    | Set_fees(_)                       -> skip
+    | Set_reward_per_second(_)          -> skip
+    | Set_burner(_)                     -> skip
+    | Set_proxy_minter(_)               -> skip
+    | Add_new_farm(_)                   -> skip
+    | Deposit(_)                        -> skip
+    | Withdraw(_)                       -> skip
+    | Harvest(_)                        -> skip
+    | Burn(_)                           -> skip
     end
   } with (no_operations, s)
 
@@ -29,23 +29,23 @@ function confirm_admin(
                         : return_type is
   block {
     case action of
-      Set_admin(_) -> skip
-    | Confirm_admin -> {
+      Set_admin(_)                      -> skip
+    | Confirm_admin                     -> {
       only_pending_admin(Tezos.sender, s.pending_admin);
 
       s.admin := s.pending_admin;
       s.pending_admin := zero_address;
     }
-    | Set_alloc_points(_) -> skip
-    | Set_fees(_) -> skip
-    | Set_reward_per_second(_) -> skip
-    | Set_burner(_) -> skip
-    | Set_proxy_minter(_) -> skip
-    | Add_new_farm(_) -> skip
-    | Deposit(_) -> skip
-    | Withdraw(_) -> skip
-    | Harvest(_) -> skip
-    | Burn(_) -> skip
+    | Set_alloc_points(_)               -> skip
+    | Set_fees(_)                       -> skip
+    | Set_reward_per_second(_)          -> skip
+    | Set_burner(_)                     -> skip
+    | Set_proxy_minter(_)               -> skip
+    | Add_new_farm(_)                   -> skip
+    | Deposit(_)                        -> skip
+    | Withdraw(_)                       -> skip
+    | Harvest(_)                        -> skip
+    | Burn(_)                           -> skip
     end
   } with (no_operations, s)
 
@@ -55,9 +55,9 @@ function set_alloc_points(
                         : return_type is
   block {
     case action of
-      Set_admin(_) -> skip
-    | Confirm_admin -> skip
-    | Set_alloc_points(params) -> {
+      Set_admin(_)                      -> skip
+    | Confirm_admin                     -> skip
+    | Set_alloc_points(params)          -> {
       only_admin(Tezos.sender, s.admin);
 
       function set_alloc_point(
@@ -85,15 +85,15 @@ function set_alloc_points(
 
       s := List.fold(set_alloc_point, params, s);
     }
-    | Set_fees(_) -> skip
-    | Set_reward_per_second(_) -> skip
-    | Set_burner(_) -> skip
-    | Set_proxy_minter(_) -> skip
-    | Add_new_farm(_) -> skip
-    | Deposit(_) -> skip
-    | Withdraw(_) -> skip
-    | Harvest(_) -> skip
-    | Burn(_) -> skip
+    | Set_fees(_)                       -> skip
+    | Set_reward_per_second(_)          -> skip
+    | Set_burner(_)                     -> skip
+    | Set_proxy_minter(_)               -> skip
+    | Add_new_farm(_)                   -> skip
+    | Deposit(_)                        -> skip
+    | Withdraw(_)                       -> skip
+    | Harvest(_)                        -> skip
+    | Burn(_)                           -> skip
     end
   } with (no_operations, s)
 
@@ -103,10 +103,10 @@ function set_fees(
                         : return_type is
   block {
     case action of
-      Set_admin(_) -> skip
-    | Confirm_admin -> skip
-    | Set_alloc_points(_) -> skip
-    | Set_fees(params) -> {
+      Set_admin(_)                      -> skip
+    | Confirm_admin                     -> skip
+    | Set_alloc_points(_)               -> skip
+    | Set_fees(params)                  -> {
       only_admin(Tezos.sender, s.admin);
 
       function set_fee(
@@ -122,14 +122,14 @@ function set_fees(
 
       s := List.fold(set_fee, params, s);
     }
-    | Set_reward_per_second(_) -> skip
-    | Set_burner(_) -> skip
-    | Set_proxy_minter(_) -> skip
-    | Add_new_farm(_) -> skip
-    | Deposit(_) -> skip
-    | Withdraw(_) -> skip
-    | Harvest(_) -> skip
-    | Burn(_) -> skip
+    | Set_reward_per_second(_)          -> skip
+    | Set_burner(_)                     -> skip
+    | Set_proxy_minter(_)               -> skip
+    | Add_new_farm(_)                   -> skip
+    | Deposit(_)                        -> skip
+    | Withdraw(_)                       -> skip
+    | Harvest(_)                        -> skip
+    | Burn(_)                           -> skip
     end
   } with (no_operations, s)
 
@@ -139,22 +139,22 @@ function set_reward_per_second(
                         : return_type is
   block {
     case action of
-      Set_admin(_) -> skip
-    | Confirm_admin -> skip
-    | Set_alloc_points(_) -> skip
-    | Set_fees(_) -> skip
-    | Set_reward_per_second(new_rps) -> {
+      Set_admin(_)                      -> skip
+    | Confirm_admin                     -> skip
+    | Set_alloc_points(_)               -> skip
+    | Set_fees(_)                       -> skip
+    | Set_reward_per_second(rps)        -> {
       only_admin(Tezos.sender, s.admin);
 
-      s.qsgov_per_second := new_rps;
+      s.qsgov_per_second := rps;
     }
-    | Set_burner(_) -> skip
-    | Set_proxy_minter(_) -> skip
-    | Add_new_farm(_) -> skip
-    | Deposit(_) -> skip
-    | Withdraw(_) -> skip
-    | Harvest(_) -> skip
-    | Burn(_) -> skip
+    | Set_burner(_)                     -> skip
+    | Set_proxy_minter(_)               -> skip
+    | Add_new_farm(_)                   -> skip
+    | Deposit(_)                        -> skip
+    | Withdraw(_)                       -> skip
+    | Harvest(_)                        -> skip
+    | Burn(_)                           -> skip
     end
   } with (no_operations, s)
 
@@ -164,22 +164,22 @@ function set_burner(
                         : return_type is
   block {
     case action of
-      Set_admin(_) -> skip
-    | Confirm_admin -> skip
-    | Set_alloc_points(_) -> skip
-    | Set_fees(_) -> skip
-    | Set_reward_per_second(_) -> skip
-    | Set_burner(new_burner) -> {
+      Set_admin(_)                      -> skip
+    | Confirm_admin                     -> skip
+    | Set_alloc_points(_)               -> skip
+    | Set_fees(_)                       -> skip
+    | Set_reward_per_second(_)          -> skip
+    | Set_burner(burner)                -> {
       only_admin(Tezos.sender, s.admin);
 
-      s.burner := new_burner;
+      s.burner := burner;
     }
-    | Set_proxy_minter(_) -> skip
-    | Add_new_farm(_) -> skip
-    | Deposit(_) -> skip
-    | Withdraw(_) -> skip
-    | Harvest(_) -> skip
-    | Burn(_) -> skip
+    | Set_proxy_minter(_)               -> skip
+    | Add_new_farm(_)                   -> skip
+    | Deposit(_)                        -> skip
+    | Withdraw(_)                       -> skip
+    | Harvest(_)                        -> skip
+    | Burn(_)                           -> skip
     end
   } with (no_operations, s)
 
@@ -189,22 +189,22 @@ function set_proxy_minter(
                         : return_type is
   block {
     case action of
-      Set_admin(_) -> skip
-    | Confirm_admin -> skip
-    | Set_alloc_points(_) -> skip
-    | Set_fees(_) -> skip
-    | Set_reward_per_second(_) -> skip
-    | Set_burner(_) -> skip
-    | Set_proxy_minter(new_proxy_minter) -> {
+      Set_admin(_)                      -> skip
+    | Confirm_admin                     -> skip
+    | Set_alloc_points(_)               -> skip
+    | Set_fees(_)                       -> skip
+    | Set_reward_per_second(_)          -> skip
+    | Set_burner(_)                     -> skip
+    | Set_proxy_minter(proxy_minter)    -> {
       only_admin(Tezos.sender, s.admin);
 
-      s.proxy_minter := new_proxy_minter;
+      s.proxy_minter := proxy_minter;
     }
-    | Add_new_farm(_) -> skip
-    | Deposit(_) -> skip
-    | Withdraw(_) -> skip
-    | Harvest(_) -> skip
-    | Burn(_) -> skip
+    | Add_new_farm(_)                   -> skip
+    | Deposit(_)                        -> skip
+    | Withdraw(_)                       -> skip
+    | Harvest(_)                        -> skip
+    | Burn(_)                           -> skip
     end
   } with (no_operations, s)
 
@@ -214,14 +214,14 @@ function add_new_farm(
                         : return_type is
   block {
     case action of
-      Set_admin(_) -> skip
-    | Confirm_admin -> skip
-    | Set_alloc_points(_) -> skip
-    | Set_fees(_) -> skip
-    | Set_reward_per_second(_) -> skip
-    | Set_burner(_) -> skip
-    | Set_proxy_minter(_) -> skip
-    | Add_new_farm(params) -> {
+      Set_admin(_)                      -> skip
+    | Confirm_admin                     -> skip
+    | Set_alloc_points(_)               -> skip
+    | Set_fees(_)                       -> skip
+    | Set_reward_per_second(_)          -> skip
+    | Set_burner(_)                     -> skip
+    | Set_proxy_minter(_)               -> skip
+    | Add_new_farm(params)              -> {
       only_admin(Tezos.sender, s.admin);
 
       if params.start_block < Tezos.level
@@ -245,10 +245,10 @@ function add_new_farm(
       ];
       s.farms_count := s.farms_count + 1n;
     }
-    | Deposit(_) -> skip
-    | Withdraw(_) -> skip
-    | Harvest(_) -> skip
-    | Burn(_) -> skip
+    | Deposit(_)                        -> skip
+    | Withdraw(_)                       -> skip
+    | Harvest(_)                        -> skip
+    | Burn(_)                           -> skip
     end
   } with (no_operations, s)
 
@@ -260,15 +260,15 @@ function deposit(
     var operations : list(operation) := no_operations;
 
     case action of
-      Set_admin(_) -> skip
-    | Confirm_admin -> skip
-    | Set_alloc_points(_) -> skip
-    | Set_fees(_) -> skip
-    | Set_reward_per_second(_) -> skip
-    | Set_burner(_) -> skip
-    | Set_proxy_minter(_) -> skip
-    | Add_new_farm(_) -> skip
-    | Deposit(params) -> {
+      Set_admin(_)                      -> skip
+    | Confirm_admin                     -> skip
+    | Set_alloc_points(_)               -> skip
+    | Set_fees(_)                       -> skip
+    | Set_reward_per_second(_)          -> skip
+    | Set_burner(_)                     -> skip
+    | Set_proxy_minter(_)               -> skip
+    | Add_new_farm(_)                   -> skip
+    | Deposit(params)                   -> {
       s := update_farm_rewards(params.fid, s);
 
       var farm : farm_type := get_farm(params.fid, s);
@@ -276,6 +276,15 @@ function deposit(
 
       user.earned := user.earned +
         abs(user.staked * farm.rps - user.prev_earned);
+
+      const res : (option(operation) * user_info_type) = claim_rewards(
+        user,
+        params.rewards_receiver,
+        s.proxy_minter
+      );
+
+      user := res.1;
+
       user.staked := user.staked + params.amt;
       user.prev_earned := user.staked * farm.rps;
 
@@ -309,10 +318,15 @@ function deposit(
           get_fa12_token_transfer_entrypoint(farm.staked_token.token)
         ) # operations;
       };
+
+      case res.0 of
+        Some(op) -> operations := op # operations
+      | None     -> skip
+      end;
     }
-    | Withdraw(_) -> skip
-    | Harvest(_) -> skip
-    | Burn(_) -> skip
+    | Withdraw(_)                       -> skip
+    | Harvest(_)                        -> skip
+    | Burn(_)                           -> skip
     end
   } with (operations, s)
 
@@ -324,16 +338,16 @@ function withdraw(
     var operations : list(operation) := no_operations;
 
     case action of
-      Set_admin(_) -> skip
-    | Confirm_admin -> skip
-    | Set_alloc_points(_) -> skip
-    | Set_fees(_) -> skip
-    | Set_reward_per_second(_) -> skip
-    | Set_burner(_) -> skip
-    | Set_proxy_minter(_) -> skip
-    | Add_new_farm(_) -> skip
-    | Deposit(_) -> skip
-    | Withdraw(params) -> {
+      Set_admin(_)                      -> skip
+    | Confirm_admin                     -> skip
+    | Set_alloc_points(_)               -> skip
+    | Set_fees(_)                       -> skip
+    | Set_reward_per_second(_)          -> skip
+    | Set_burner(_)                     -> skip
+    | Set_proxy_minter(_)               -> skip
+    | Add_new_farm(_)                   -> skip
+    | Deposit(_)                        -> skip
+    | Withdraw(params)                  -> {
       s := update_farm_rewards(params.fid, s);
 
       var farm : farm_type := get_farm(params.fid, s);
@@ -342,6 +356,14 @@ function withdraw(
 
       user.earned := user.earned +
         abs(user.staked * farm.rps - user.prev_earned);
+
+      const res : (option(operation) * user_info_type) = claim_rewards(
+        user,
+        params.rewards_receiver,
+        s.proxy_minter
+      );
+
+      user := res.1;
 
       if value = 0n
       then value := user.staked
@@ -384,9 +406,14 @@ function withdraw(
           get_fa12_token_transfer_entrypoint(farm.staked_token.token)
         ) # operations;
       };
+
+      case res.0 of
+        Some(op) -> operations := op # operations
+      | None     -> skip
+      end;
     }
-    | Harvest(_) -> skip
-    | Burn(_) -> skip
+    | Harvest(_)                        -> skip
+    | Burn(_)                           -> skip
     end
   } with (operations, s)
 
@@ -398,17 +425,17 @@ function harvest(
     var operations : list(operation) := no_operations;
 
     case action of
-      Set_admin(_) -> skip
-    | Confirm_admin -> skip
-    | Set_alloc_points(_) -> skip
-    | Set_fees(_) -> skip
-    | Set_reward_per_second(_) -> skip
-    | Set_burner(_) -> skip
-    | Set_proxy_minter(_) -> skip
-    | Add_new_farm(_) -> skip
-    | Deposit(_) -> skip
-    | Withdraw(_) -> skip
-    | Harvest(params) -> {
+      Set_admin(_)                      -> skip
+    | Confirm_admin                     -> skip
+    | Set_alloc_points(_)               -> skip
+    | Set_fees(_)                       -> skip
+    | Set_reward_per_second(_)          -> skip
+    | Set_burner(_)                     -> skip
+    | Set_proxy_minter(_)               -> skip
+    | Add_new_farm(_)                   -> skip
+    | Deposit(_)                        -> skip
+    | Withdraw(_)                       -> skip
+    | Harvest(params)                   -> {
       s := update_farm_rewards(params.fid, s);
 
       var farm : farm_type := get_farm(params.fid, s);
@@ -416,26 +443,27 @@ function harvest(
 
       user.earned := user.earned +
         abs(user.staked * farm.rps - user.prev_earned);
-      user.prev_earned := user.staked * farm.rps;
 
-      if user.earned = 0n
-      then skip
-      else {
-        operations := Tezos.transaction(
-          record [
-            amt       = user.earned;
-            recipient = params.receiver;
-          ],
-          0mutez,
-          get_proxy_minter_mint_entrypoint(s.proxy_minter)
-        ) # operations;
-      };
+      const res : (option(operation) * user_info_type) = claim_rewards(
+        user,
+        params.rewards_receiver,
+        s.proxy_minter
+      );
+
+      case res.0 of
+        Some(op) -> operations := op # operations
+      | None     -> skip
+      end;
+
+      user := res.1;
+
+      user.prev_earned := user.staked * farm.rps;
 
       farm.users_info[Tezos.sender] := user;
 
       s.farms[params.fid] := farm;
     }
-    | Burn(_) -> skip
+    | Burn(_)                           -> skip
     end
   } with (operations, s)
 
@@ -447,18 +475,18 @@ function burn(
     var operations : list(operation) := no_operations;
 
     case action of
-      Set_admin(_) -> skip
-    | Confirm_admin -> skip
-    | Set_alloc_points(_) -> skip
-    | Set_fees(_) -> skip
-    | Set_reward_per_second(_) -> skip
-    | Set_burner(_) -> skip
-    | Set_proxy_minter(_) -> skip
-    | Add_new_farm(_) -> skip
-    | Deposit(_) -> skip
-    | Withdraw(_) -> skip
-    | Harvest(_) -> skip
-    | Burn(fid) -> {
+      Set_admin(_)                      -> skip
+    | Confirm_admin                     -> skip
+    | Set_alloc_points(_)               -> skip
+    | Set_fees(_)                       -> skip
+    | Set_reward_per_second(_)          -> skip
+    | Set_burner(_)                     -> skip
+    | Set_proxy_minter(_)               -> skip
+    | Add_new_farm(_)                   -> skip
+    | Deposit(_)                        -> skip
+    | Withdraw(_)                       -> skip
+    | Harvest(_)                        -> skip
+    | Burn(fid)                         -> {
       only_admin(Tezos.sender, s.admin);
 
       const farm : farm_type = get_farm(fid, s);

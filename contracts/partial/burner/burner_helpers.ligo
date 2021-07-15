@@ -6,7 +6,7 @@ function get_burn_callback_entrypoint(
                         : option(contract(list(bal_response_type)))
   ) of
     Some(contr) -> contr
-  | None -> (
+  | None        -> (
     failwith("Burner/burn-callback-entrypoint-404")
                         : contract(list(bal_response_type))
   )

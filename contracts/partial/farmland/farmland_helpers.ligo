@@ -3,7 +3,7 @@ function get_farm(
   const s               : storage_type)
                         : farm_type is
   case s.farms[fid] of
-    None -> (failwith("Farmland/farm-not-set") : farm_type)
+    None       -> (failwith("Farmland/farm-not-set") : farm_type)
   | Some(farm) -> farm
   end
 
@@ -16,7 +16,7 @@ function get_user_info(
     const farm : farm_type = get_farm(fid, s);
     const user_info : user_info_type = case farm.users_info[user] of
       Some(info) -> info
-    | None -> record [
+    | None       -> record [
       last_staked = 0n;
       staked      = 0n;
       earned      = 0n;
@@ -39,7 +39,7 @@ function update_farm_rewards(
       then {
         const time_diff : nat = abs(Tezos.now - farm.upd);
         const reward : nat = time_diff * s.qsgov_per_second *
-          farm.alloc_point / s.total_alloc_point;
+          precision * farm.alloc_point / s.total_alloc_point;
 
         farm.rps := farm.rps + reward / farm.staked;
       }
@@ -58,8 +58,35 @@ function get_proxy_minter_mint_entrypoint(
                         : option(contract(mint_tokens_type))
   ) of
     Some(contr) -> contr
-  | None -> (
+  | None        -> (
     failwith("ProxyMinter/mint-qsgov-tokens-entrypoint-404")
                         : contract(mint_tokens_type)
   )
   end
+
+function claim_rewards(
+  var user              : user_info_type;
+  const receiver        : address;
+  const proxy_minter    : address)
+                        : (option(operation) * user_info_type) is
+  block {
+    const earned : nat = user.earned / precision;
+    var op : option(operation) := (None : option(operation));
+
+    if user.earned = 0n
+    then skip
+    else {
+      user.earned := abs(user.earned - earned * precision);
+
+      op := Some(
+        Tezos.transaction(
+          record [
+            amt       = user.earned;
+            recipient = receiver;
+          ],
+          0mutez,
+          get_proxy_minter_mint_entrypoint(proxy_minter)
+        )
+      );
+    };
+  } with (op, user)

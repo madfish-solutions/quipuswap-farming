@@ -1,3 +1,4 @@
+(* Util to get burner's %burn_callback entrypoint *)
 function get_burn_callback_entrypoint(
   const this            : address)
                         : contract(list(bal_response_type)) is

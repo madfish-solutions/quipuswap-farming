@@ -5,7 +5,7 @@ type token_type         is [@layout:comb] record [
   id                      : nat; (* Token ID *)
 ]
 
-type qsgov_balance_type is [@layout:comb] record [
+type get_balance_type   is [@layout:comb] record [
   balance                 : nat; (* GOV token balance *)
   flag                    : bool; (* GOV token was found in response or not *)
 ];

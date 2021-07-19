@@ -1,3 +1,4 @@
+(* Set new admin *)
 function set_admin(
   const action          : action_type;
   var s                 : storage_type)
@@ -5,500 +6,477 @@ function set_admin(
   block {
     case action of
       Set_admin(admin)                  -> {
+        (* Check of admin permissions *)
         only_admin(Tezos.sender, s.admin);
 
+        (* Setup pending admin that must confirm his new admin role *)
         s.pending_admin := admin;
       }
-    | Confirm_admin                     -> skip
-    | Set_alloc_points(_)               -> skip
-    | Set_fees(_)                       -> skip
-    | Set_reward_per_second(_)          -> skip
-    | Set_burner(_)                     -> skip
-    | Set_proxy_minter(_)               -> skip
-    | Add_new_farm(_)                   -> skip
-    | Deposit(_)                        -> skip
-    | Withdraw(_)                       -> skip
-    | Harvest(_)                        -> skip
-    | Burn(_)                           -> skip
+    | _                                 -> skip
     end
   } with (no_operations, s)
 
+(* Confirm new admin *)
 function confirm_admin(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
   block {
     case action of
-      Set_admin(_)                      -> skip
-    | Confirm_admin                     -> {
-      only_pending_admin(Tezos.sender, s.pending_admin);
+      Confirm_admin                     -> {
+        (* Check of pending admin permissions *)
+        only_pending_admin(Tezos.sender, s.pending_admin);
 
-      s.admin := s.pending_admin;
-      s.pending_admin := zero_address;
-    }
-    | Set_alloc_points(_)               -> skip
-    | Set_fees(_)                       -> skip
-    | Set_reward_per_second(_)          -> skip
-    | Set_burner(_)                     -> skip
-    | Set_proxy_minter(_)               -> skip
-    | Add_new_farm(_)                   -> skip
-    | Deposit(_)                        -> skip
-    | Withdraw(_)                       -> skip
-    | Harvest(_)                        -> skip
-    | Burn(_)                           -> skip
+        (* Setup new admin and reset pending admin *)
+        s.admin := s.pending_admin;
+        s.pending_admin := zero_address;
+      }
+    | _                                 -> skip
     end
   } with (no_operations, s)
 
+(* Update allocation points for farms *)
 function set_alloc_points(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
   block {
     case action of
-      Set_admin(_)                      -> skip
-    | Confirm_admin                     -> skip
-    | Set_alloc_points(params)          -> {
-      only_admin(Tezos.sender, s.admin);
+      Set_alloc_points(params)          -> {
+        (* Check of admin permissions *)
+        only_admin(Tezos.sender, s.admin);
 
-      function set_alloc_point(
-        var s           : storage_type;
-        const params    : set_alloc_type)
-                        : storage_type is
-        block {
-          var farm : farm_type := get_farm(params.fid, s);
+        (* Update allocation point for the specified farm *)
+        function set_alloc_point(
+          var s           : storage_type;
+          const params    : set_alloc_type)
+                          : storage_type is
+          block {
+            (* Retrieve farm from the storage *)
+            var farm : farm_type := get_farm(params.fid, s);
 
-          if params.with_update
-          then s := update_farm_rewards(params.fid, s)
-          else skip;
+            (* Check if need to update farm's rewards *)
+            if params.with_update
+            then s := update_farm_rewards(params.fid, s) (* Update rewards *)
+            else skip;
 
-          if s.total_alloc_point >= farm.alloc_point
-          then {
+            (* Ensure total allocation point is correct *)
+            if s.total_alloc_point < farm.alloc_point
+            then failwith("Farmland/wrong-allocation-points-number")
+            else skip;
+
+            (* Update total allocation point *)
             s.total_alloc_point := abs(
               s.total_alloc_point - farm.alloc_point
             ) + params.alloc_point;
-          }
-          else skip;
 
-          farm.alloc_point := params.alloc_point;
-          s.farms[params.fid] := farm;
-        } with s;
+            (* Update farm's allocation point *)
+            farm.alloc_point := params.alloc_point;
 
-      s := List.fold(set_alloc_point, params, s);
-    }
-    | Set_fees(_)                       -> skip
-    | Set_reward_per_second(_)          -> skip
-    | Set_burner(_)                     -> skip
-    | Set_proxy_minter(_)               -> skip
-    | Add_new_farm(_)                   -> skip
-    | Deposit(_)                        -> skip
-    | Withdraw(_)                       -> skip
-    | Harvest(_)                        -> skip
-    | Burn(_)                           -> skip
+            (* Save farm to the storage *)
+            s.farms[params.fid] := farm;
+          } with s;
+
+        (* Update allocation points *)
+        s := List.fold(set_alloc_point, params, s);
+      }
+    | _                                 -> skip
     end
   } with (no_operations, s)
 
+(* Update fees for farms *)
 function set_fees(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
   block {
     case action of
-      Set_admin(_)                      -> skip
-    | Confirm_admin                     -> skip
-    | Set_alloc_points(_)               -> skip
-    | Set_fees(params)                  -> {
-      only_admin(Tezos.sender, s.admin);
+      Set_fees(params)                  -> {
+        (* Check of admin permissions *)
+        only_admin(Tezos.sender, s.admin);
 
-      function set_fee(
-        var s           : storage_type;
-        const params    : set_fee_type)
-                        : storage_type is
-        block {
-          var farm : farm_type := get_farm(params.fid, s);
+        (* Update fees for the specified farm *)
+        function set_fee(
+          var s           : storage_type;
+          const params    : set_fee_type)
+                          : storage_type is
+          block {
+            (* Retrieve farm from the storage *)
+            var farm : farm_type := get_farm(params.fid, s);
 
-          farm.fees := params.fees;
-          s.farms[params.fid] := farm;
-        } with s;
+            (* Update farm's fees *)
+            farm.fees := params.fees;
 
-      s := List.fold(set_fee, params, s);
-    }
-    | Set_reward_per_second(_)          -> skip
-    | Set_burner(_)                     -> skip
-    | Set_proxy_minter(_)               -> skip
-    | Add_new_farm(_)                   -> skip
-    | Deposit(_)                        -> skip
-    | Withdraw(_)                       -> skip
-    | Harvest(_)                        -> skip
-    | Burn(_)                           -> skip
+            (* Save farm to the storage *)
+            s.farms[params.fid] := farm;
+          } with s;
+
+        (* Update fees *)
+        s := List.fold(set_fee, params, s);
+      }
+    | _                                 -> skip
     end
   } with (no_operations, s)
 
+(* Update reward per second in QS GOV tokens *)
 function set_reward_per_second(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
   block {
     case action of
-      Set_admin(_)                      -> skip
-    | Confirm_admin                     -> skip
-    | Set_alloc_points(_)               -> skip
-    | Set_fees(_)                       -> skip
-    | Set_reward_per_second(rps)        -> {
-      only_admin(Tezos.sender, s.admin);
+      Set_reward_per_second(rps)        -> {
+        (* Check of admin permissions *)
+        only_admin(Tezos.sender, s.admin);
 
-      s.qsgov_per_second := rps;
-    }
-    | Set_burner(_)                     -> skip
-    | Set_proxy_minter(_)               -> skip
-    | Add_new_farm(_)                   -> skip
-    | Deposit(_)                        -> skip
-    | Withdraw(_)                       -> skip
-    | Harvest(_)                        -> skip
-    | Burn(_)                           -> skip
+        (* Update reward per second *)
+        s.qsgov_per_second := rps;
+      }
+    | _                                 -> skip
     end
   } with (no_operations, s)
 
+(* Update burner address *)
 function set_burner(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
   block {
     case action of
-      Set_admin(_)                      -> skip
-    | Confirm_admin                     -> skip
-    | Set_alloc_points(_)               -> skip
-    | Set_fees(_)                       -> skip
-    | Set_reward_per_second(_)          -> skip
-    | Set_burner(burner)                -> {
-      only_admin(Tezos.sender, s.admin);
+      Set_burner(burner)                -> {
+        (* Check of admin permissions *)
+        only_admin(Tezos.sender, s.admin);
 
-      s.burner := burner;
-    }
-    | Set_proxy_minter(_)               -> skip
-    | Add_new_farm(_)                   -> skip
-    | Deposit(_)                        -> skip
-    | Withdraw(_)                       -> skip
-    | Harvest(_)                        -> skip
-    | Burn(_)                           -> skip
+        (* Update burner *)
+        s.burner := burner;
+      }
+    | _                                 -> skip
     end
   } with (no_operations, s)
 
+(* Update proxy minter address *)
 function set_proxy_minter(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
   block {
     case action of
-      Set_admin(_)                      -> skip
-    | Confirm_admin                     -> skip
-    | Set_alloc_points(_)               -> skip
-    | Set_fees(_)                       -> skip
-    | Set_reward_per_second(_)          -> skip
-    | Set_burner(_)                     -> skip
-    | Set_proxy_minter(proxy_minter)    -> {
-      only_admin(Tezos.sender, s.admin);
+      Set_proxy_minter(proxy_minter)    -> {
+        (* Check of admin permissions *)
+        only_admin(Tezos.sender, s.admin);
 
-      s.proxy_minter := proxy_minter;
-    }
-    | Add_new_farm(_)                   -> skip
-    | Deposit(_)                        -> skip
-    | Withdraw(_)                       -> skip
-    | Harvest(_)                        -> skip
-    | Burn(_)                           -> skip
+        (* Update proxy minter *)
+        s.proxy_minter := proxy_minter;
+      }
+    | _                                 -> skip
     end
   } with (no_operations, s)
 
+(* Register new farm *)
 function add_new_farm(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
   block {
     case action of
-      Set_admin(_)                      -> skip
-    | Confirm_admin                     -> skip
-    | Set_alloc_points(_)               -> skip
-    | Set_fees(_)                       -> skip
-    | Set_reward_per_second(_)          -> skip
-    | Set_burner(_)                     -> skip
-    | Set_proxy_minter(_)               -> skip
-    | Add_new_farm(params)              -> {
-      only_admin(Tezos.sender, s.admin);
+      Add_new_farm(params)              -> {
+        (* Check of admin permissions *)
+        only_admin(Tezos.sender, s.admin);
 
-      if params.start_block < Tezos.level
-      then failwith("Farmland/wrong-start-block")
-      else skip;
+        (* Ensure start block is correct *)
+        if params.start_block < Tezos.level
+        then failwith("Farmland/wrong-start-block")
+        else skip;
 
-      s.total_alloc_point := s.total_alloc_point + params.alloc_point;
-      s.farms[s.farms_count] := record [
-        users_info   = (Map.empty : map(address, user_info_type));
-        fees         = params.fees;
-        upd          = Tezos.now;
-        staked_token = params.staked_token;
-        reward_token = s.qsgov;
-        is_lp_farm   = params.is_lp_farm;
-        is_fa2_token = params.is_fa2_token;
-        timelocked   = params.timelocked;
-        alloc_point  = params.alloc_point;
-        rps          = 0n;
-        staked       = 0n;
-        start_block  = params.start_block;
-      ];
-      s.farms_count := s.farms_count + 1n;
-    }
-    | Deposit(_)                        -> skip
-    | Withdraw(_)                       -> skip
-    | Harvest(_)                        -> skip
-    | Burn(_)                           -> skip
+        (* Update total allocation point *)
+        s.total_alloc_point := s.total_alloc_point + params.alloc_point;
+
+        (* Add new farm info to the storage *)
+        s.farms[s.farms_count] := record [
+          users_info   = (Map.empty : map(address, user_info_type));
+          fees         = params.fees;
+          upd          = Tezos.now;
+          staked_token = params.staked_token;
+          reward_token = s.qsgov;
+          is_lp_farm   = params.is_lp_farm;
+          is_fa2_token = params.is_fa2_token;
+          timelocked   = params.timelocked;
+          alloc_point  = params.alloc_point;
+          rps          = 0n;
+          staked       = 0n;
+          start_block  = params.start_block;
+        ];
+
+        (* Update farms count *)
+        s.farms_count := s.farms_count + 1n;
+      }
+    | _                                 -> skip
     end
   } with (no_operations, s)
 
+(* Deposit tokens for staking in the specified farm *)
 function deposit(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
   block {
+    (* Operations to be performed *)
     var operations : list(operation) := no_operations;
 
     case action of
-      Set_admin(_)                      -> skip
-    | Confirm_admin                     -> skip
-    | Set_alloc_points(_)               -> skip
-    | Set_fees(_)                       -> skip
-    | Set_reward_per_second(_)          -> skip
-    | Set_burner(_)                     -> skip
-    | Set_proxy_minter(_)               -> skip
-    | Add_new_farm(_)                   -> skip
-    | Deposit(params)                   -> {
-      s := update_farm_rewards(params.fid, s);
+      Deposit(params)                   -> {
+        (* Update rewards for the farm *)
+        s := update_farm_rewards(params.fid, s);
 
-      var farm : farm_type := get_farm(params.fid, s);
-      var user : user_info_type := get_user_info(params.fid, Tezos.sender, s);
+        (* Retrieve farm from the storage *)
+        var farm : farm_type := get_farm(params.fid, s);
 
-      user.earned := user.earned +
-        abs(user.staked * farm.rps - user.prev_earned);
+        (* Retrieve user data for the specified farm *)
+        var user : user_info_type :=
+          get_user_info(params.fid, Tezos.sender, s);
 
-      const res : (list(operation) * user_info_type) = claim_rewards(
-        user,
-        farm,
-        params.rewards_receiver,
-        s
-      );
+        (* Claim user's rewards *)
+        const res : (option(operation) * user_info_type) = claim_rewards(
+          user,
+          farm,
+          params.rewards_receiver,
+          s
+        );
 
-      user := res.1;
+        (* Update user's info *)
+        user := res.1;
 
-      case params.referrer of
-        None    -> skip
-      | Some(_) -> user.referrer := params.referrer
-      end;
+        (* Update user's referrer *)
+        case params.referrer of
+          None    -> skip
+        | Some(_) -> user.referrer := params.referrer
+        end;
 
-      user.staked := user.staked + params.amt;
-      user.prev_earned := user.staked * farm.rps;
+        (* Update user's staked and earned tokens amount *)
+        user.staked := user.staked + params.amt;
+        user.prev_earned := user.staked * farm.rps;
 
-      farm.users_info[Tezos.sender] := user;
-      farm.staked := farm.staked + params.amt;
+        (* Save user's info in the farm and update farm's staked amount *)
+        farm.users_info[Tezos.sender] := user;
+        farm.staked := farm.staked + params.amt;
 
-      s.farms[params.fid] := farm;
+        (* Save farm to the storage *)
+        s.farms[params.fid] := farm;
 
-      if farm.is_fa2_token
-      then {
-        const dst : transfer_dst_type = record [
-          to_      = Tezos.self_address;
-          token_id = farm.staked_token.id;
-          amount   = params.amt;
-        ];
-        const fa2_transfer_param : fa2_send_type = record [
-          from_ = Tezos.sender;
-          txs   = list [dst];
-        ];
+        (* Check the staked token standard *)
+        if farm.is_fa2_token
+        then {
+          (* Prepare FA2 token transfer params *)
+          const dst : transfer_dst_type = record [
+            to_      = Tezos.self_address;
+            token_id = farm.staked_token.id;
+            amount   = params.amt;
+          ];
+          const fa2_transfer_param : fa2_send_type = record [
+            from_ = Tezos.sender;
+            txs   = list [dst];
+          ];
 
-        operations := Tezos.transaction(
-          FA2_transfer_type(list [fa2_transfer_param]),
-          0mutez,
-          get_fa2_token_transfer_entrypoint(farm.staked_token.token)
-        ) # operations;
+          (* Prepare FA2 transfer operation for staked token *)
+          operations := Tezos.transaction(
+            FA2_transfer_type(list [fa2_transfer_param]),
+            0mutez,
+            get_fa2_token_transfer_entrypoint(farm.staked_token.token)
+          ) # operations;
+        }
+        else {
+          (* Prepare FA1.2 transfer operation for staked token *)
+          operations := Tezos.transaction(
+            FA12_transfer_type(Tezos.sender, (Tezos.self_address, params.amt)),
+            0mutez,
+            get_fa12_token_transfer_entrypoint(farm.staked_token.token)
+          ) # operations;
+        };
+
+        (* Concat claim rewards operation with list of operations *)
+        case res.0 of
+          Some(op) -> operations := op # operations
+        | None     -> skip
+        end;
       }
-      else {
-        operations := Tezos.transaction(
-          FA12_transfer_type(Tezos.sender, (Tezos.self_address, params.amt)),
-          0mutez,
-          get_fa12_token_transfer_entrypoint(farm.staked_token.token)
-        ) # operations;
-      };
-
-      operations := concat_op_lists(operations, res.0);
-    }
-    | Withdraw(_)                       -> skip
-    | Harvest(_)                        -> skip
-    | Burn(_)                           -> skip
+    | _                                 -> skip
     end
   } with (operations, s)
 
+(* Withdraw tokens from staking in the specified farm *)
 function withdraw(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
   block {
+    (* Operations to be performed *)
     var operations : list(operation) := no_operations;
 
     case action of
-      Set_admin(_)                      -> skip
-    | Confirm_admin                     -> skip
-    | Set_alloc_points(_)               -> skip
-    | Set_fees(_)                       -> skip
-    | Set_reward_per_second(_)          -> skip
-    | Set_burner(_)                     -> skip
-    | Set_proxy_minter(_)               -> skip
-    | Add_new_farm(_)                   -> skip
-    | Deposit(_)                        -> skip
-    | Withdraw(params)                  -> {
-      s := update_farm_rewards(params.fid, s);
+      Withdraw(params)                  -> {
+        (* Update rewards for the farm *)
+        s := update_farm_rewards(params.fid, s);
 
-      var farm : farm_type := get_farm(params.fid, s);
-      var user : user_info_type := get_user_info(params.fid, Tezos.sender, s);
-      var value : nat := params.amt;
+        (* Retrieve farm from the storage *)
+        var farm : farm_type := get_farm(params.fid, s);
 
-      user.earned := user.earned +
-        abs(user.staked * farm.rps - user.prev_earned);
+        (* Retrieve user data for the specified farm *)
+        var user : user_info_type :=
+          get_user_info(params.fid, Tezos.sender, s);
+        var value : nat := params.amt;
 
-      const res : (list(operation) * user_info_type) = claim_rewards(
-        user,
-        farm,
-        params.rewards_receiver,
-        s
-      );
+        (* Claim user's rewards *)
+        const res : (option(operation) * user_info_type) = claim_rewards(
+          user,
+          farm,
+          params.rewards_receiver,
+          s
+        );
 
-      user := res.1;
+        (* Update user's info *)
+        user := res.1;
 
-      if value = 0n
-      then value := user.staked
-      else skip;
+        (* Process "withdraw all" *)
+        if value = 0n
+        then value := user.staked
+        else skip;
 
-      if value <= user.staked
-      then skip
-      else failwith("Farmland/balance-too-low");
+        (* Check the correct withdrawal quantity *)
+        if value > user.staked
+        then failwith("Farmland/balance-too-low")
+        else skip;
 
-      user.staked := abs(user.staked - value);
-      user.prev_earned := user.staked * farm.rps;
+        (* Update user's staked and earned tokens amount *)
+        user.staked := abs(user.staked - value);
+        user.prev_earned := user.staked * farm.rps;
 
-      farm.users_info[Tezos.sender] := user;
-      farm.staked := abs(farm.staked - value);
+        (* Save user's info in the farm and update farm's staked amount *)
+        farm.users_info[Tezos.sender] := user;
+        farm.staked := abs(farm.staked - value);
 
-      s.farms[params.fid] := farm;
+        (* Save farm to the storage *)
+        s.farms[params.fid] := farm;
 
-      if farm.is_fa2_token
-      then {
-        const dst : transfer_dst_type = record [
-          to_      = params.receiver;
-          token_id = farm.staked_token.id;
-          amount   = value;
-        ];
-        const fa2_transfer_param : fa2_send_type = record [
-          from_ = Tezos.self_address;
-          txs   = list [dst];
-        ];
+        (* Check the staked token standard *)
+        if farm.is_fa2_token
+        then {
+          (* Prepare FA2 token transfer params *)
+          const dst : transfer_dst_type = record [
+            to_      = params.receiver;
+            token_id = farm.staked_token.id;
+            amount   = value;
+          ];
+          const fa2_transfer_param : fa2_send_type = record [
+            from_ = Tezos.self_address;
+            txs   = list [dst];
+          ];
 
-        operations := Tezos.transaction(
-          FA2_transfer_type(list [fa2_transfer_param]),
-          0mutez,
-          get_fa2_token_transfer_entrypoint(farm.staked_token.token)
-        ) # operations;
+          (* Prepare FA2 transfer operation for staked token *)
+          operations := Tezos.transaction(
+            FA2_transfer_type(list [fa2_transfer_param]),
+            0mutez,
+            get_fa2_token_transfer_entrypoint(farm.staked_token.token)
+          ) # operations;
+        }
+        else {
+          (* Prepare FA1.2 transfer operation for staked token *)
+          operations := Tezos.transaction(
+            FA12_transfer_type(Tezos.self_address, (params.receiver, value)),
+            0mutez,
+            get_fa12_token_transfer_entrypoint(farm.staked_token.token)
+          ) # operations;
+        };
+
+        (* Concat claim rewards operation with list of operations *)
+        case res.0 of
+          Some(op) -> operations := op # operations
+        | None     -> skip
+        end;
       }
-      else {
-        operations := Tezos.transaction(
-          FA12_transfer_type(Tezos.self_address, (params.receiver, value)),
-          0mutez,
-          get_fa12_token_transfer_entrypoint(farm.staked_token.token)
-        ) # operations;
-      };
-
-      operations := concat_op_lists(operations, res.0);
-    }
-    | Harvest(_)                        -> skip
-    | Burn(_)                           -> skip
+    | _                                 -> skip
     end
   } with (operations, s)
 
+(* Claim earned tokens *)
 function harvest(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
   block {
+    (* Operations to be performed *)
     var operations : list(operation) := no_operations;
 
     case action of
-      Set_admin(_)                      -> skip
-    | Confirm_admin                     -> skip
-    | Set_alloc_points(_)               -> skip
-    | Set_fees(_)                       -> skip
-    | Set_reward_per_second(_)          -> skip
-    | Set_burner(_)                     -> skip
-    | Set_proxy_minter(_)               -> skip
-    | Add_new_farm(_)                   -> skip
-    | Deposit(_)                        -> skip
-    | Withdraw(_)                       -> skip
-    | Harvest(params)                   -> {
-      s := update_farm_rewards(params.fid, s);
+      Harvest(params)                   -> {
+        (* Update rewards for the farm *)
+        s := update_farm_rewards(params.fid, s);
 
-      var farm : farm_type := get_farm(params.fid, s);
-      var user : user_info_type := get_user_info(params.fid, Tezos.sender, s);
+        (* Retrieve farm from the storage *)
+        var farm : farm_type := get_farm(params.fid, s);
 
-      user.earned := user.earned +
-        abs(user.staked * farm.rps - user.prev_earned);
+        (* Retrieve user data for the specified farm *)
+        var user : user_info_type :=
+          get_user_info(params.fid, Tezos.sender, s);
 
-      const res : (list(operation) * user_info_type) = claim_rewards(
-        user,
-        farm,
-        params.rewards_receiver,
-        s
-      );
+        (* Claim user's rewards *)
+        const res : (option(operation) * user_info_type) = claim_rewards(
+          user,
+          farm,
+          params.rewards_receiver,
+          s
+        );
 
-      operations := concat_op_lists(operations, res.0);
+        (* Update user's info *)
+        user := res.1;
 
-      user := res.1;
+        (* Concat claim rewards operation with list of operations *)
+        case res.0 of
+          Some(op) -> operations := op # operations
+        | None     -> skip
+        end;
 
-      user.prev_earned := user.staked * farm.rps;
+        (* Update user's earned tokens amount *)
+        user.prev_earned := user.staked * farm.rps;
 
-      farm.users_info[Tezos.sender] := user;
+        (* Save user's info in the farm *)
+        farm.users_info[Tezos.sender] := user;
 
-      s.farms[params.fid] := farm;
-    }
-    | Burn(_)                           -> skip
+        (* Save farm to the storage *)
+        s.farms[params.fid] := farm;
+      }
+    | _                                 -> skip
     end
   } with (operations, s)
 
+(* Burn bakers rewards *)
 function burn(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
   block {
+    (* Operations to be performed *)
     var operations : list(operation) := no_operations;
 
     case action of
-      Set_admin(_)                      -> skip
-    | Confirm_admin                     -> skip
-    | Set_alloc_points(_)               -> skip
-    | Set_fees(_)                       -> skip
-    | Set_reward_per_second(_)          -> skip
-    | Set_burner(_)                     -> skip
-    | Set_proxy_minter(_)               -> skip
-    | Add_new_farm(_)                   -> skip
-    | Deposit(_)                        -> skip
-    | Withdraw(_)                       -> skip
-    | Harvest(_)                        -> skip
-    | Burn(fid)                         -> {
-      only_admin(Tezos.sender, s.admin);
+      Burn(fid)                         -> {
+        (* Check of admin permissions *)
+        only_admin(Tezos.sender, s.admin);
 
-      const farm : farm_type = get_farm(fid, s);
+        (* Retrieve farm from the storage *)
+        const farm : farm_type = get_farm(fid, s);
 
-      if not farm.is_lp_farm
-      then failwith("Farmland/not-LP-farm")
-      else skip;
+        (* Ensure farm is LP token farm *)
+        if not farm.is_lp_farm
+        then failwith("Farmland/not-LP-farm")
+        else skip;
 
-      operations := Tezos.transaction(
-        WithdrawProfit(s.burner),
-        0mutez,
-        get_quipuswap_use_entrypoint(farm.staked_token.token)
-      ) # operations;
-    }
+        (* Prepare operation for withdrawing bakers rewards from the LP *)
+        operations := Tezos.transaction(
+          WithdrawProfit(s.burner),
+          0mutez,
+          get_quipuswap_use_entrypoint(farm.staked_token.token)
+        ) # operations;
+      }
+    | _                                 -> skip
     end
   } with (operations, s)

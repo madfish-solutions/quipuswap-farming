@@ -1,3 +1,4 @@
+(* Util to get QS GOV token %mint_gov_token entrypoint *)
 function get_mint_qsgov_tokens_entrypoint(
   const token           : address)
                         : contract(mint_gov_toks_type) is
@@ -12,6 +13,7 @@ function get_mint_qsgov_tokens_entrypoint(
   )
   end
 
+(* Util to get proxy minter's %withdraw_callback entrypoint *)
 function get_withdraw_callback_entrypoint(
   const this            : address)
                         : contract(list(bal_response_type)) is

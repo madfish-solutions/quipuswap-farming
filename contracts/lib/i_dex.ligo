@@ -1,4 +1,4 @@
-type init_exchange_type is nat
+type init_exchange_type is nat (* Amount of tokens to add as init liquidity *)
 
 type tez_to_tok_type    is record [
   (* Min amount of tokens received to accept exchange *)
@@ -16,7 +16,7 @@ type tok_to_tez_type    is record [
   receiver                : address;
 ]
 
-type invest_liq_type    is nat
+type invest_liq_type    is nat (* Amount of tokens to remove from liquidity *)
 
 type divest_liq_type    is record [
   (* Min amount of XTZ received to accept the divestment *)
@@ -43,7 +43,7 @@ type veto_type          is record [
   voter                   : address;
 ]
 
-type withdraw_type      is address
+type withdraw_type      is address (* Receiver of bakers rewards *)
 
 type dex_action_type    is
   InitializeExchange      of init_exchange_type

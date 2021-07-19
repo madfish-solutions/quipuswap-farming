@@ -291,9 +291,10 @@ function deposit(
         | Some(_) -> user.referrer := params.referrer
         end;
 
-        (* Update user's staked and earned tokens amount *)
+        (* Update some user's info *)
         user.staked := user.staked + params.amt;
         user.prev_earned := user.staked * farm.rps;
+        user.last_staked := Tezos.now;
 
         (* Save user's info in the farm and update farm's staked amount *)
         farm.users_info[Tezos.sender] := user;

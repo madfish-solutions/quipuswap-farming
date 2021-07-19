@@ -18,11 +18,11 @@ function get_user_info(
     case farm.users_info[user] of
       Some(info) -> info
     | None       -> record [
-      last_staked = 0n;
+      referrer    = (None : option(address));
+      last_staked = (0 : timestamp);
       staked      = 0n;
       earned      = 0n;
       prev_earned = 0n;
-      referrer    = (None : option(address));
     ]
     end
 

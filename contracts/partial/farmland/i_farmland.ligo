@@ -6,11 +6,11 @@ type fees_type          is [@layout:comb] record [
 ]
 
 type user_info_type     is [@layout:comb] record [
-  last_staked             : nat; (* Last timestamp when user staked tokens *)
+  referrer                : option(address); (* User's referrer *)
+  last_staked             : timestamp; (* Last time when user staked tokens *)
   staked                  : nat; (* Total amount of tokens staked by user *)
   earned                  : nat; (* Earned amount of tokens by user *)
   prev_earned             : nat; (* Previous earned amount of tokens by user *)
-  referrer                : option(address); (* User's referrer *)
 ]
 
 type timelock_type      is [@layout:comb] record [

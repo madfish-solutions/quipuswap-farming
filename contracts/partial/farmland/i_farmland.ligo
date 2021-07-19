@@ -13,19 +13,25 @@ type user_info_type     is [@layout:comb] record [
   referrer                : option(address); (* User's referrer *)
 ]
 
+type timelock_type      is [@layout:comb] record [
+  duration                : nat; (* in seconds, 0 for farms without timelock *)
+]
+
 type farm_type          is [@layout:comb] record [
   users_info              : map(address, user_info_type); (* Users data *)
   fees                    : fees_type; (* Fees data *)
   upd                     : timestamp; (* Last farm updated timestamp *)
   staked_token            : token_type; (* Token to stake *)
   reward_token            : token_type; (* Token in which rewards are paid *)
+  timelock                : timelock_type; (* Timelock info *)
   is_lp_farm              : bool; (* Flag: LP token staked or not *)
   is_fa2_token            : bool; (* Flag: staked tok standard is FA2 or not *)
-  timelocked              : bool; (* Flag: farm with timelock or not *)
+  paused                  : bool; (* Falg: farm paused or not *)
   alloc_point             : nat; (* Farm allocation point *)
   rps                     : nat; (* Reward per share *)
   staked                  : nat; (* Total count of staked tokens in the farm *)
   start_block             : nat; (* Farm start block *)
+  fid                     : nat; (* Farm ID *)
 ]
 
 type storage_type       is [@layout:comb] record [
@@ -70,10 +76,18 @@ type add_new_farm_type  is [@layout:comb] record [
   staked_token            : token_type; (* Token to stake *)
   is_lp_farm              : bool; (* Flag: LP token staked or not *)
   is_fa2_token            : bool; (* Flag: staked tok standard is FA2 or not *)
-  timelocked              : bool; (* Flag: farm with timelock or not *)
+  paused                  : bool; (* Flag: paused or not at the beginning *)
+  timelock                : timelock_type; (* Timelock info *)
   alloc_point             : nat; (* Farm allocation point *)
   start_block             : nat; (* Farm start block *)
 ]
+
+type pause_farm_type    is [@layout:comb] record [
+  fid                     : fid_type; (* Farm ID *)
+  pause                   : bool; (* Flag: pause or unpause *)
+]
+
+type pause_farms_type   is list(pause_farm_type)
 
 type deposit_type       is [@layout:comb] record [
   fid                     : fid_type; (* Farm ID *)
@@ -105,6 +119,7 @@ type action_type        is
 | Set_burner              of set_burner_type
 | Set_proxy_minter        of set_proxy_type
 | Add_new_farm            of add_new_farm_type
+| Pause_farms             of pause_farms_type
 | Deposit                 of deposit_type
 | Withdraw                of withdraw_type
 | Harvest                 of harvest_type
@@ -132,6 +147,6 @@ type full_action_type   is
 
 [@inline] const default_qsgov_id : nat = 0n;
 
-[@inline] const farmland_methods_max_index : nat = 11n;
+[@inline] const farmland_methods_max_index : nat = 12n;
 
 [@inline] const timelock_period : nat = 2_592_000n; (* 30 days *)

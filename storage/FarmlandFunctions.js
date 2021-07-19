@@ -33,18 +33,22 @@ module.exports = [
   },
   {
     index: 8,
-    name: "deposit",
+    name: "pause_farms",
   },
   {
     index: 9,
-    name: "withdraw",
+    name: "deposit",
   },
   {
     index: 10,
-    name: "harvest",
+    name: "withdraw",
   },
   {
     index: 11,
+    name: "harvest",
+  },
+  {
+    index: 12,
     name: "burn",
   },
 ];

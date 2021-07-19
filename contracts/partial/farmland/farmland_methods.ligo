@@ -14,10 +14,11 @@
     | Set_burner(_)            -> 5n
     | Set_proxy_minter(_)      -> 6n
     | Add_new_farm(_)          -> 7n
-    | Deposit(_)               -> 8n
-    | Withdraw(_)              -> 9n
-    | Harvest(_)               -> 10n
-    | Burn(_)                  -> 11n
+    | Pause_farms(_)           -> 8n
+    | Deposit(_)               -> 9n
+    | Withdraw(_)              -> 10n
+    | Harvest(_)               -> 11n
+    | Burn(_)                  -> 12n
     end;
 
     (* Call lambda function *)

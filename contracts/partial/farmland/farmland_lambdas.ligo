@@ -57,7 +57,7 @@ function set_alloc_points(
 
             (* Check if need to update farm's rewards *)
             if params.with_update
-            then s := update_farm_rewards(params.fid, s) (* Update rewards *)
+            then s := update_farm_rewards(farm, s) (* Update farm's rewards *)
             else skip;
 
             (* Ensure total allocation point is correct *)
@@ -198,17 +198,53 @@ function add_new_farm(
           upd          = Tezos.now;
           staked_token = params.staked_token;
           reward_token = s.qsgov;
+          timelock     = params.timelock;
           is_lp_farm   = params.is_lp_farm;
           is_fa2_token = params.is_fa2_token;
-          timelocked   = params.timelocked;
+          paused       = params.paused;
           alloc_point  = params.alloc_point;
           rps          = 0n;
           staked       = 0n;
           start_block  = params.start_block;
+          fid          = s.farms_count;
         ];
 
         (* Update farms count *)
         s.farms_count := s.farms_count + 1n;
+      }
+    | _                                 -> skip
+    end
+  } with (no_operations, s)
+
+(* Pause or unpause farms *)
+function pause_farms(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    case action of
+      Pause_farms(params)               -> {
+        (* Check of admin permissions *)
+        only_admin(Tezos.sender, s.admin);
+
+        (* Pause or unpause the specified farm *)
+        function pause_farm(
+          var s           : storage_type;
+          const params    : pause_farm_type)
+                          : storage_type is
+          block {
+            (* Retrieve farm from the storage *)
+            var farm : farm_type := get_farm(params.fid, s);
+
+            (* Pause or unpause the farm *)
+            farm.paused := params.pause;
+
+            (* Save farm to the storage *)
+            s.farms[params.fid] := farm;
+          } with s;
+
+        (* Pause or unpause farms from params list *)
+        s := List.fold(pause_farm, params, s);
       }
     | _                                 -> skip
     end
@@ -225,15 +261,18 @@ function deposit(
 
     case action of
       Deposit(params)                   -> {
-        (* Update rewards for the farm *)
-        s := update_farm_rewards(params.fid, s);
-
         (* Retrieve farm from the storage *)
         var farm : farm_type := get_farm(params.fid, s);
 
+        if farm.paused
+        then failwith("Farmland/farm-is-paused")
+        else skip;
+
+        (* Update rewards for the farm *)
+        s := update_farm_rewards(farm, s);
+
         (* Retrieve user data for the specified farm *)
-        var user : user_info_type :=
-          get_user_info(params.fid, Tezos.sender, s);
+        var user : user_info_type := get_user_info(farm, Tezos.sender);
 
         (* Claim user's rewards *)
         const res : (option(operation) * user_info_type) = claim_rewards(
@@ -314,15 +353,14 @@ function withdraw(
 
     case action of
       Withdraw(params)                  -> {
-        (* Update rewards for the farm *)
-        s := update_farm_rewards(params.fid, s);
-
         (* Retrieve farm from the storage *)
         var farm : farm_type := get_farm(params.fid, s);
 
+        (* Update rewards for the farm *)
+        s := update_farm_rewards(farm, s);
+
         (* Retrieve user data for the specified farm *)
-        var user : user_info_type :=
-          get_user_info(params.fid, Tezos.sender, s);
+        var user : user_info_type := get_user_info(farm, Tezos.sender);
         var value : nat := params.amt;
 
         (* Claim user's rewards *)
@@ -408,15 +446,14 @@ function harvest(
 
     case action of
       Harvest(params)                   -> {
-        (* Update rewards for the farm *)
-        s := update_farm_rewards(params.fid, s);
-
         (* Retrieve farm from the storage *)
         var farm : farm_type := get_farm(params.fid, s);
 
+        (* Update rewards for the farm *)
+        s := update_farm_rewards(farm, s);
+
         (* Retrieve user data for the specified farm *)
-        var user : user_info_type :=
-          get_user_info(params.fid, Tezos.sender, s);
+        var user : user_info_type := get_user_info(farm, Tezos.sender);
 
         (* Claim user's rewards *)
         const res : (option(operation) * user_info_type) = claim_rewards(

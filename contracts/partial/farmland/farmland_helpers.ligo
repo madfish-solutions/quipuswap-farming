@@ -11,16 +11,11 @@ function get_farm(
 
 (* Util to get user info related to specific farm *)
 function get_user_info(
-  const fid             : fid_type;
-  const user            : address;
-  const s               : storage_type)
+  const farm            : farm_type;
+  const user            : address)
                         : user_info_type is
-  block {
-    (* Get farm by ID *)
-    const farm : farm_type = get_farm(fid, s);
-
     (* Get user info *)
-    const user_info : user_info_type = case farm.users_info[user] of
+    case farm.users_info[user] of
       Some(info) -> info
     | None       -> record [
       last_staked = 0n;
@@ -29,18 +24,14 @@ function get_user_info(
       prev_earned = 0n;
       referrer    = (None : option(address));
     ]
-    end;
-  } with user_info
+    end
 
 (* Util to update rewards of the specified farm *)
 function update_farm_rewards(
-  const fid             : fid_type;
+  var farm              : farm_type;
   var s                 : storage_type)
                         : storage_type is
   block {
-    (* Get farm by ID *)
-    var farm : farm_type := get_farm(fid, s);
-
     (* Check if farm is already started *)
     if Tezos.level <= farm.start_block
     then skip
@@ -64,7 +55,7 @@ function update_farm_rewards(
       farm.upd := Tezos.now;
 
       (* Save the farm to the storage *)
-      s.farms[fid] := farm;
+      s.farms[farm.fid] := farm;
     };
   } with s
 

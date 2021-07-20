@@ -6,7 +6,6 @@ type fees_type          is [@layout:comb] record [
 ]
 
 type user_info_type     is [@layout:comb] record [
-  referrer                : option(address); (* User's referrer *)
   last_staked             : timestamp; (* Last time when user staked tokens *)
   staked                  : nat; (* Total amount of tokens staked by user *)
   earned                  : nat; (* Earned amount of tokens by user *)
@@ -36,6 +35,7 @@ type farm_type          is [@layout:comb] record [
 
 type storage_type       is [@layout:comb] record [
   farms                   : big_map(fid_type, farm_type); (* Farms data *)
+  referrers               : big_map(address, address); (* Referrers *)
   qsgov                   : token_type; (* QS GOV token *)
   admin                   : address; (* Contract's actual admin address *)
   pending_admin           : address; (* Contract's pending admin address *)

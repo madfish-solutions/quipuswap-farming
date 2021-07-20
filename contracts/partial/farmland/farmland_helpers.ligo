@@ -18,7 +18,6 @@ function get_user_info(
     case farm.users_info[user] of
       Some(info) -> info
     | None       -> record [
-      referrer    = (None : option(address));
       last_staked = (0 : timestamp);
       staked      = 0n;
       earned      = 0n;
@@ -114,7 +113,7 @@ function claim_rewards(
       if harvest_fee > 0n
       then {
         (* Get sender's referrer *)
-        const receiver : address = case user.referrer of
+        const receiver : address = case s.referrers[Tezos.sender] of
           None           -> zero_address
         | Some(referrer) -> referrer
         end;

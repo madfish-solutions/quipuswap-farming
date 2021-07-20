@@ -82,10 +82,6 @@ function claim_rewards(
   const s               : storage_type)
                         : (option(operation) * user_info_type) is
   block {
-    (* Update users's reward *)
-    user.earned := user.earned +
-      abs(user.staked * farm.rps - user.prev_earned);
-
     (* Calculate user's real reward *)
     const earned : nat = user.earned / precision;
 

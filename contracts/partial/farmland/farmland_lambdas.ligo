@@ -274,11 +274,15 @@ function deposit(
         (* Retrieve user data for the specified farm *)
         var user : user_info_type := get_user_info(farm, Tezos.sender);
 
-        (* Claim user's rewards *)
+        (* Update users's reward *)
+        user.earned := user.earned +
+          abs(user.staked * farm.rps - user.prev_earned);
+
+        (* Prepare claiming params *)
         var res : (option(operation) * user_info_type) :=
           ((None : option(operation)), user);
 
-        (* Check timelock (if timelock is finished - harvest rewards) *)
+        (* Check timelock (if timelock is finished - claim rewards) *)
         if abs(Tezos.now - user.last_staked) >= farm.timelock.duration
         then res := claim_rewards(user, farm, params.rewards_receiver, s)
         else skip;
@@ -370,6 +374,10 @@ function withdraw(
         (* Retrieve user data for the specified farm *)
         var user : user_info_type := get_user_info(farm, Tezos.sender);
         var value : nat := params.amt;
+
+        (* Update users's reward *)
+        user.earned := user.earned +
+          abs(user.staked * farm.rps - user.prev_earned);
 
         (* Claim user's rewards *)
         const res : (option(operation) * user_info_type) = claim_rewards(
@@ -463,13 +471,18 @@ function harvest(
         (* Retrieve user data for the specified farm *)
         var user : user_info_type := get_user_info(farm, Tezos.sender);
 
-        (* Claim user's rewards *)
-        const res : (option(operation) * user_info_type) = claim_rewards(
-          user,
-          farm,
-          params.rewards_receiver,
-          s
-        );
+        (* Update users's reward *)
+        user.earned := user.earned +
+          abs(user.staked * farm.rps - user.prev_earned);
+
+        (* Prepare claiming params *)
+        var res : (option(operation) * user_info_type) :=
+          ((None : option(operation)), user);
+
+        (* Check timelock (if timelock is finished - claim rewards) *)
+        if abs(Tezos.now - user.last_staked) >= farm.timelock.duration
+        then res := claim_rewards(user, farm, params.rewards_receiver, s)
+        else failwith("Farmland/timelock-is-not-finished");
 
         (* Update user's info *)
         user := res.1;

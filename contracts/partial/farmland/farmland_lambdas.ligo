@@ -275,12 +275,13 @@ function deposit(
         var user : user_info_type := get_user_info(farm, Tezos.sender);
 
         (* Claim user's rewards *)
-        const res : (option(operation) * user_info_type) = claim_rewards(
-          user,
-          farm,
-          params.rewards_receiver,
-          s
-        );
+        var res : (option(operation) * user_info_type) :=
+          ((None : option(operation)), user);
+
+        (* Check timelock (if timelock is finished - harvest rewards) *)
+        if abs(Tezos.now - user.last_staked) >= farm.timelock.duration
+        then res := claim_rewards(user, farm, params.rewards_receiver, s)
+        else skip;
 
         (* Update user's info *)
         user := res.1;
@@ -295,9 +296,11 @@ function deposit(
         }
         end;
 
-        (* Update some user's info *)
+        (* Update user's staked and earned tokens amount *)
         user.staked := user.staked + params.amt;
         user.prev_earned := user.staked * farm.rps;
+
+        (* Reset timelock *)
         user.last_staked := Tezos.now;
 
         (* Save user's info in the farm and update farm's staked amount *)

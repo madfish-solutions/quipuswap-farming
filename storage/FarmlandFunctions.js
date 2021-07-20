@@ -49,6 +49,10 @@ module.exports = [
   },
   {
     index: 12,
-    name: "burn",
+    name: "burn_rewards",
+  },
+  {
+    index: 13,
+    name: "burn_qsgov_tokens",
   },
 ];

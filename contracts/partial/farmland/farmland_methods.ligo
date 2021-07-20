@@ -18,7 +18,8 @@
     | Deposit(_)               -> 9n
     | Withdraw(_)              -> 10n
     | Harvest(_)               -> 11n
-    | Burn(_)                  -> 12n
+    | Burn_rewards(_)          -> 12n
+    | Burn_qsgov_tokens(_)     -> 13n
     end;
 
     (* Call lambda function *)

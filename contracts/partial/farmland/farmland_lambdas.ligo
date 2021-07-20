@@ -487,7 +487,7 @@ function harvest(
   } with (operations, s)
 
 (* Burn bakers rewards *)
-function burn(
+function burn_rewards(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
@@ -496,7 +496,7 @@ function burn(
     var operations : list(operation) := no_operations;
 
     case action of
-      Burn(fid)                         -> {
+      Burn_rewards(fid)                 -> {
         (* Check of admin permissions *)
         only_admin(Tezos.sender, s.admin);
 
@@ -514,6 +514,57 @@ function burn(
           0mutez,
           get_quipuswap_use_entrypoint(farm.staked_token.token)
         ) # operations;
+      }
+    | _                                 -> skip
+    end
+  } with (operations, s)
+
+(* Burn QS GOV tokens collected in the result of early withdrawals *)
+function burn_qsgov_tokens(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    (* Operations to be performed *)
+    var operations : list(operation) := no_operations;
+
+    case action of
+      Burn_qsgov_tokens                 -> {
+        if s.collected_wfee > 0n
+        then {
+          (* Calculate amount to burn *)
+          const burn_amount : nat = s.collected_wfee * 97n / 100n;
+
+          (* Calculate 3% reward for the transaction sender *)
+          const reward : nat = abs(s.collected_wfee - burn_amount);
+
+          (* Create params to burn QS GOV tokens and pay the reward *)
+          const dst1 : transfer_dst_type = record [
+            to_      = zero_address;
+            token_id = s.qsgov.id;
+            amount   = burn_amount;
+          ];
+          const dst2 : transfer_dst_type = record [
+            to_      = Tezos.sender;
+            token_id = s.qsgov.id;
+            amount   = reward;
+          ];
+          const fa2_transfer_param : fa2_send_type = record [
+            from_ = Tezos.self_address;
+            txs   = list [dst1; dst2];
+          ];
+
+          (* Add transfer QS GOV token operation to operations list *)
+          operations := Tezos.transaction(
+            FA2_transfer_type(list [fa2_transfer_param]),
+            0mutez,
+            get_fa2_token_transfer_entrypoint(s.qsgov.token)
+          ) # operations;
+
+          (* Reset the collected withdrawal fee amount *)
+          s.collected_wfee := abs(s.collected_wfee - burn_amount - reward);
+        }
+        else skip;
       }
     | _                                 -> skip
     end

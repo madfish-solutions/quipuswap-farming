@@ -44,6 +44,7 @@ type storage_type       is [@layout:comb] record [
   farms_count             : nat; (* Number of farms registered on contract *)
   qsgov_per_second        : nat; (* Reward per second for all farms *)
   total_alloc_point       : nat; (* Sum of all allocation points in farms *)
+  collected_wfee          : nat; (* Number of collected withdrawal fee *)
 ]
 
 type set_admin_type     is address (* New admin address *)
@@ -108,7 +109,9 @@ type harvest_type       is [@layout:comb] record [
   rewards_receiver        : address; (* Receiver of earned tokens *)
 ]
 
-type burn_type          is nat (* Farm ID *)
+type burn_rewards_type  is nat (* Farm ID *)
+
+type burn_qsgov_type    is unit
 
 type action_type        is
   Set_admin               of set_admin_type
@@ -123,7 +126,8 @@ type action_type        is
 | Deposit                 of deposit_type
 | Withdraw                of withdraw_type
 | Harvest                 of harvest_type
-| Burn                    of burn_type
+| Burn_rewards            of burn_rewards_type
+| Burn_qsgov_tokens       of burn_qsgov_type
 
 type return_type        is (list(operation) * storage_type)
 
@@ -147,6 +151,6 @@ type full_action_type   is
 
 [@inline] const default_qsgov_id : nat = 0n;
 
-[@inline] const farmland_methods_max_index : nat = 12n;
+[@inline] const farmland_methods_max_index : nat = 13n;
 
 [@inline] const timelock_period : nat = 2_592_000n; (* 30 days *)

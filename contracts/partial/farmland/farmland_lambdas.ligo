@@ -288,7 +288,11 @@ function deposit(
         (* Update user's referrer *)
         case params.referrer of
           None    -> skip
-        | Some(_) -> user.referrer := params.referrer
+        | Some(ref) -> {
+          if ref = Tezos.sender
+          then failwith("Farmland/can-not-refer-yourself")
+          else user.referrer := params.referrer;
+        }
         end;
 
         (* Update some user's info *)

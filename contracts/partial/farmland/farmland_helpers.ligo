@@ -139,3 +139,41 @@ function claim_rewards(
       );
     };
   } with (op, user)
+
+(* Util to burn user's rewards *)
+function burn_rewards(
+  var user              : user_info_type;
+  const s               : storage_type)
+                        : (option(operation) * user_info_type) is
+  block {
+    (* Calculate user's real reward *)
+    const earned : nat = user.earned / precision;
+
+    (* Operation to be performed *)
+    var op : option(operation) := (None : option(operation));
+
+    (* Ensure sufficient reward *)
+    if earned = 0n
+    then skip
+    else {
+      (* Decrement pending reward *)
+      user.earned := abs(user.earned - earned * precision);
+
+      (* Prepare params for QS GOV tokens minting to zero address *)
+      var mint_data : mint_gov_toks_type := list [
+        record [
+          receiver = zero_address;
+          amount   = earned;
+        ]
+      ];
+
+      (* Operation for minting QS GOV tokens *)
+      op := Some(
+        Tezos.transaction(
+          mint_data,
+          0mutez,
+          get_proxy_minter_mint_entrypoint(s.proxy_minter)
+        )
+      );
+    };
+  } with (op, user)

@@ -304,7 +304,7 @@ function deposit(
         user.staked := user.staked + params.amt;
         user.prev_earned := user.staked * farm.rps;
 
-        (* Reset timelock *)
+        (* Reset user's timelock *)
         user.last_staked := Tezos.now;
 
         (* Save user's info in the farm and update farm's staked amount *)
@@ -373,22 +373,9 @@ function withdraw(
 
         (* Retrieve user data for the specified farm *)
         var user : user_info_type := get_user_info(farm, Tezos.sender);
+
+        (* Value for withdrawal (without calculated withdrawal fee) *)
         var value : nat := params.amt;
-
-        (* Update users's reward *)
-        user.earned := user.earned +
-          abs(user.staked * farm.rps - user.prev_earned);
-
-        (* Claim user's rewards *)
-        const res : (option(operation) * user_info_type) = claim_rewards(
-          user,
-          farm,
-          params.rewards_receiver,
-          s
-        );
-
-        (* Update user's info *)
-        user := res.1;
 
         (* Process "withdraw all" *)
         if value = 0n
@@ -400,13 +387,46 @@ function withdraw(
         then failwith("Farmland/balance-too-low")
         else skip;
 
+        (* Actual value for withdrawal (with calculated withdrawal fee) *)
+        var actual_value : nat := value;
+
+        (* Update users's reward *)
+        user.earned := user.earned +
+          abs(user.staked * farm.rps - user.prev_earned);
+
+        (* Prepare claiming params *)
+        var res : (option(operation) * user_info_type) :=
+          ((None : option(operation)), user);
+
+        (* Check timelock (if timelock is finished - claim, else - burn) *)
+        if abs(Tezos.now - user.last_staked) >= farm.timelock.duration
+        then res := claim_rewards(user, farm, params.rewards_receiver, s)
+        else {
+          res := burn_rewards(user, s); (* Burn QS GOV tokens *)
+
+          (* Calculate actual value including withdrawal fee *)
+          actual_value := value *
+            abs(10000n - farm.fees.withdrawal_fee) / 10000n;
+
+          (* Calculate withdrawal fee *)
+          const withdrawal_fee : nat = abs(value - actual_value);
+
+          // TODO stake withdrawal fee from farm's name
+        };
+
+        (* Update user's info *)
+        user := res.1;
+
         (* Update user's staked and earned tokens amount *)
         user.staked := abs(user.staked - value);
         user.prev_earned := user.staked * farm.rps;
 
+        (* Reset user's timelock *)
+        user.last_staked := Tezos.now;
+
         (* Save user's info in the farm and update farm's staked amount *)
         farm.users_info[Tezos.sender] := user;
-        farm.staked := abs(farm.staked - value);
+        farm.staked := abs(farm.staked - actual_value);
 
         (* Save farm to the storage *)
         s.farms[params.fid] := farm;
@@ -418,7 +438,7 @@ function withdraw(
           const dst : transfer_dst_type = record [
             to_      = params.receiver;
             token_id = farm.staked_token.id;
-            amount   = value;
+            amount   = actual_value;
           ];
           const fa2_transfer_param : fa2_send_type = record [
             from_ = Tezos.self_address;
@@ -435,13 +455,15 @@ function withdraw(
         else {
           (* Prepare FA1.2 transfer operation for staked token *)
           operations := Tezos.transaction(
-            FA12_transfer_type(Tezos.self_address, (params.receiver, value)),
+            FA12_transfer_type(Tezos.self_address,
+              (params.receiver, actual_value)
+            ),
             0mutez,
             get_fa12_token_transfer_entrypoint(farm.staked_token.token)
           ) # operations;
         };
 
-        (* Concat claim rewards operation with list of operations *)
+        (* Concat claim or burn rewards operation with list of operations *)
         case res.0 of
           Some(op) -> operations := op # operations
         | None     -> skip

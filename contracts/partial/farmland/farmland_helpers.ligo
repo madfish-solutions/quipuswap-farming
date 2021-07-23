@@ -143,6 +143,7 @@ function claim_rewards(
 (* Util to burn user's rewards *)
 function burn_rewards(
   var user              : user_info_type;
+  const pay_burn_reward : bool;
   const s               : storage_type)
                         : (option(operation) * user_info_type) is
   block {
@@ -159,13 +160,41 @@ function burn_rewards(
       (* Decrement pending reward *)
       user.earned := abs(user.earned - earned * precision);
 
-      (* Prepare params for QS GOV tokens minting to zero address *)
-      var mint_data : mint_gov_toks_type := list [
-        record [
+      (* Empty list that will be filled with minting params *)
+      var mint_data : mint_gov_toks_type := list [];
+
+      if pay_burn_reward
+      then {
+        (* Calculate real amount to burn (without 3% as a reward) *)
+        const burn_amount : nat = earned * 97n / 100n;
+
+        (* Calculate 3% reward for the transaction sender *)
+        const reward : nat = abs(earned - burn_amount);
+
+        (* Prepare destination params for minting *)
+        const dst1 : mint_gov_tok_type = record [
+          receiver = zero_address;
+          amount   = burn_amount;
+        ];
+        const dst2 : mint_gov_tok_type = record [
+          receiver = Tezos.sender;
+          amount   = reward;
+        ];
+
+        (* Update list with data about minting *)
+        mint_data := dst1 # mint_data;
+        mint_data := dst2 # mint_data;
+      }
+      else {
+        (* Prepare destination param for minting *)
+        const dst : mint_gov_tok_type = record [
           receiver = zero_address;
           amount   = earned;
-        ]
-      ];
+        ];
+
+        (* Update list with data about minting *)
+        mint_data := dst # mint_data;
+      };
 
       (* Operation for minting QS GOV tokens *)
       op := Some(

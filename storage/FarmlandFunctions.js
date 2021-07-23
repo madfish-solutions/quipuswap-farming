@@ -49,10 +49,10 @@ module.exports = [
   },
   {
     index: 12,
-    name: "burn_rewards",
+    name: "burn_xtz_rewards",
   },
   {
     index: 13,
-    name: "burn_qsgov_tokens",
+    name: "burn_farm_rewards",
   },
 ];

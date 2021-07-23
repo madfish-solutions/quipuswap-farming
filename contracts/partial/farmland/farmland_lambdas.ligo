@@ -402,7 +402,7 @@ function withdraw(
         if abs(Tezos.now - user.last_staked) >= farm.timelock.duration
         then res := claim_rewards(user, farm, params.rewards_receiver, s)
         else {
-          res := burn_rewards(user, s); (* Burn QS GOV tokens *)
+          res := burn_rewards(user, False, s); (* Burn QS GOV tokens *)
 
           (* Calculate actual value including withdrawal fee *)
           actual_value := value *
@@ -528,8 +528,8 @@ function harvest(
     end
   } with (operations, s)
 
-(* Burn bakers rewards *)
-function burn_rewards(
+(* Burn bakers rewards (XTZ) *)
+function burn_xtz_rewards(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
@@ -538,7 +538,7 @@ function burn_rewards(
     var operations : list(operation) := no_operations;
 
     case action of
-      Burn_rewards(fid)                 -> {
+      Burn_xtz_rewards(fid)             -> {
         (* Check of admin permissions *)
         only_admin(Tezos.sender, s.admin);
 
@@ -561,8 +561,8 @@ function burn_rewards(
     end
   } with (operations, s)
 
-(* Burn QS GOV tokens collected in the result of early withdrawals *)
-function burn_qsgov_tokens(
+(* Burn farm rewards *)
+function burn_farm_rewards(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
@@ -571,42 +571,41 @@ function burn_qsgov_tokens(
     var operations : list(operation) := no_operations;
 
     case action of
-      Burn_qsgov_tokens                 -> {
-        if s.collected_wfee > 0n
-        then {
-          (* Calculate amount to burn *)
-          const burn_amount : nat = s.collected_wfee * 97n / 100n;
+      Burn_farm_rewards(fid)            -> {
+        (* Retrieve farm from the storage *)
+        var farm : farm_type := get_farm(fid, s);
 
-          (* Calculate 3% reward for the transaction sender *)
-          const reward : nat = abs(s.collected_wfee - burn_amount);
+        (* Update rewards for the farm *)
+        s := update_farm_rewards(farm, s);
 
-          (* Create params to burn QS GOV tokens and pay the reward *)
-          const dst1 : transfer_dst_type = record [
-            to_      = zero_address;
-            token_id = s.qsgov.id;
-            amount   = burn_amount;
-          ];
-          const dst2 : transfer_dst_type = record [
-            to_      = Tezos.sender;
-            token_id = s.qsgov.id;
-            amount   = reward;
-          ];
-          const fa2_transfer_param : fa2_send_type = record [
-            from_ = Tezos.self_address;
-            txs   = list [dst1; dst2];
-          ];
+        (* Retrieve user data for the specified farm *)
+        var user : user_info_type := get_user_info(farm, Tezos.self_address);
 
-          (* Add transfer QS GOV token operation to operations list *)
-          operations := Tezos.transaction(
-            FA2_transfer_type(list [fa2_transfer_param]),
-            0mutez,
-            get_fa2_token_transfer_entrypoint(s.qsgov.token)
-          ) # operations;
+        (* Update users's reward *)
+        user.earned := user.earned +
+          abs(user.staked * farm.rps - user.prev_earned);
 
-          (* Reset the collected withdrawal fee amount *)
-          s.collected_wfee := abs(s.collected_wfee - burn_amount - reward);
-        }
-        else skip;
+        (* Burn QS GOV tokens (farm's rewards) *)
+        var res : (option(operation) * user_info_type) :=
+          burn_rewards(user, True, s);
+
+        (* Update user's info *)
+        user := res.1;
+
+        (* Concat burn QS GOV tokens operation with list of operations *)
+        case res.0 of
+          Some(op) -> operations := op # operations
+        | None     -> skip
+        end;
+
+        (* Update user's earned tokens amount *)
+        user.prev_earned := user.staked * farm.rps;
+
+        (* Save user's info in the farm *)
+        farm.users_info[Tezos.self_address] := user;
+
+        (* Save farm to the storage *)
+        s.farms[fid] := farm;
       }
     | _                                 -> skip
     end

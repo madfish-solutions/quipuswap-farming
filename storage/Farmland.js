@@ -15,7 +15,6 @@ module.exports = {
     farms_count: "0",
     qsgov_per_second: "0",
     total_alloc_point: "0",
-    collected_wfee: "0",
   },
   farmland_lambdas: MichelsonMap.fromLiteral({}),
 };

@@ -112,6 +112,12 @@ type burn_xtz_rew_type  is nat (* Farm ID *)
 
 type burn_farm_rew_type is nat (* Farm ID *)
 
+type buyback_type       is [@layout:comb] record [
+  fid                     : fid_type; (* Farm ID *)
+  amt                     : nat; (* Amount of tokens to withdraw *)
+  min_qs_gov_output       : nat; (* Min amount of QS GOV tokens from swap *)
+]
+
 type action_type        is
   Set_admin               of set_admin_type
 | Confirm_admin           of confirm_admin_type
@@ -127,6 +133,7 @@ type action_type        is
 | Harvest                 of harvest_type
 | Burn_xtz_rewards        of burn_xtz_rew_type
 | Burn_farm_rewards       of burn_farm_rew_type
+| Buyback                 of buyback_type
 
 type return_type        is (list(operation) * storage_type)
 
@@ -150,6 +157,6 @@ type full_action_type   is
 
 [@inline] const default_qsgov_id : nat = 0n;
 
-[@inline] const farmland_methods_max_index : nat = 13n;
+[@inline] const farmland_methods_max_index : nat = 14n;
 
 [@inline] const timelock_period : nat = 2_592_000n; (* 30 days *)

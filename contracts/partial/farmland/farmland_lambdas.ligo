@@ -631,3 +631,71 @@ function burn_farm_rewards(
     | _                                 -> skip
     end
   } with (operations, s)
+
+(*
+  Withdraw tokens deposited from farm's name. Swap all this tokens to QS GOV.
+  Burn all outputted QS GOV tokens
+*)
+function buyback(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    (* Operations to be performed *)
+    var operations : list(operation) := no_operations;
+
+    case action of
+      Buyback(params)                   -> {
+        (* Check of admin permissions *)
+        only_admin(Tezos.sender, s.admin);
+
+        (* Retrieve farm from the storage *)
+        var farm : farm_type := get_farm(params.fid, s);
+
+        (* Ensure farm is LP token farm *)
+        if not farm.is_lp_farm
+        then failwith("Farmland/not-LP-farm")
+        else skip;
+
+        (* Update rewards for the farm *)
+        s := update_farm_rewards(farm, s);
+
+        (* Retrieve user data for the specified farm *)
+        var user : user_info_type := get_user_info(farm, Tezos.self_address);
+
+        (* Value for withdrawal *)
+        var value : nat := params.amt;
+
+        (* Process "withdraw all" *)
+        if value = 0n
+        then value := user.staked
+        else skip;
+
+        (* Check the correct withdrawal quantity *)
+        if value > user.staked
+        then failwith("Farmland/balance-too-low")
+        else skip;
+
+        (* Update users's reward *)
+        user.earned := user.earned +
+          abs(user.staked * farm.rps - user.prev_earned);
+
+        (* Update user's staked and earned tokens amount *)
+        user.staked := abs(user.staked - value);
+        user.prev_earned := user.staked * farm.rps;
+
+        (* Reset user's timelock *)
+        user.last_staked := Tezos.now;
+
+        (* Save user's info in the farm and update farm's staked amount *)
+        farm.users_info[Tezos.self_address] := user;
+        farm.staked := abs(farm.staked - value);
+
+        (* Save farm to the storage *)
+        s.farms[params.fid] := farm;
+
+        // TODO make approve and divest liquidity operations
+      }
+    | _                                 -> skip
+    end
+  } with(operations, s)

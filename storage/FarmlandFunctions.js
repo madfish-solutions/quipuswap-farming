@@ -55,4 +55,8 @@ module.exports = [
     index: 13,
     name: "burn_farm_rewards",
   },
+  {
+    index: 14,
+    name: "buyback",
+  },
 ];

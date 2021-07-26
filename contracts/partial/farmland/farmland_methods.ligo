@@ -20,6 +20,7 @@
     | Harvest(_)               -> 11n
     | Burn_xtz_rewards(_)      -> 12n
     | Burn_farm_rewards(_)     -> 13n
+    | Buyback(_)               -> 14n
     end;
 
     (* Call lambda function *)

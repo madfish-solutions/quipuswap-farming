@@ -50,6 +50,21 @@ function get_fa2_token_transfer_entrypoint(
   )
   end
 
+(* Util to get FA1.2 token %getBalance entrypoint *)
+function get_fa12_token_balance_of_entrypoint(
+  const token           : address)
+                        : contract(fa12_balance_type) is
+  case (
+    Tezos.get_entrypoint_opt("%getBalance", token)
+                        : option(contract(fa12_balance_type))
+  ) of
+    Some(contr) -> contr
+  | None        -> (
+    failwith("FA1.2/balance-of-entrypoint-404")
+                        : contract(fa12_balance_type)
+  )
+  end
+
 (* Util to get FA2 token %balance_of entrypoint *)
 function get_fa2_token_balance_of_entrypoint(
   const token           : address)

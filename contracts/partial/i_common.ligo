@@ -3,6 +3,7 @@ type use_type           is dex_action_type
 type token_type         is [@layout:comb] record [
   token                   : address; (* Token address *)
   id                      : nat; (* Token ID *)
+  is_fa2                  : bool; (* Flag: token standard is FA2 or not *)
 ]
 
 type get_balance_type   is [@layout:comb] record [

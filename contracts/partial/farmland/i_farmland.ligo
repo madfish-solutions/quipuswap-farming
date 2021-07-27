@@ -12,6 +12,15 @@ type user_info_type     is [@layout:comb] record [
   prev_earned             : nat; (* Previous earned amount of tokens by user *)
 ]
 
+type stake_params_type  is [@layout:comb] record [
+  (* Token to stake *)
+  staked_token            : token_type;
+  (* Flag: LP token staked or not *)
+  is_lp_staked_token      : bool;
+  (* If LP token staked - non zero address + ID, else - zero address + 0 ID *)
+  token                   : token_type;
+]
+
 type timelock_type      is [@layout:comb] record [
   duration                : nat; (* in seconds, 0 for farms without timelock *)
 ]
@@ -20,11 +29,9 @@ type farm_type          is [@layout:comb] record [
   users_info              : map(address, user_info_type); (* Users data *)
   fees                    : fees_type; (* Fees data *)
   upd                     : timestamp; (* Last farm updated timestamp *)
-  staked_token            : token_type; (* Token to stake *)
+  stake_params            : stake_params_type; (* Staking params *)
   reward_token            : token_type; (* Token in which rewards are paid *)
   timelock                : timelock_type; (* Timelock info *)
-  is_lp_farm              : bool; (* Flag: LP token staked or not *)
-  is_fa2_token            : bool; (* Flag: staked tok standard is FA2 or not *)
   paused                  : bool; (* Falg: farm paused or not *)
   alloc_point             : nat; (* Farm allocation point *)
   rps                     : nat; (* Reward per share *)
@@ -73,7 +80,7 @@ type set_proxy_type     is address (* New proxy minter contract address *)
 
 type add_new_farm_type  is [@layout:comb] record [
   fees                    : fees_type; (* Fees data *)
-  staked_token            : token_type; (* Token to stake *)
+  stake_params            : stake_params_type; (* Staking params *)
   is_lp_farm              : bool; (* Flag: LP token staked or not *)
   is_fa2_token            : bool; (* Flag: staked tok standard is FA2 or not *)
   paused                  : bool; (* Flag: paused or not at the beginning *)

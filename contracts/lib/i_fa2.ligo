@@ -1,30 +1,41 @@
 type token_id_type      is nat (* Token ID *)
 
 type transfer_dst_type  is [@layout:comb] record [
-  to_                     : address; (* Recipient of tokens *)
-  token_id                : token_id_type; (* Token ID *)
-  amount                  : nat; (* Number of tokens to transfer *)
+  (* Recipient of tokens *)
+  to_                     : address;
+  (* Token ID *)
+  token_id                : token_id_type;
+  (* Number of tokens to transfer *)
+  amount                  : nat;
 ]
 
 type fa2_send_type      is [@layout:comb] record [
-  from_                   : address; (* Sender of tokens *)
-  txs                     : list(transfer_dst_type); (* Transactions *)
+  (* Sender of tokens *)
+  from_                   : address;
+  (* Transactions *)
+  txs                     : list(transfer_dst_type);
 ]
 
 type fa2_transfer_type  is
 FA2_transfer_type         of list(fa2_send_type) (* Transfers list *)
 
 type bal_request_type   is [@layout:comb] record [
-  owner                   : address; (* Owner of tokens *)
-  token_id                : token_id_type; (* Token ID *)
+  (* Owner of tokens *)
+  owner                   : address;
+  (* Token ID *)
+  token_id                : token_id_type;
 ]
 
 type bal_response_type  is [@layout:comb] record [
-  request                 : bal_request_type; (* Balance of request *)
-  balance                 : nat; (* Balance of tokens *)
+  (* Balance of request *)
+  request                 : bal_request_type;
+  (* Balance of tokens *)
+  balance                 : nat;
 ]
 
 type balance_of_type    is [@layout:comb] record [
-  requests                : list(bal_request_type); (* Balance of requests *)
-  callback                : contract(list(bal_response_type)); (* Callback *)
+  (* Balance of requests *)
+  requests                : list(bal_request_type);
+  (* Callback *)
+  callback                : contract(list(bal_response_type));
 ]

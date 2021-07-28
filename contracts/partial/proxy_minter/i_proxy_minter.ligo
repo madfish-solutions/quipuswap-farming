@@ -1,13 +1,19 @@
 type storage_type       is [@layout:comb] record [
-  farms                   : set(address); (* Set of registered farms *)
-  qsgov                   : token_type; (* QS GOV token *)
-  admin                   : address; (* Contract's actual admin address *)
-  pending_admin           : address; (* Contract's pending admin address *)
+  (* Set of registered farms *)
+  farms                   : set(address);
+  (* QS GOV token *)
+  qsgov                   : token_type;
+  (* Contract's actual admin address *)
+  admin                   : address;
+  (* Contract's pending admin address *)
+  pending_admin           : address;
 ]
 
 type register_farm_type is [@layout:comb] record [
-  farm                    : address; (* Farm address *)
-  register                : bool; (* Flag: register or unregister *)
+  (* Farm address *)
+  farm                    : address;
+  (* Flag: register or unregister *)
+  register                : bool;
 ]
 
 type withdraw_type_1    is unit

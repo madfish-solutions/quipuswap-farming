@@ -1,8 +1,10 @@
 type burn_type          is Burn             of (address * nat)
 
 type storage_type       is [@layout:comb] record [
-  qsgov_lp                : address; (* QS GOV token LP address *)
-  qsgov                   : token_type; (* QS GOV token *)
+  (* QS GOV token LP address *)
+  qsgov_lp                : address;
+  (* QS GOV token *)
+  qsgov                   : token_type;
 ]
 
 type burn_callback_type is list(bal_response_type)

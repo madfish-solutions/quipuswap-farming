@@ -649,7 +649,7 @@ function fa12_tok_bal_callback(
   block {
     case action of
       Fa12_tok_bal_callback(bal)        -> {
-        skip;
+        swap(bal);
       }
     | _                                 -> skip
     end
@@ -665,8 +665,14 @@ function fa2_tok_bal_callback(
                         : return_type is
   block {
     case action of
-      Fa2_tok_bal_callback(params)      -> {
-        skip;
+      Fa2_tok_bal_callback(response)    -> {
+        const bal : nat = get_fa2_token_balance(
+          response,
+          Tezos.self_address,
+          s.temp.token.id
+        );
+
+        swap(bal);
       }
     | _                                 -> skip
     end
@@ -731,10 +737,13 @@ function buyback(
         s.farms[params.fid] := farm;
 
         (* Save min amount of QS GOV tokens received after exchange *)
-        s.min_qs_gov_output := params.min_qs_gov_output;
+        s.temp.min_qs_gov_output := params.min_qs_gov_output;
 
         if not farm.stake_params.is_lp_staked_token
         then {
+          (* Save staked token info temporary params *)
+          s.temp.token := farm.stake_params.staked_token;
+
           (* Check staked token type *)
           if farm.stake_params.staked_token.is_fa2
           then {
@@ -769,6 +778,9 @@ function buyback(
           };
         }
         else {
+          (* Save divested token info temporary params *)
+          s.temp.token := farm.stake_params.token;
+
           (* Check divested token type *)
           if farm.stake_params.token.is_fa2
           then {

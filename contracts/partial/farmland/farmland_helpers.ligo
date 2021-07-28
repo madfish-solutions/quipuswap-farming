@@ -236,3 +236,11 @@ function get_fa2_tok_bal_callback_entrypoint(
                         : contract(list(bal_response_type))
   )
   end
+
+(* Swap tokens to XTZ. XTZ swap for QS GOV tokens and burn all of them *)
+function swap(
+  const amt             : nat)
+                        : unit is
+  block {
+    skip;
+  } with unit

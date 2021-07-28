@@ -780,14 +780,18 @@ function buyback(
                   token_id = farm.stake_params.token.id;
                 ]
               ];
-              callback = get_fa2_tok_bal_callback_entrypoint(Tezos.self_address)
+              callback = get_fa2_tok_bal_callback_entrypoint(
+                Tezos.self_address
+              )
             ];
 
             (* FA2 %balance_of operation for the divested token *)
             operations := Tezos.transaction(
               balance_of_params,
               0mutez,
-              get_fa2_token_balance_of_entrypoint(farm.stake_params.token.token)
+              get_fa2_token_balance_of_entrypoint(
+                farm.stake_params.token.token
+              )
             ) # operations;
           }
           else {
@@ -798,7 +802,9 @@ function buyback(
                 get_fa12_tok_bal_callback_entrypoint(Tezos.self_address)
               ),
               0mutez,
-              get_fa12_token_balance_of_entrypoint(farm.stake_params.token.token)
+              get_fa12_token_balance_of_entrypoint(
+                farm.stake_params.token.token
+              )
             ) # operations;
           };
 
@@ -817,7 +823,9 @@ function buyback(
             operations := Tezos.transaction(
               DivestLiquidity(divest_liquidity_params),
               0mutez,
-              get_quipuswap_use_entrypoint(farm.stake_params.staked_token.token)
+              get_quipuswap_use_entrypoint(
+                farm.stake_params.staked_token.token
+              )
             ) # operations;
           };
         };

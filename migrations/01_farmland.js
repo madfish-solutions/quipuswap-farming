@@ -30,6 +30,7 @@ module.exports = async (tezos) => {
 
   farmlandStorage.storage.qsgov.token = zeroAddress;
   farmlandStorage.storage.qsgov.id = "0";
+  farmlandStorage.storage.qsgov_pool = zeroAddress;
   farmlandStorage.storage.admin = deployer;
   farmlandStorage.storage.pending_admin = zeroAddress;
   farmlandStorage.storage.burner = zeroAddress;

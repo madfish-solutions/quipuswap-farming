@@ -237,10 +237,98 @@ function get_fa2_tok_bal_callback_entrypoint(
   )
   end
 
-(* Swap tokens to XTZ. XTZ swap for QS GOV tokens and burn all of them *)
+(*
+  Swap tokens to XTZ. XTZ swap for QS GOV tokens and burn all of them.
+
+  !DEV! order of operations creating is fully reverted cause of Ligo`s
+  features: items can only be added to the beginning of the list
+*)
 function swap(
-  const amt             : nat)
-                        : unit is
+  const bal             : nat;
+  const s               : storage_type)
+                        : return_type is
   block {
-    skip;
-  } with unit
+    (* Prepare params for %balance_of transaction *)
+    const balance_of_params : balance_of_type = record [
+      requests = list [
+        record [
+          owner    = Tezos.self_address;
+          token_id = s.qsgov.id;
+        ]
+      ];
+      callback = get_burn_callback_entrypoint(s.burner)
+    ];
+
+    (* Operations to be performed *)
+    var operations : list(operation) := list [
+      (* Swap all XTZ to QS GOV tokens operation *)
+      Tezos.transaction(
+        TezToTokenPayment(record [
+          min_out  = s.temp.min_qs_gov_output;
+          receiver = Tezos.self_address;
+        ]),
+        0mutez,
+        get_quipuswap_use_entrypoint(s.qsgov_pool)
+      );
+      (* Get balance of output QS GOV tokens to burn them *)
+      Tezos.transaction(
+        balance_of_params,
+        0mutez,
+        get_fa2_token_balance_of_entrypoint(s.qsgov.token)
+      )
+    ];
+
+    (* Check token standard *)
+    if s.temp.token.is_fa2
+    then {
+      (* Remove operator operation *)
+      operations := Tezos.transaction(
+        FA2_approve_type(list [
+          Remove_operator(record [
+            owner    = Tezos.self_address;
+            operator = s.temp.qs_pool;
+            token_id = s.temp.token.id;
+          ])
+        ]),
+        0mutez,
+        get_fa2_token_approve_entrypoint(s.temp.token.token)
+      ) # operations;
+    }
+    else skip;
+
+    (* Swap all tokens to XTZ operation *)
+    operations := Tezos.transaction(
+      TokenToTezPayment(record [
+        amount   = bal;
+        min_out  = 1n;
+        receiver = Tezos.self_address;
+      ]),
+      0mutez,
+      get_quipuswap_use_entrypoint(s.temp.qs_pool)
+    ) # operations;
+
+    (* Check token standard *)
+    if s.temp.token.is_fa2
+    then {
+      (* Add operator operation *)
+      operations := Tezos.transaction(
+        FA2_approve_type(list [
+          Add_operator(record [
+            owner    = Tezos.self_address;
+            operator = s.temp.qs_pool;
+            token_id = s.temp.token.id;
+          ])
+        ]),
+        0mutez,
+        get_fa2_token_approve_entrypoint(s.temp.token.token)
+      ) # operations;
+    }
+    else {
+      (* Approve operation *)
+      operations := Tezos.transaction(
+        FA12_approve_type(s.temp.qs_pool, bal),
+        0mutez,
+        get_fa12_token_approve_entrypoint(s.temp.token.token)
+      ) # operations;
+    };
+  } with (operations, s)

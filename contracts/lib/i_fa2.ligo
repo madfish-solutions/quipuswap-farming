@@ -39,3 +39,19 @@ type balance_of_type    is [@layout:comb] record [
   (* Callback *)
   callback                : contract(list(bal_response_type));
 ]
+
+type operator_param is [@layout:comb] record [
+  (* Owner of tokens *)
+  owner         : address;
+  (* Operator of tokens *)
+  operator      : address;
+  (* Token ID *)
+  token_id      : token_id_type;
+]
+
+type update_operator_param is
+| Add_operator        of operator_param
+| Remove_operator     of operator_param
+
+type fa2_approve_type  is
+FA2_approve_type          of list(update_operator_param) (* Approvals list *)

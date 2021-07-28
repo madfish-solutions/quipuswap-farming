@@ -1,5 +1,7 @@
 const { MichelsonMap } = require("@taquito/michelson-encoder");
 
+const zero_address = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";
+
 module.exports = {
   storage: {
     farms: MichelsonMap.fromLiteral({}),
@@ -7,15 +9,17 @@ module.exports = {
     temp: {
       min_qs_gov_output: "0",
       token: {
-        token: "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg",
+        token: zero_address,
         id: "0",
         is_fa2: false,
       },
+      qs_pool: zero_address,
     },
     qsgov: {
       token: null,
       id: "0",
     },
+    qsgov_pool: null,
     admin: null,
     pending_admin: null,
     burner: null,

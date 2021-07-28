@@ -50,6 +50,36 @@ function get_fa2_token_transfer_entrypoint(
   )
   end
 
+(* Util to get FA1.2 token %approve entrypoint *)
+function get_fa12_token_approve_entrypoint(
+  const token           : address)
+                        : contract(fa12_approve_type) is
+  case (
+    Tezos.get_entrypoint_opt("%approve", token)
+                        : option(contract(fa12_approve_type))
+  ) of
+    Some(contr) -> contr
+  | None        -> (
+    failwith("FA1.2/approve-entrypoint-404")
+                        : contract(fa12_approve_type)
+  )
+  end
+
+(* Util to get FA2 token %update_operators entrypoint *)
+function get_fa2_token_approve_entrypoint(
+  const token           : address)
+                        : contract(fa2_approve_type) is
+  case (
+    Tezos.get_entrypoint_opt("%update_operators", token)
+                        : option(contract(fa2_approve_type))
+  ) of
+    Some(contr) -> contr
+  | None        -> (
+    failwith("FA2/approve-entrypoint-404")
+                        : contract(fa2_approve_type)
+  )
+  end
+
 (* Util to get FA1.2 token %getBalance entrypoint *)
 function get_fa12_token_balance_of_entrypoint(
   const token           : address)
@@ -89,6 +119,21 @@ function get_quipuswap_use_entrypoint(
   ) of
     Some(contr) -> contr
   | None        -> (failwith("QS/use-entrypoint-404") : contract(use_type))
+  end
+
+(* Util to get burner's %burn_callback entrypoint *)
+function get_burn_callback_entrypoint(
+  const burner          : address)
+                        : contract(list(bal_response_type)) is
+  case (
+    Tezos.get_entrypoint_opt("%burn_callback", burner)
+                        : option(contract(list(bal_response_type)))
+  ) of
+    Some(contr) -> contr
+  | None        -> (
+    failwith("Burner/burn-callback-entrypoint-404")
+                        : contract(list(bal_response_type))
+  )
   end
 
 (* Util to get FA2 token balance by ID and owner *)

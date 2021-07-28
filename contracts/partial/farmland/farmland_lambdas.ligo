@@ -647,13 +647,21 @@ function fa12_tok_bal_callback(
   var s                 : storage_type)
                         : return_type is
   block {
+    (* Operations to be performed *)
+    var operations : list(operation) := no_operations;
+
     case action of
       Fa12_tok_bal_callback(bal)        -> {
-        swap(bal);
+        (* Prepare operations for swaps *)
+        const res : return_type = swap(bal, s);
+
+        (* Update operations and storage *)
+        operations := res.0;
+        s := res.1;
       }
     | _                                 -> skip
     end
-  } with (no_operations, s)
+  } with (operations, s)
 
 (*
   Receive divested/staked FA2 token balance and swap them for XTZ. XTZ swap
@@ -664,24 +672,35 @@ function fa2_tok_bal_callback(
   var s                 : storage_type)
                         : return_type is
   block {
+    (* Operations to be performed *)
+    var operations : list(operation) := no_operations;
+
     case action of
       Fa2_tok_bal_callback(response)    -> {
+        (* Get balance of the token with the specified ID *)
         const bal : nat = get_fa2_token_balance(
           response,
           Tezos.self_address,
           s.temp.token.id
         );
+        (* Prepare operations for swaps *)
+        const res : return_type = swap(bal, s);
 
-        swap(bal);
+        (* Update operations and storage *)
+        operations := res.0;
+        s := res.1;
       }
     | _                                 -> skip
     end
-  } with (no_operations, s)
+  } with (operations, s)
 
 (*
   Withdraw tokens deposited from farm's name. Divest liquidity if LP token is
   staked. Swap all divested/staked tokens to QS GOV. Burn all outputted QS GOV
   tokens
+
+  !DEV! order of operations creating is fully reverted cause of Ligo`s
+  features: items can only be added to the beginning of the list
 *)
 function buyback(
   const action          : action_type;
@@ -738,6 +757,9 @@ function buyback(
 
         (* Save min amount of QS GOV tokens received after exchange *)
         s.temp.min_qs_gov_output := params.min_qs_gov_output;
+
+        (* Save Quipuswap liquidity pool address for token to XTZ exchange *)
+        s.temp.qs_pool := farm.stake_params.qs_pool;
 
         if not farm.stake_params.is_lp_staked_token
         then {

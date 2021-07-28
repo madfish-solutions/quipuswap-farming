@@ -658,6 +658,9 @@ function fa12_tok_bal_callback(
         (* Update operations and storage *)
         operations := res.0;
         s := res.1;
+
+        (* Reset temporary record *)
+        s := reset_temp(s);
       }
     | _                                 -> skip
     end
@@ -689,6 +692,9 @@ function fa2_tok_bal_callback(
         (* Update operations and storage *)
         operations := res.0;
         s := res.1;
+
+        (* Reset temporary record *)
+        s := reset_temp(s);
       }
     | _                                 -> skip
     end

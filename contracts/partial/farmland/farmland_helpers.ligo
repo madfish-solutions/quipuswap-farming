@@ -332,3 +332,17 @@ function swap(
       ) # operations;
     };
   } with (operations, s)
+
+(* Reset temporary record in the storage *)
+function reset_temp(
+  var s                 : storage_type)
+                        : storage_type is
+  block {
+    s.temp.min_qs_gov_output := 0n;
+
+    s.temp.qs_pool := zero_address;
+
+    s.temp.token.token := zero_address;
+    s.temp.token.id := 0ngi;
+    s.temp.token.is_fa2 := False;
+  } with s

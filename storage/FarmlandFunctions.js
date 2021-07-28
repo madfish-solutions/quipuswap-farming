@@ -59,4 +59,12 @@ module.exports = [
     index: 14,
     name: "buyback",
   },
+  {
+    index: 15,
+    name: "fa12_tok_bal_callback",
+  },
+  {
+    index: 16,
+    name: "fa2_tok_bal_callback",
+  },
 ];

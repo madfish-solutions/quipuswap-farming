@@ -21,6 +21,8 @@
     | Burn_xtz_rewards(_)      -> 12n
     | Burn_farm_rewards(_)     -> 13n
     | Buyback(_)               -> 14n
+    | Fa12_tok_bal_callback(_) -> 15n
+    | Fa2_tok_bal_callback(_)  -> 16n
     end;
 
     (* Call lambda function *)

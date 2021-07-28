@@ -51,6 +51,7 @@ type storage_type       is [@layout:comb] record [
   farms_count             : nat; (* Number of farms registered on contract *)
   qsgov_per_second        : nat; (* Reward per second for all farms *)
   total_alloc_point       : nat; (* Sum of all allocation points in farms *)
+  min_qs_gov_output       : nat; (* TMP: min amount of QS GOV swapped tokens *)
 ]
 
 type set_admin_type     is address (* New admin address *)
@@ -125,6 +126,10 @@ type buyback_type       is [@layout:comb] record [
   min_qs_gov_output       : nat; (* Min amount of QS GOV tokens from swap *)
 ]
 
+type fa12_bal_type      is nat
+
+type fa2_bal_type       is list(bal_response_type)
+
 type action_type        is
   Set_admin               of set_admin_type
 | Confirm_admin           of confirm_admin_type
@@ -141,6 +146,8 @@ type action_type        is
 | Burn_xtz_rewards        of burn_xtz_rew_type
 | Burn_farm_rewards       of burn_farm_rew_type
 | Buyback                 of buyback_type
+| Fa12_tok_bal_callback   of fa12_bal_type
+| Fa2_tok_bal_callback    of fa2_bal_type
 
 type return_type        is (list(operation) * storage_type)
 
@@ -164,6 +171,6 @@ type full_action_type   is
 
 [@inline] const default_qsgov_id : nat = 0n;
 
-[@inline] const farmland_methods_max_index : nat = 14n;
+[@inline] const farmland_methods_max_index : nat = 16n;
 
 [@inline] const timelock_period : nat = 2_592_000n; (* 30 days *)

@@ -639,8 +639,43 @@ function burn_farm_rewards(
   } with (operations, s)
 
 (*
-  Withdraw tokens deposited from farm's name. Swap all this tokens to QS GOV.
-  Burn all outputted QS GOV tokens
+  Receive divested/staked FA1.2 token balance and swap them for XTZ. XTZ swap
+  for QS GOV tokens. Burn all outputted QS GOV tokens
+*)
+function fa12_tok_bal_callback(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    case action of
+      Fa12_tok_bal_callback(bal)        -> {
+        skip;
+      }
+    | _                                 -> skip
+    end
+  } with (no_operations, s)
+
+(*
+  Receive divested/staked FA2 token balance and swap them for XTZ. XTZ swap
+  for QS GOV tokens. Burn all outputted QS GOV tokens
+*)
+function fa2_tok_bal_callback(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    case action of
+      Fa2_tok_bal_callback(params)      -> {
+        skip;
+      }
+    | _                                 -> skip
+    end
+  } with (no_operations, s)
+
+(*
+  Withdraw tokens deposited from farm's name. Divest liquidity if LP token is
+  staked. Swap all divested/staked tokens to QS GOV. Burn all outputted QS GOV
+  tokens
 *)
 function buyback(
   const action          : action_type;
@@ -695,63 +730,96 @@ function buyback(
         (* Save farm to the storage *)
         s.farms[params.fid] := farm;
 
-        (* Get actual token (not LP) to swap for XTZ *)
-        var tok : token_type := farm.stake_params.staked_token;
+        (* Save min amount of QS GOV tokens received after exchange *)
+        s.min_qs_gov_output := params.min_qs_gov_output;
 
-        if farm.stake_params.is_lp_staked_token
-        then tok := farm.stake_params.token
-        else skip;
-
-        (* Check divested/staked token type *)
-        if tok.is_fa2
+        if not farm.stake_params.is_lp_staked_token
         then {
-          (* Prepare params for FA2 %balance_of operation *)
-          const balance_of_params : balance_of_type = record [
-            requests = list [
-              record [
-                owner    = Tezos.self_address;
-                token_id = tok.id;
-              ]
-            ];
-            callback = get_fa2_tok_bal_callback_entrypoint(Tezos.self_address)
-          ];
+          (* Check staked token type *)
+          if farm.stake_params.staked_token.is_fa2
+          then {
+            (* Swap all staked tokens for QS GOV tokens and burn them *)
+            const res : return_type = fa12_tok_bal_callback(
+              Fa12_tok_bal_callback(value),
+              s
+            );
 
-          (* FA2 %balance_of operation for specified token *)
-          operations := Tezos.transaction(
-            balance_of_params,
-            0mutez,
-            get_fa2_token_balance_of_entrypoint(tok.token)
-          ) # operations;
+            (* Update list of operations and storage *)
+            operations := res.0;
+            s := res.1;
+          }
+          else {
+            (* Swap all staked tokens for QS GOV tokens and burn them *)
+            const res : return_type = fa2_tok_bal_callback(
+              Fa2_tok_bal_callback(list [
+                record [
+                  request = record [
+                    owner    = Tezos.self_address;
+                    token_id = farm.stake_params.staked_token.id;
+                  ];
+                  balance = value;
+                ]
+              ]),
+              s
+            );
+
+            (* Update list of operations and storage *)
+            operations := res.0;
+            s := res.1;
+          };
         }
         else {
-          (* FA1.2 %balance_of operation for specified token *)
-          operations := Tezos.transaction(
-            FA12_balance_of_type(
-              Tezos.self_address,
-              get_fa12_tok_bal_callback_entrypoint(Tezos.self_address)
-            ),
-            0mutez,
-            get_fa12_token_balance_of_entrypoint(tok.token)
-          ) # operations;
-        };
+          (* Check divested token type *)
+          if farm.stake_params.token.is_fa2
+          then {
+            (* Prepare params for FA2 %balance_of operation *)
+            const balance_of_params : balance_of_type = record [
+              requests = list [
+                record [
+                  owner    = Tezos.self_address;
+                  token_id = farm.stake_params.token.id;
+                ]
+              ];
+              callback = get_fa2_tok_bal_callback_entrypoint(Tezos.self_address)
+            ];
 
-        (* Check farm is LP token farm *)
-        if not farm.stake_params.is_lp_staked_token
-        then skip
-        else { (* Divest liquidity *)
-          (* Params for liquidity divestment *)
-          const divest_liquidity_params : divest_liq_type = record [
-            min_tez    = 1n;
-            min_tokens = 1n;
-            shares     = value;
-          ];
+            (* FA2 %balance_of operation for the divested token *)
+            operations := Tezos.transaction(
+              balance_of_params,
+              0mutez,
+              get_fa2_token_balance_of_entrypoint(farm.stake_params.token.token)
+            ) # operations;
+          }
+          else {
+            (* FA1.2 %balance_of operation for the divested token *)
+            operations := Tezos.transaction(
+              FA12_balance_of_type(
+                Tezos.self_address,
+                get_fa12_tok_bal_callback_entrypoint(Tezos.self_address)
+              ),
+              0mutez,
+              get_fa12_token_balance_of_entrypoint(farm.stake_params.token.token)
+            ) # operations;
+          };
 
-          (* Divest liquidity operation *)
-          operations := Tezos.transaction(
-            DivestLiquidity(divest_liquidity_params),
-            0mutez,
-            get_quipuswap_use_entrypoint(farm.stake_params.staked_token.token)
-          ) # operations;
+          (* Check farm is LP token farm *)
+          if not farm.stake_params.is_lp_staked_token
+          then skip
+          else { (* Divest liquidity *)
+            (* Params for liquidity divestment *)
+            const divest_liquidity_params : divest_liq_type = record [
+              min_tez    = 1n;
+              min_tokens = 1n;
+              shares     = value;
+            ];
+
+            (* Divest liquidity operation *)
+            operations := Tezos.transaction(
+              DivestLiquidity(divest_liquidity_params),
+              0mutez,
+              get_quipuswap_use_entrypoint(farm.stake_params.staked_token.token)
+            ) # operations;
+          };
         };
       }
     | _                                 -> skip

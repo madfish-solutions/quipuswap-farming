@@ -207,32 +207,32 @@ function burn_rewards(
     };
   } with (op, user)
 
-(* Util to get farmland's %divested_fa12_balance_callback entrypoint *)
-function get_divested_fa12_token_balance_callback_entrypoint(
+(* Util to get farmland's %fa12_tok_bal_callback entrypoint *)
+function get_fa12_tok_bal_callback_entrypoint(
   const this            : address)
                         : contract(nat) is
   case (
-    Tezos.get_entrypoint_opt("%divested_fa12_balance_callback", this)
+    Tezos.get_entrypoint_opt("%fa12_tok_bal_callback", this)
                         : option(contract(nat))
   ) of
     Some(contr) -> contr
   | None        -> (
-    failwith("Farmland/divested-fa12-balance-callback-entrypoint-404")
+    failwith("Farmland/fa12-bal-tok-callback-entrypoint-404")
                         : contract(nat)
   )
   end
 
-(* Util to get farmland's %divested_fa2_balance_callback entrypoint *)
-function get_divested_fa2_token_balance_callback_entrypoint(
+(* Util to get farmland's %fa2_tok_bal_callback entrypoint *)
+function get_fa2_tok_bal_callback_entrypoint(
   const this            : address)
                         : contract(list(bal_response_type)) is
   case (
-    Tezos.get_entrypoint_opt("%divested_fa2_balance_callback", this)
+    Tezos.get_entrypoint_opt("%fa2_tok_bal_callback", this)
                         : option(contract(list(bal_response_type)))
   ) of
     Some(contr) -> contr
   | None        -> (
-    failwith("Farmland/divested-fa2-balance-callback-entrypoint-404")
+    failwith("Farmland/fa2-tok-bal-callback-entrypoint-404")
                         : contract(list(bal_response_type))
   )
   end

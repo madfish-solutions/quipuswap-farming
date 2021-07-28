@@ -695,40 +695,43 @@ function buyback(
         (* Save farm to the storage *)
         s.farms[params.fid] := farm;
 
-        (* Check divested token type *)
-        if farm.stake_params.token.is_fa2
+        (* Get actual token (not LP) to swap for XTZ *)
+        var tok : token_type := farm.stake_params.staked_token;
+
+        if farm.stake_params.is_lp_staked_token
+        then tok := farm.stake_params.token
+        else skip;
+
+        (* Check divested/staked token type *)
+        if tok.is_fa2
         then {
           (* Prepare params for FA2 %balance_of operation *)
           const balance_of_params : balance_of_type = record [
             requests = list [
               record [
                 owner    = Tezos.self_address;
-                token_id = farm.stake_params.token.id;
+                token_id = tok.id;
               ]
             ];
-            callback = get_divested_fa2_token_balance_callback_entrypoint(
-              Tezos.self_address
-            )
+            callback = get_fa2_tok_bal_callback_entrypoint(Tezos.self_address)
           ];
 
-          (* FA2 %balance_of operation for token from the divested pair *)
+          (* FA2 %balance_of operation for specified token *)
           operations := Tezos.transaction(
             balance_of_params,
             0mutez,
-            get_fa2_token_balance_of_entrypoint(farm.stake_params.token.token)
+            get_fa2_token_balance_of_entrypoint(tok.token)
           ) # operations;
         }
         else {
-          (* FA1.2 %balance_of operation for token from the divested pair *)
+          (* FA1.2 %balance_of operation for specified token *)
           operations := Tezos.transaction(
             FA12_balance_of_type(
               Tezos.self_address,
-              get_divested_fa12_token_balance_callback_entrypoint(
-                Tezos.self_address
-              )
+              get_fa12_tok_bal_callback_entrypoint(Tezos.self_address)
             ),
             0mutez,
-            get_fa12_token_balance_of_entrypoint(farm.stake_params.token.token)
+            get_fa12_token_balance_of_entrypoint(tok.token)
           ) # operations;
         };
 

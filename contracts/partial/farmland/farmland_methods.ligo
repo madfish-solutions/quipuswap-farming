@@ -13,16 +13,17 @@
     | Set_reward_per_second(_) -> 4n
     | Set_burner(_)            -> 5n
     | Set_proxy_minter(_)      -> 6n
-    | Add_new_farm(_)          -> 7n
-    | Pause_farms(_)           -> 8n
-    | Deposit(_)               -> 9n
-    | Withdraw(_)              -> 10n
-    | Harvest(_)               -> 11n
-    | Burn_xtz_rewards(_)      -> 12n
-    | Burn_farm_rewards(_)     -> 13n
-    | Buyback(_)               -> 14n
-    | Fa12_tok_bal_callback(_) -> 15n
-    | Fa2_tok_bal_callback(_)  -> 16n
+    | Set_baker_registry(_)    -> 7n
+    | Add_new_farm(_)          -> 8n
+    | Pause_farms(_)           -> 9n
+    | Deposit(_)               -> 10n
+    | Withdraw(_)              -> 11n
+    | Harvest(_)               -> 12n
+    | Burn_xtz_rewards(_)      -> 13n
+    | Burn_farm_rewards(_)     -> 14n
+    | Buyback(_)               -> 15n
+    | Fa12_tok_bal_callback(_) -> 16n
+    | Fa2_tok_bal_callback(_)  -> 17n
     end;
 
     (* Call lambda function *)

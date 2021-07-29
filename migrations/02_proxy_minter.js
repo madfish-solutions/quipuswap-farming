@@ -1,11 +1,7 @@
-const Farmland = require("../build/farmland.json");
-
 const { TezosToolkit } = require("@taquito/taquito");
 const { InMemorySigner } = require("@taquito/signer");
 
 const { migrate } = require("../scripts/helpers");
-
-const { confirmOperation } = require("../scripts/confirmation");
 
 const { alice, dev } = require("../scripts/sandbox/accounts");
 
@@ -28,7 +24,6 @@ module.exports = async (tezos) => {
 
   const zeroAddress = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";
 
-  proxyMinterStorage.farms = [Farmland["networks"][env.network]["farmland"]];
   proxyMinterStorage.qsgov.token = zeroAddress;
   proxyMinterStorage.qsgov.id = "0";
   proxyMinterStorage.admin = deployer;
@@ -41,13 +36,4 @@ module.exports = async (tezos) => {
   );
 
   console.log(`ProxyMinter: ${proxyMinterAddress}`);
-
-  const farmland = await tezos.contract.at(
-    Farmland["networks"][env.network]["farmland"]
-  );
-  const operation = await farmland.methods
-    .set_proxy_minter(proxyMinterAddress)
-    .send();
-
-  await confirmOperation(tezos, operation.hash);
 };

@@ -172,6 +172,24 @@ function set_proxy_minter(
     end
   } with (no_operations, s)
 
+(* Update baker registry address *)
+function set_baker_registry(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    case action of
+      Set_baker_registry(registry)      -> {
+        (* Check of admin permissions *)
+        only_admin(Tezos.sender, s.admin);
+
+        (* Update baker registry *)
+        s.baker_registry := registry;
+      }
+    | _                                 -> skip
+    end
+  } with (no_operations, s)
+
 (* Register new farm *)
 function add_new_farm(
   const action          : action_type;

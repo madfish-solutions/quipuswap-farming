@@ -4,13 +4,13 @@ const { compile, runMigrations } = require("./helpers");
 
 const argv = yargs
   .command(
-    "compile [contract] [format] [output_dir]",
+    "compile [contracts] [format] [output_dir]",
     "compiles the contract",
     {
-      contract: {
+      contracts: {
         description: "the contract to compile",
         alias: "c",
-        type: "string",
+        type: "array",
       },
       format: {
         description: "fromat of output file",
@@ -24,7 +24,9 @@ const argv = yargs
       },
     },
     async (argv) => {
-      compile(argv.contract, argv.format, argv.output_dir);
+      for (i in argv.contracts) {
+        compile(argv.contracts[i], argv.format, argv.output_dir);
+      }
     }
   )
   .command(

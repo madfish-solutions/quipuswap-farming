@@ -29,42 +29,46 @@ module.exports = [
   },
   {
     index: 7,
-    name: "add_new_farm",
+    name: "set_baker_registry",
   },
   {
     index: 8,
-    name: "pause_farms",
+    name: "add_new_farm",
   },
   {
     index: 9,
-    name: "deposit",
+    name: "pause_farms",
   },
   {
     index: 10,
-    name: "withdraw",
+    name: "deposit",
   },
   {
     index: 11,
-    name: "harvest",
+    name: "withdraw",
   },
   {
     index: 12,
-    name: "burn_xtz_rewards",
+    name: "harvest",
   },
   {
     index: 13,
-    name: "burn_farm_rewards",
+    name: "burn_xtz_rewards",
   },
   {
     index: 14,
-    name: "buyback",
+    name: "burn_farm_rewards",
   },
   {
     index: 15,
-    name: "fa12_tok_bal_callback",
+    name: "buyback",
   },
   {
     index: 16,
+    name: "fa12_tok_bal_callback",
+  },
+  {
+    index: 17,
     name: "fa2_tok_bal_callback",
   },
 ];

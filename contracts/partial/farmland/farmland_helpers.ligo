@@ -27,34 +27,34 @@ function get_user_info(
 
 (* Util to update rewards of the specified farm *)
 function update_farm_rewards(
-  var farm              : farm_type;
+  var _farm             : farm_type;
   var s                 : storage_type)
                         : storage_type is
   block {
     (* Check if farm is already started *)
-    if Tezos.level <= farm.start_block
+    if Tezos.level <= _farm.start_block
     then skip
     else {
       (* Check if some tokens is already staked *)
-      if farm.staked =/= 0n
+      if _farm.staked =/= 0n
       then {
         (* Calculate timedelta in blocks *)
-        const time_diff : nat = abs(Tezos.now - farm.upd);
+        const time_diff : nat = abs(Tezos.now - _farm.upd);
 
         (* Calculate new rewards to be minted for the farm *)
         const reward : nat = time_diff * s.qsgov_per_second *
-          precision * farm.alloc_point / s.total_alloc_point;
+          precision * _farm.alloc_point / s.total_alloc_point;
 
         (* Update farm's reward per share *)
-        farm.rps := farm.rps + reward / farm.staked;
+        _farm.rps := _farm.rps + reward / _farm.staked;
       }
       else skip;
 
       (* Update farm's update block *)
-      farm.upd := Tezos.now;
+      _farm.upd := Tezos.now;
 
       (* Save the farm to the storage *)
-      s.farms[farm.fid] := farm;
+      s.farms[_farm.fid] := _farm;
     };
   } with s
 
@@ -343,6 +343,6 @@ function reset_temp(
     s.temp.qs_pool := zero_address;
 
     s.temp.token.token := zero_address;
-    s.temp.token.id := 0ngi;
+    s.temp.token.id := 0n;
     s.temp.token.is_fa2 := False;
   } with s

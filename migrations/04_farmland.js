@@ -1,3 +1,7 @@
+const BakerRegistry = require("../build/baker_registry.json");
+const ProxyMinter = require("../build/proxy_minter.json");
+const Burner = require("../build/burner.json");
+
 const { execSync } = require("child_process");
 
 const { TezosToolkit } = require("@taquito/taquito");
@@ -33,8 +37,11 @@ module.exports = async (tezos) => {
   farmlandStorage.storage.qsgov_pool = zeroAddress;
   farmlandStorage.storage.admin = deployer;
   farmlandStorage.storage.pending_admin = zeroAddress;
-  farmlandStorage.storage.burner = zeroAddress;
-  farmlandStorage.storage.proxy_minter = zeroAddress;
+  farmlandStorage.storage.burner = Burner["networks"][env.network]["burner"];
+  farmlandStorage.storage.proxy_minter =
+    ProxyMinter["networks"][env.network]["proxy_minter"];
+  farmlandStorage.storage.baker_registry =
+    BakerRegistry["networks"][env.network]["baker_registry"];
 
   const farmlandAddress = await migrate(tezos, "farmland", farmlandStorage);
 
@@ -57,5 +64,22 @@ module.exports = async (tezos) => {
     });
 
     await confirmOperation(tezos, operation.hash);
+
+    console.log(
+      farmlandFunction.index +
+        1 +
+        ". " +
+        farmlandFunction.name +
+        " successfully installed."
+    );
   }
+
+  const proxyMinter = await tezos.contract.at(
+    ProxyMinter["networks"][env.network]["proxy_minter"]
+  );
+  const operation = await proxyMinter.methods
+    .register_farm(farmlandAddress, true)
+    .send();
+
+  await confirmOperation(tezos, operation.hash);
 };

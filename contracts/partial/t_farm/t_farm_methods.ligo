@@ -8,22 +8,19 @@
     const id : nat = case action of
       Set_admin(_)             -> 0n
     | Confirm_admin(_)         -> 1n
-    | Set_alloc_points(_)      -> 2n
-    | Set_fees(_)              -> 3n
-    | Set_reward_per_second(_) -> 4n
-    | Set_burner(_)            -> 5n
-    | Set_proxy_minter(_)      -> 6n
-    | Set_baker_registry(_)    -> 7n
-    | Add_new_farm(_)          -> 8n
-    | Pause_farms(_)           -> 9n
-    | Deposit(_)               -> 10n
-    | Withdraw(_)              -> 11n
-    | Harvest(_)               -> 12n
-    | Burn_xtz_rewards(_)      -> 13n
-    | Burn_farm_rewards(_)     -> 14n
-    | Buyback(_)               -> 15n
-    | Fa12_tok_bal_callback(_) -> 16n
-    | Fa2_tok_bal_callback(_)  -> 17n
+    | Set_fees(_)              -> 2n
+    | Set_burner(_)            -> 3n
+    | Set_baker_registry(_)    -> 4n
+    | Add_new_farm(_)          -> 5n
+    | Pause_farms(_)           -> 6n
+    | Deposit(_)               -> 7n
+    | Withdraw(_)              -> 8n
+    | Harvest(_)               -> 9n
+    | Burn_xtz_rewards(_)      -> 10n
+    | Burn_farm_rewards(_)     -> 11n
+    | Buyback(_)               -> 12n
+    | Fa12_tok_bal_callback(_) -> 13n
+    | Fa2_tok_bal_callback(_)  -> 14n
     end;
 
     (* Call lambda function *)

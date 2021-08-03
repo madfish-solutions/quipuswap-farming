@@ -26,8 +26,6 @@ module.exports = {
     proxy_minter: null,
     baker_registry: null,
     farms_count: "0",
-    qsgov_per_second: "0",
-    total_alloc_point: "0",
   },
   t_farm_lambdas: MichelsonMap.fromLiteral({}),
 };

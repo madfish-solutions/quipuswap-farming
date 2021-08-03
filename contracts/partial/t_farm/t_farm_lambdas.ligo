@@ -35,55 +35,6 @@ function confirm_admin(
     end
   } with (no_operations, s)
 
-(* Update allocation points for farms *)
-function set_alloc_points(
-  const action          : action_type;
-  var s                 : storage_type)
-                        : return_type is
-  block {
-    case action of
-      Set_alloc_points(params)          -> {
-        (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
-
-        (* Update allocation point for the specified farm *)
-        function set_alloc_point(
-          var s           : storage_type;
-          const params    : set_alloc_type)
-                          : storage_type is
-          block {
-            (* Retrieve farm from the storage *)
-            var farm : farm_type := get_farm(params.fid, s);
-
-            (* Check if need to update farm's rewards *)
-            if params.with_update
-            then s := update_farm_rewards(farm, s) (* Update farm's rewards *)
-            else skip;
-
-            (* Ensure total allocation point is correct *)
-            if s.total_alloc_point < farm.alloc_point
-            then failwith("TFarm/wrong-allocation-points-number")
-            else skip;
-
-            (* Update total allocation point *)
-            s.total_alloc_point := abs(
-              s.total_alloc_point - farm.alloc_point
-            ) + params.alloc_point;
-
-            (* Update farm's allocation point *)
-            farm.alloc_point := params.alloc_point;
-
-            (* Save farm to the storage *)
-            s.farms[params.fid] := farm;
-          } with s;
-
-        (* Update allocation points *)
-        s := List.fold(set_alloc_point, params, s);
-      }
-    | _                                 -> skip
-    end
-  } with (no_operations, s)
-
 (* Update fees for farms *)
 function set_fees(
   const action          : action_type;
@@ -118,24 +69,6 @@ function set_fees(
     end
   } with (no_operations, s)
 
-(* Update reward per second in QS GOV tokens *)
-function set_reward_per_second(
-  const action          : action_type;
-  var s                 : storage_type)
-                        : return_type is
-  block {
-    case action of
-      Set_reward_per_second(rps)        -> {
-        (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
-
-        (* Update reward per second *)
-        s.qsgov_per_second := rps;
-      }
-    | _                                 -> skip
-    end
-  } with (no_operations, s)
-
 (* Update burner address *)
 function set_burner(
   const action          : action_type;
@@ -149,24 +82,6 @@ function set_burner(
 
         (* Update burner *)
         s.burner := burner;
-      }
-    | _                                 -> skip
-    end
-  } with (no_operations, s)
-
-(* Update proxy minter address *)
-function set_proxy_minter(
-  const action          : action_type;
-  var s                 : storage_type)
-                        : return_type is
-  block {
-    case action of
-      Set_proxy_minter(proxy_minter)    -> {
-        (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
-
-        (* Update proxy minter *)
-        s.proxy_minter := proxy_minter;
       }
     | _                                 -> skip
     end
@@ -206,9 +121,6 @@ function add_new_farm(
         then failwith("TFarm/wrong-start-block")
         else skip;
 
-        (* Update total allocation point *)
-        s.total_alloc_point := s.total_alloc_point + params.alloc_point;
-
         (* Add new farm info to the storage *)
         s.farms[s.farms_count] := record [
           users_info        = (Map.empty : map(address, user_info_type));
@@ -222,7 +134,7 @@ function add_new_farm(
           current_delegated = zero_key_hash;
           current_candidate = zero_key_hash;
           paused            = params.paused;
-          alloc_point       = params.alloc_point;
+          reward_per_second = params.reward_per_second;
           rps               = 0n;
           staked            = 0n;
           start_block       = params.start_block;

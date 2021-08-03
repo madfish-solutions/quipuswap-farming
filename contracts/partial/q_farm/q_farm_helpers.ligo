@@ -39,7 +39,7 @@ function update_farm_rewards(
       (* Check if some tokens is already staked *)
       if _farm.staked =/= 0n
       then {
-        (* Calculate timedelta in blocks *)
+        (* Calculate timedelta in seconds *)
         const time_diff : nat = abs(Tezos.now - _farm.upd);
 
         (* Calculate new rewards to be minted for the farm *)
@@ -51,7 +51,7 @@ function update_farm_rewards(
       }
       else skip;
 
-      (* Update farm's update block *)
+      (* Update farm's update timestamp *)
       _farm.upd := Tezos.now;
 
       (* Save the farm to the storage *)
@@ -114,14 +114,14 @@ function claim_rewards(
       if harvest_fee > 0n
       then {
         (* Get sender's referrer *)
-        const receiver : address = case s.referrers[Tezos.sender] of
+        const fee_receiver : address = case s.referrers[Tezos.sender] of
           None           -> zero_address
         | Some(referrer) -> referrer
         end;
 
         (* Prepare params for QS GOV tokens minting to referrer *)
         const harvest_fee_mint_data : mint_gov_tok_type = record [
-          receiver = receiver;
+          receiver = fee_receiver;
           amount   = harvest_fee;
         ];
 

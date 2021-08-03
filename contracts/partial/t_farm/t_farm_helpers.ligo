@@ -39,40 +39,24 @@ function update_farm_rewards(
       (* Check if some tokens is already staked *)
       if _farm.staked =/= 0n
       then {
-        (* Calculate timedelta in blocks *)
+        (* Calculate timedelta in seconds *)
         const time_diff : nat = abs(Tezos.now - _farm.upd);
 
-        (* Calculate new rewards to be minted for the farm *)
-        const reward : nat = time_diff * s.qsgov_per_second *
-          precision * _farm.alloc_point / s.total_alloc_point;
+        (* Calculate new reward *)
+        const reward : nat = time_diff * _farm.reward_per_second * precision;
 
         (* Update farm's reward per share *)
         _farm.rps := _farm.rps + reward / _farm.staked;
       }
       else skip;
 
-      (* Update farm's update block *)
+      (* Update farm's update timestamp *)
       _farm.upd := Tezos.now;
 
       (* Save the farm to the storage *)
       s.farms[_farm.fid] := _farm;
     };
   } with s
-
-(* Util to get proxy minter's %mint_qsgov_tokens entrypoint *)
-function get_proxy_minter_mint_entrypoint(
-  const proxy_minter    : address)
-                        : contract(mint_gov_toks_type) is
-  case (
-    Tezos.get_entrypoint_opt("%mint_qsgov_tokens", proxy_minter)
-                        : option(contract(mint_gov_toks_type))
-  ) of
-    Some(contr) -> contr
-  | None        -> (
-    failwith("ProxyMinter/mint-qsgov-tokens-entrypoint-404")
-                        : contract(mint_gov_toks_type)
-  )
-  end
 
 (* Util to claim sender's rewards *)
 function claim_rewards(
@@ -102,6 +86,8 @@ function claim_rewards(
       (* Calculate harvest fee *)
       const harvest_fee : nat = abs(earned - actual_earned);
 
+      // TODO change mint to transfer of reward token
+
       (* Prepare params for QS GOV tokens minting to rewards receiver *)
       var mint_data : mint_gov_toks_type := list [
         record [
@@ -114,14 +100,14 @@ function claim_rewards(
       if harvest_fee > 0n
       then {
         (* Get sender's referrer *)
-        const receiver : address = case s.referrers[Tezos.sender] of
+        const fee_receiver : address = case s.referrers[Tezos.sender] of
           None           -> zero_address
         | Some(referrer) -> referrer
         end;
 
         (* Prepare params for QS GOV tokens minting to referrer *)
         const harvest_fee_mint_data : mint_gov_tok_type = record [
-          receiver = receiver;
+          receiver = fee_receiver;
           amount   = harvest_fee;
         ];
 
@@ -130,14 +116,11 @@ function claim_rewards(
       }
       else skip;
 
-      (* Operation for minting QS GOV tokens *)
-      op := Some(
-        Tezos.transaction(
-          mint_data,
-          0mutez,
-          get_proxy_minter_mint_entrypoint(s.proxy_minter)
-        )
-      );
+      (* Operation for transferring reward tokens *)
+      // TODO prepare transfer operation
+      // op := Some(
+      //   Tezos.transaction()
+      // );
     };
   } with (op, user)
 
@@ -160,6 +143,8 @@ function burn_rewards(
     else {
       (* Decrement pending reward *)
       user.earned := abs(user.earned - earned * precision);
+
+      // TODO change mint to transfer of reward token
 
       (* Empty list that will be filled with minting params *)
       var mint_data : mint_gov_toks_type := list [];
@@ -197,14 +182,11 @@ function burn_rewards(
         mint_data := dst # mint_data;
       };
 
-      (* Operation for minting QS GOV tokens *)
-      op := Some(
-        Tezos.transaction(
-          mint_data,
-          0mutez,
-          get_proxy_minter_mint_entrypoint(s.proxy_minter)
-        )
-      );
+      (* Operation for transferring reward tokens *)
+      // TODO prepare transfer operation
+      // op := Some(
+      //   Tezos.transaction()
+      // );
     };
   } with (op, user)
 

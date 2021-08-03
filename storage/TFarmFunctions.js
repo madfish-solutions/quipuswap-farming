@@ -9,66 +9,58 @@ module.exports = [
   },
   {
     index: 2,
-    name: "set_alloc_points",
-  },
-  {
-    index: 3,
     name: "set_fees",
   },
   {
-    index: 4,
-    name: "set_reward_per_second",
-  },
-  {
-    index: 5,
+    index: 3,
     name: "set_burner",
   },
   {
-    index: 6,
+    index: 4,
     name: "set_proxy_minter",
   },
   {
-    index: 7,
+    index: 5,
     name: "set_baker_registry",
   },
   {
-    index: 8,
+    index: 6,
     name: "add_new_farm",
   },
   {
-    index: 9,
+    index: 7,
     name: "pause_farms",
   },
   {
-    index: 10,
+    index: 8,
     name: "deposit",
   },
   {
-    index: 11,
+    index: 9,
     name: "withdraw",
   },
   {
-    index: 12,
+    index: 10,
     name: "harvest",
   },
   {
-    index: 13,
+    index: 11,
     name: "burn_xtz_rewards",
   },
   {
-    index: 14,
+    index: 12,
     name: "burn_farm_rewards",
   },
   {
-    index: 15,
+    index: 13,
     name: "buyback",
   },
   {
-    index: 16,
+    index: 14,
     name: "fa12_tok_bal_callback",
   },
   {
-    index: 17,
+    index: 15,
     name: "fa2_tok_bal_callback",
   },
 ];

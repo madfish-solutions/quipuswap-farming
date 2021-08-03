@@ -241,13 +241,13 @@ type action_type        is
 
 type return_type        is (list(operation) * storage_type)
 
-type farmland_func_type is (action_type * storage_type) -> return_type
+type q_farm_func_type   is (action_type * storage_type) -> return_type
 
 type full_storage_type  is [@layout:comb] record [
   (* Contract's real storage *)
   storage                 : storage_type;
   (* Lambdas *)
-  farmland_lambdas        : big_map(nat, farmland_func_type);
+  q_farm_lambdas          : big_map(nat, q_farm_func_type);
 ]
 
 type full_return_type   is (list(operation) * full_storage_type)
@@ -256,7 +256,7 @@ type setup_func_type    is [@layout:comb] record [
   (* Index (ID) of the function *)
   index                   : nat;
   (* Function's lambda *)
-  func                    : farmland_func_type;
+  func                    : q_farm_func_type;
 ]
 
 type full_action_type   is
@@ -265,6 +265,6 @@ type full_action_type   is
 
 [@inline] const default_qsgov_id : nat = 0n;
 
-[@inline] const farmland_methods_max_index : nat = 17n;
+[@inline] const q_farm_methods_max_index : nat = 17n;
 
 [@inline] const timelock_period : nat = 2_592_000n; (* 30 days *)

@@ -12,8 +12,8 @@ const { confirmOperation } = require("../scripts/confirmation");
 
 const { alice, dev } = require("../scripts/sandbox/accounts");
 
-const farmlandStorage = require("../storage/Farmland");
-const farmlandFunctions = require("../storage/FarmlandFunctions");
+const qFarmStorage = require("../storage/QFarm");
+const qFarmFunctions = require("../storage/QFarmFunctions");
 
 const env = require("../env");
 
@@ -32,30 +32,30 @@ module.exports = async (tezos) => {
 
   const zeroAddress = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";
 
-  farmlandStorage.storage.qsgov.token = zeroAddress;
-  farmlandStorage.storage.qsgov.id = "0";
-  farmlandStorage.storage.qsgov_pool = zeroAddress;
-  farmlandStorage.storage.admin = deployer;
-  farmlandStorage.storage.pending_admin = zeroAddress;
-  farmlandStorage.storage.burner = Burner["networks"][env.network]["burner"];
-  farmlandStorage.storage.proxy_minter =
+  qFarmStorage.storage.qsgov.token = zeroAddress;
+  qFarmStorage.storage.qsgov.id = "0";
+  qFarmStorage.storage.qsgov_pool = zeroAddress;
+  qFarmStorage.storage.admin = deployer;
+  qFarmStorage.storage.pending_admin = zeroAddress;
+  qFarmStorage.storage.burner = Burner["networks"][env.network]["burner"];
+  qFarmStorage.storage.proxy_minter =
     ProxyMinter["networks"][env.network]["proxy_minter"];
-  farmlandStorage.storage.baker_registry =
+  qFarmStorage.storage.baker_registry =
     BakerRegistry["networks"][env.network]["baker_registry"];
 
-  const farmlandAddress = await migrate(tezos, "farmland", farmlandStorage);
+  const qFarmAddress = await migrate(tezos, "q_farm", qFarmStorage);
 
-  console.log(`Farmland: ${farmlandAddress}`);
+  console.log(`QFarm: ${qFarmAddress}`);
 
   const ligo = getLigo(true);
 
-  for (farmlandFunction of farmlandFunctions) {
+  for (qFarmFunction of qFarmFunctions) {
     const stdout = execSync(
-      `${ligo} compile-parameter --michelson-format=json $PWD/contracts/main/farmland.ligo main 'Setup_func(record index=${farmlandFunction.index}n; func=${farmlandFunction.name}; end)'`,
+      `${ligo} compile-parameter --michelson-format=json $PWD/contracts/main/q_farm.ligo main 'Setup_func(record index=${qFarmFunction.index}n; func=${qFarmFunction.name}; end)'`,
       { maxBuffer: 1024 * 500 }
     );
     const operation = await tezos.contract.transfer({
-      to: farmlandAddress,
+      to: qFarmAddress,
       amount: 0,
       parameter: {
         entrypoint: "setup_func",
@@ -66,10 +66,10 @@ module.exports = async (tezos) => {
     await confirmOperation(tezos, operation.hash);
 
     console.log(
-      farmlandFunction.index +
+      qFarmFunction.index +
         1 +
         ". " +
-        farmlandFunction.name +
+        qFarmFunction.name +
         " successfully installed."
     );
   }
@@ -78,7 +78,7 @@ module.exports = async (tezos) => {
     ProxyMinter["networks"][env.network]["proxy_minter"]
   );
   const operation = await proxyMinter.methods
-    .register_farm(farmlandAddress, true)
+    .register_farm(qFarmAddress, true)
     .send();
 
   await confirmOperation(tezos, operation.hash);

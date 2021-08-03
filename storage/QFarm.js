@@ -29,5 +29,5 @@ module.exports = {
     qsgov_per_second: "0",
     total_alloc_point: "0",
   },
-  farmland_lambdas: MichelsonMap.fromLiteral({}),
+  q_farm_lambdas: MichelsonMap.fromLiteral({}),
 };

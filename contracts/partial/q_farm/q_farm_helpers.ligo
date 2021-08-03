@@ -5,7 +5,7 @@ function get_farm(
                         : farm_type is
   (* Get farm info *)
   case s.farms[fid] of
-    None       -> (failwith("Farmland/farm-not-set") : farm_type)
+    None       -> (failwith("QFarm/farm-not-set") : farm_type)
   | Some(farm) -> farm
   end
 
@@ -208,7 +208,7 @@ function burn_rewards(
     };
   } with (op, user)
 
-(* Util to get farmland's %fa12_tok_bal_callback entrypoint *)
+(* Util to get q_farm's %fa12_tok_bal_callback entrypoint *)
 function get_fa12_tok_bal_callback_entrypoint(
   const this            : address)
                         : contract(nat) is
@@ -218,12 +218,12 @@ function get_fa12_tok_bal_callback_entrypoint(
   ) of
     Some(contr) -> contr
   | None        -> (
-    failwith("Farmland/fa12-bal-tok-callback-entrypoint-404")
+    failwith("QFarm/fa12-bal-tok-callback-entrypoint-404")
                         : contract(nat)
   )
   end
 
-(* Util to get farmland's %fa2_tok_bal_callback entrypoint *)
+(* Util to get q_farm's %fa2_tok_bal_callback entrypoint *)
 function get_fa2_tok_bal_callback_entrypoint(
   const this            : address)
                         : contract(list(bal_response_type)) is
@@ -233,7 +233,7 @@ function get_fa2_tok_bal_callback_entrypoint(
   ) of
     Some(contr) -> contr
   | None        -> (
-    failwith("Farmland/fa2-tok-bal-callback-entrypoint-404")
+    failwith("QFarm/fa2-tok-bal-callback-entrypoint-404")
                         : contract(list(bal_response_type))
   )
   end

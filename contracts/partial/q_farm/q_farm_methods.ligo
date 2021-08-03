@@ -1,5 +1,5 @@
-(* Call farmland lambda function *)
-[@inline] function call_farmland(
+(* Call q_farm lambda function *)
+[@inline] function call_q_farm(
   const action          : action_type;
   var s                 : full_storage_type)
                         : full_return_type is
@@ -27,29 +27,29 @@
     end;
 
     (* Call lambda function *)
-    const res : return_type = case s.farmland_lambdas[id] of
+    const res : return_type = case s.q_farm_lambdas[id] of
       Some(f) -> f(action, s.storage)
-    | None    -> (failwith("Farmland/func-not-set") : return_type)
+    | None    -> (failwith("QFarm/func-not-set") : return_type)
     end;
 
-    (* Update farmland storage *)
+    (* Update q_farm storage *)
     s.storage := res.1;
   } with (res.0, s)
 
-(* Setup lambda function by index for farmland contract *)
+(* Setup lambda function by index for q_farm contract *)
 [@inline] function setup_func(
   const params          : setup_func_type;
   var s                 : full_storage_type)
                         : full_return_type is
   block {
     (* Check lambda's index *)
-    if params.index > farmland_methods_max_index
-    then failwith("Farmland/wrong-index")
+    if params.index > q_farm_methods_max_index
+    then failwith("QFarm/wrong-index")
     else skip;
 
     (* Setup lambda function *)
-    case s.farmland_lambdas[params.index] of
-      Some(_) -> failwith("Farmland/func-set")
-    | None     -> s.farmland_lambdas[params.index] := params.func
+    case s.q_farm_lambdas[params.index] of
+      Some(_) -> failwith("QFarm/func-set")
+    | None     -> s.q_farm_lambdas[params.index] := params.func
     end;
   } with (no_operations, s)

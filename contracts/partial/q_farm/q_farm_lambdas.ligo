@@ -62,7 +62,7 @@ function set_alloc_points(
 
             (* Ensure total allocation point is correct *)
             if s.total_alloc_point < farm.alloc_point
-            then failwith("Farmland/wrong-allocation-points-number")
+            then failwith("QFarm/wrong-allocation-points-number")
             else skip;
 
             (* Update total allocation point *)
@@ -203,7 +203,7 @@ function add_new_farm(
 
         (* Ensure start block is correct *)
         if params.start_block < Tezos.level
-        then failwith("Farmland/wrong-start-block")
+        then failwith("QFarm/wrong-start-block")
         else skip;
 
         (* Update total allocation point *)
@@ -286,7 +286,7 @@ function deposit(
         var farm : farm_type := get_farm(params.fid, s);
 
         if farm.paused
-        then failwith("Farmland/farm-is-paused")
+        then failwith("QFarm/farm-is-paused")
         else skip;
 
         (* Update rewards for the farm *)
@@ -316,7 +316,7 @@ function deposit(
           None      -> skip
         | Some(referrer) -> {
           if referrer = Tezos.sender
-          then failwith("Farmland/can-not-refer-yourself")
+          then failwith("QFarm/can-not-refer-yourself")
           else s.referrers[Tezos.sender] := referrer;
         }
         end;
@@ -427,7 +427,7 @@ function withdraw(
 
         (* Check the correct withdrawal quantity *)
         if value > user.staked
-        then failwith("Farmland/balance-too-low")
+        then failwith("QFarm/balance-too-low")
         else skip;
 
         (* Actual value for withdrawal (with calculated withdrawal fee) *)
@@ -590,7 +590,7 @@ function harvest(
         (* Check timelock (if timelock is finished - claim rewards) *)
         if abs(Tezos.now - user.last_staked) >= farm.timelock.duration
         then res := claim_rewards(user, farm, params.rewards_receiver, s)
-        else failwith("Farmland/timelock-is-not-finished");
+        else failwith("QFarm/timelock-is-not-finished");
 
         (* Update user's info *)
         user := res.1;
@@ -633,7 +633,7 @@ function burn_xtz_rewards(
 
         (* Ensure farm is LP token farm *)
         if not farm.stake_params.is_lp_staked_token
-        then failwith("Farmland/not-LP-farm")
+        then failwith("QFarm/not-LP-farm")
         else skip;
 
         (* Prepare operation for withdrawing bakers rewards from the LP *)
@@ -799,7 +799,7 @@ function buyback(
 
         (* Check the correct withdrawal quantity *)
         if value > user.staked
-        then failwith("Farmland/balance-too-low")
+        then failwith("QFarm/balance-too-low")
         else skip;
 
         (* Update users's reward *)

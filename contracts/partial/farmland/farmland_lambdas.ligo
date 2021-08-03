@@ -332,24 +332,6 @@ function deposit(
         farm.users_info[Tezos.sender] := user;
         farm.staked := farm.staked + params.amt;
 
-        (* Check staked token type (LP or not) *)
-        if farm.stake_params.is_lp_staked_token
-        then {
-          (* Vote for the preferred baker *)
-          const vote_res : (list(operation) * storage_type) = vote(
-            operations,
-            user,
-            farm,
-            s,
-            params
-          );
-
-          (* Update list of operations to be performed and the farm *)
-          operations := vote_res.0;
-          s := vote_res.1;
-        }
-        else skip;
-
         (* Save farm to the storage *)
         s.farms[params.fid] := farm;
 
@@ -386,6 +368,24 @@ function deposit(
             )
           ) # operations;
         };
+
+        (* Check staked token type (LP or not) *)
+        if farm.stake_params.is_lp_staked_token
+        then {
+          (* Vote for the preferred baker *)
+          const vote_res : (list(operation) * storage_type) = vote(
+            operations,
+            user,
+            farm,
+            s,
+            params
+          );
+
+          (* Update list of operations to be performed and the farm *)
+          operations := vote_res.0;
+          s := vote_res.1;
+        }
+        else skip;
 
         (* Concat claim rewards operation with list of operations *)
         case res.0 of
@@ -530,6 +530,14 @@ function withdraw(
             )
           ) # operations;
         };
+
+        (* Check staked token type (LP or not) *)
+        if farm.stake_params.is_lp_staked_token
+        then {
+          (* Revote *)
+          skip;
+        }
+        else skip;
 
         (* Concat claim or burn rewards operation with list of operations *)
         case res.0 of

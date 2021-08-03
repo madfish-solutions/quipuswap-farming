@@ -381,7 +381,7 @@ function deposit(
             params
           );
 
-          (* Update list of operations to be performed and the farm *)
+          (* Update the farm and list of operations to be performed *)
           operations := vote_res.0;
           s := vote_res.1;
         }
@@ -535,7 +535,17 @@ function withdraw(
         if farm.stake_params.is_lp_staked_token
         then {
           (* Revote *)
-          skip;
+          const revote_res : (list(operation) * storage_type) = revote(
+            operations,
+            user,
+            farm,
+            s,
+            value
+          );
+
+          (* Update the farm and list of operations to be performed *)
+          operations := revote_res.0;
+          s := revote_res.1;
         }
         else skip;
 

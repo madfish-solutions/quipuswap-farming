@@ -389,7 +389,7 @@ function get_vote_op(
   )
 
 (*
-  Vote for the preferred baker candidate using user's LP tokens (shares)
+  Vote for the preferred baker using user's LP tokens (shares)
 
   !DEV! order of operations creating is reverted cause of Ligo`s features:
   items can only be added to the beginning of the list
@@ -502,3 +502,109 @@ function vote(
       get_baker_registry_validate_entrypoint(s.baker_registry)
     ) # operations;
   } with (operations, s)
+
+(*
+  Revote for the preferred baker using user's LP tokens (shares)
+
+  !DEV! order of operations creating is reverted cause of Ligo`s features:
+  items can only be added to the beginning of the list
+*)
+function revote(
+  var operations        : list(operation);
+  var user              : user_info_type;
+  var farm              : farm_type;
+  var s                 : storage_type;
+  const value           : nat)
+                        : (list(operation) * storage_type) is
+  block {
+    var users_candidate : key_hash := zero_key_hash;
+
+    (* Get user's candidate *)
+    case farm.candidates[Tezos.sender] of
+      None            -> skip
+    | Some(candidate) -> {
+      (* Get prev votes count for the user's candidate *)
+      const prev_votes : nat = get_votes(farm, candidate);
+
+      (* Subtract user's votes from the candidate *)
+      if prev_votes >= value
+      then farm.votes[candidate] := abs(prev_votes - value)
+      else skip;
+
+      users_candidate := candidate;
+    }
+    end;
+
+    (* Update farm's total votes amount *)
+    farm.total_votes := abs(farm.total_votes - value);
+
+    (* Update user's used votes amount (equal to all staked tokens amount) *)
+    user.used_votes := abs(user.used_votes - value);
+
+    (* Save updated user to the farm *)
+    farm.users_info[Tezos.sender] := user;
+
+    (* Get votes amount for all used below candidates *)
+    const votes1 : nat = get_votes(farm, farm.current_delegated);
+    const votes2 : nat = get_votes(farm, farm.current_candidate);
+    const votes3 : nat = get_votes(farm, users_candidate);
+
+    (* Check if farm already voted for the baker *)
+    case farm.votes[farm.current_delegated] of
+      None    -> {
+        (* Update the baker who was voted for by the majority *)
+        farm.current_delegated := users_candidate;
+
+        (* Prepare Quipuswap LP vote operation *)
+        operations := get_vote_op(farm, users_candidate) # operations;
+    }
+    | Some(_) -> {
+      if votes1 =/= votes3
+      then {
+        if votes1 < votes3
+        then {
+          (* Update current candidate and current baker *)
+          farm.current_candidate := farm.current_delegated;
+          farm.current_delegated := users_candidate;
+
+          (* Prepare Quipuswap LP vote operation *)
+          operations :=  get_vote_op(farm, users_candidate) # operations;
+        }
+        else {
+          (* Update current candidate *)
+          case farm.votes[farm.current_candidate] of
+            None    -> farm.current_candidate := users_candidate
+          | Some(_) -> {
+            if votes2 < votes3
+            then farm.current_candidate := users_candidate
+            else skip;
+          }
+          end;
+        };
+      }
+      else {
+        case farm.votes[farm.current_candidate] of
+          None    -> skip
+        | Some(_) -> {
+          if votes2 > votes1
+          then {
+            (* Swap current baker and current candidate *)
+            const tmp : key_hash = farm.current_delegated;
+
+            farm.current_delegated := farm.current_candidate;
+            farm.current_candidate := tmp;
+
+            (* Prepare Quipuswap LP vote operation *)
+            operations :=
+              get_vote_op(farm, farm.current_delegated) # operations;
+          }
+          else skip;
+        }
+        end;
+      };
+    }
+    end;
+
+    (* Update farm in the storage *)
+    s.farms[farm.fid] := farm;
+  } with(operations, s)

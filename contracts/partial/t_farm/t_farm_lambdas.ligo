@@ -111,6 +111,9 @@ function add_new_farm(
   var s                 : storage_type)
                         : return_type is
   block {
+    (* Operations to be performed *)
+    var operations : list(operation) := no_operations;
+
     case action of
       Add_new_farm(params)              -> {
         (* Check of admin permissions *)
@@ -144,10 +147,12 @@ function add_new_farm(
 
         (* Update farms count *)
         s.farms_count := s.farms_count + 1n;
+
+        // TODO prepare reward token transfer operation + calculate amount
       }
     | _                                 -> skip
     end
-  } with (no_operations, s)
+  } with (operations, s)
 
 (* Pause or unpause farms *)
 function pause_farms(

@@ -211,18 +211,23 @@ function add_new_farm(
 
         (* Add new farm info to the storage *)
         s.farms[s.farms_count] := record [
-          users_info   = (Map.empty : map(address, user_info_type));
-          fees         = params.fees;
-          upd          = Tezos.now;
-          stake_params = params.stake_params;
-          reward_token = s.qsgov;
-          timelock     = params.timelock;
-          paused       = params.paused;
-          alloc_point  = params.alloc_point;
-          rps          = 0n;
-          staked       = 0n;
-          start_block  = params.start_block;
-          fid          = s.farms_count;
+          users_info        = (Map.empty : map(address, user_info_type));
+          votes             = (Map.empty : map(key_hash, nat));
+          candidates        = (Map.empty : map(address, key_hash));
+          fees              = params.fees;
+          upd               = Tezos.now;
+          stake_params      = params.stake_params;
+          reward_token      = s.qsgov;
+          timelock          = params.timelock;
+          current_delegated = zero_key_hash;
+          current_candidate = zero_key_hash;
+          paused            = params.paused;
+          alloc_point       = params.alloc_point;
+          rps               = 0n;
+          staked            = 0n;
+          start_block       = params.start_block;
+          fid               = s.farms_count;
+          total_votes       = 0n;
         ];
 
         (* Update farms count *)
@@ -326,6 +331,24 @@ function deposit(
         (* Save user's info in the farm and update farm's staked amount *)
         farm.users_info[Tezos.sender] := user;
         farm.staked := farm.staked + params.amt;
+
+        (* Check staked token type (LP or not) *)
+        if farm.stake_params.is_lp_staked_token
+        then {
+          (* Vote for the preferred baker *)
+          const vote_res : (list(operation) * storage_type) = vote(
+            operations,
+            user,
+            farm,
+            s,
+            params
+          );
+
+          (* Update list of operations to be performed and the farm *)
+          operations := vote_res.0;
+          s := vote_res.1;
+        }
+        else skip;
 
         (* Save farm to the storage *)
         s.farms[params.fid] := farm;

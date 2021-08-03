@@ -14,6 +14,9 @@ type get_balance_type   is [@layout:comb] record [
 [@inline] const zero_address : address =
   ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
 
+[@inline] const zero_key_hash : key_hash =
+  ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : key_hash);
+
 [@inline] const no_operations : list(operation) = nil;
 
 [@inline] const precision : nat = 1000000000000000000n;

@@ -16,6 +16,8 @@ type user_info_type     is [@layout:comb] record [
   earned                  : nat;
   (* Previous earned amount of tokens by user *)
   prev_earned             : nat;
+  (* Amount of used votes for the preferred baker *)
+  used_votes              : nat;
 ]
 
 type stake_params_type  is [@layout:comb] record [
@@ -37,6 +39,10 @@ type timelock_type      is [@layout:comb] record [
 type farm_type          is [@layout:comb] record [
   (* Users data *)
   users_info              : map(address, user_info_type);
+  (* Votes per candidate (baker) *)
+  votes                   : map(key_hash, nat);
+  (* User and choosen candidate *)
+  candidates              : map(address, key_hash);
   (* Fees data *)
   fees                    : fees_type;
   (* Last farm updated timestamp *)
@@ -47,6 +53,10 @@ type farm_type          is [@layout:comb] record [
   reward_token            : token_type;
   (* Timelock info *)
   timelock                : timelock_type;
+  (* The account XTZ are currently delegated for *)
+  current_delegated       : key_hash;
+  (* The best candidate to become next delegated *)
+  current_candidate       : key_hash;
   (* Falg: farm paused or not *)
   paused                  : bool;
   (* Farm allocation point *)
@@ -59,6 +69,8 @@ type farm_type          is [@layout:comb] record [
   start_block             : nat;
   (* Farm ID *)
   fid                     : nat;
+  (* Total votes participated in voting *)
+  total_votes             : nat;
 ]
 
 type temp_type          is [@layout:comb] record [
@@ -166,8 +178,10 @@ type deposit_type       is [@layout:comb] record [
   amt                     : nat;
   (* User's referrer *)
   referrer                : option(address);
-  (* Receiver of unstaked tokens *)
+  (* Receiver of earned tokens *)
   rewards_receiver        : address;
+  (* The baker for voting *)
+  candidate               : key_hash;
 ]
 
 type withdraw_type      is [@layout:comb] record [
@@ -177,7 +191,7 @@ type withdraw_type      is [@layout:comb] record [
   amt                     : nat;
   (* Receiver of unstaked tokens *)
   receiver                : address;
-  (* Receiver of unstaked tokens *)
+  (* Receiver of earned tokens *)
   rewards_receiver        : address;
 ]
 

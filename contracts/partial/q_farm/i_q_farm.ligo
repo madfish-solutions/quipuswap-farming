@@ -263,8 +263,4 @@ type full_action_type   is
   Use                     of action_type
 | Setup_func              of setup_func_type
 
-[@inline] const default_qsgov_id : nat = 0n;
-
 [@inline] const q_farm_methods_max_index : nat = 17n;
-
-[@inline] const timelock_period : nat = 2_592_000n; (* 30 days *)

@@ -18,9 +18,7 @@
     | Harvest(_)               -> 9n
     | Burn_xtz_rewards(_)      -> 10n
     | Claim_farm_rewards(_)    -> 11n
-    | Buyback(_)               -> 12n
-    | Fa12_tok_bal_callback(_) -> 13n
-    | Fa2_tok_bal_callback(_)  -> 14n
+    | Withdraw_farm_depo(_)    -> 12n
     end;
 
     (* Call lambda function *)

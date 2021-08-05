@@ -75,22 +75,11 @@ type farm_type          is [@layout:comb] record [
   total_votes             : nat;
 ]
 
-type temp_type          is [@layout:comb] record [
-  (* Min amount of QS GOV swapped tokens *)
-  min_qs_gov_output       : nat;
-  (* Token that will be swapped for XTZ *)
-  token                   : token_type;
-  (* Quipuswap liquidity pool for tokens exchange *)
-  qs_pool                 : address;
-]
-
 type storage_type       is [@layout:comb] record [
   (* Farms data *)
   farms                   : big_map(fid_type, farm_type);
   (* Referrers *)
   referrers               : big_map(address, address);
-  (* Temp data that stores data between inter contract calls and callbacks *)
-  temp                    : temp_type;
   (* QS GOV token *)
   qsgov                   : token_type;
   (* QS GOV token liquidity pool on Quipuswap DEX *)
@@ -191,18 +180,12 @@ type burn_xtz_rew_type  is nat (* Farm ID *)
 
 type claim_farm_type    is nat (* Farm ID *)
 
-type buyback_type       is [@layout:comb] record [
+type withdraw_farm_type is [@layout:comb] record [
   (* Farm ID *)
   fid                     : fid_type;
   (* Amount of tokens to withdraw *)
   amt                     : nat;
-  (* Min amount of QS GOV tokens from swap *)
-  min_qs_gov_output       : nat;
 ]
-
-type fa12_bal_type      is nat
-
-type fa2_bal_type       is list(bal_response_type)
 
 type action_type        is
   Set_admin               of set_admin_type
@@ -217,9 +200,7 @@ type action_type        is
 | Harvest                 of harvest_type
 | Burn_xtz_rewards        of burn_xtz_rew_type
 | Claim_farm_rewards      of claim_farm_type
-| Buyback                 of buyback_type
-| Fa12_tok_bal_callback   of fa12_bal_type
-| Fa2_tok_bal_callback    of fa2_bal_type
+| Withdraw_farm_depo      of withdraw_farm_type
 
 type return_type        is (list(operation) * storage_type)
 
@@ -245,8 +226,4 @@ type full_action_type   is
   Use                     of action_type
 | Setup_func              of setup_func_type
 
-[@inline] const default_qsgov_id : nat = 0n;
-
-[@inline] const t_farm_methods_max_index : nat = 14n;
-
-[@inline] const timelock_period : nat = 2_592_000n; (* 30 days *)
+[@inline] const t_farm_methods_max_index : nat = 12n;

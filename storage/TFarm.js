@@ -6,15 +6,6 @@ module.exports = {
   storage: {
     farms: MichelsonMap.fromLiteral({}),
     referrers: MichelsonMap.fromLiteral({}),
-    temp: {
-      min_qs_gov_output: "0",
-      token: {
-        token: zero_address,
-        id: "0",
-        is_fa2: false,
-      },
-      qs_pool: zero_address,
-    },
     qsgov: {
       token: null,
       id: "0",

@@ -49,14 +49,6 @@ module.exports = [
   },
   {
     index: 12,
-    name: "buyback",
-  },
-  {
-    index: 13,
-    name: "fa12_tok_bal_callback",
-  },
-  {
-    index: 14,
-    name: "fa2_tok_bal_callback",
+    name: "withdraw_farm_depo",
   },
 ];

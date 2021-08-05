@@ -257,12 +257,19 @@ function deposit(
           abs(user.staked * farm.rps - user.prev_earned);
 
         (* Prepare claiming params *)
-        var res : (option(operation) * user_info_type) :=
-          ((None : option(operation)), user);
+        var res : (list(operation) * user_info_type) := (operations, user);
 
         (* Check timelock (if timelock is finished - claim rewards) *)
         if abs(Tezos.now - user.last_staked) >= farm.timelock.duration
-        then res := claim_rewards(user, farm, params.rewards_receiver, s)
+        then {
+          res := claim_rewards(
+            user,
+            operations,
+            farm,
+            params.rewards_receiver,
+            s
+          )
+        }
         else skip;
 
         (* Update user's info *)
@@ -344,11 +351,8 @@ function deposit(
         }
         else skip;
 
-        (* Concat claim rewards operation with list of operations *)
-        case res.0 of
-          Some(op) -> operations := op # operations
-        | None     -> skip
-        end;
+        (* Concat claim rewards operations with list of operations *)
+        operations := concat_op_lists(res.0, operations);
       }
     | _                                 -> skip
     end
@@ -395,14 +399,22 @@ function withdraw(
           abs(user.staked * farm.rps - user.prev_earned);
 
         (* Prepare claiming params *)
-        var res : (option(operation) * user_info_type) :=
-          ((None : option(operation)), user);
+        var res : (list(operation) * user_info_type) := (operations, user);
 
         (* Check timelock (if timelock is finished - claim, else - burn) *)
         if abs(Tezos.now - user.last_staked) >= farm.timelock.duration
-        then res := claim_rewards(user, farm, params.rewards_receiver, s)
+        then {
+          res := claim_rewards(
+            user,
+            operations,
+            farm,
+            params.rewards_receiver,
+            s
+          )
+        }
         else { (* Burn reward and stake withdrawal fee from farm's name *)
-          res := burn_rewards(user, False, s); (* Burn QS GOV tokens *)
+          (* Burn reward tokens *)
+          res := burn_rewards(user, operations, False, s);
 
           (* Calculate actual value including withdrawal fee *)
           actual_value := value *
@@ -506,11 +518,8 @@ function withdraw(
         }
         else skip;
 
-        (* Concat claim or burn rewards operation with list of operations *)
-        case res.0 of
-          Some(op) -> operations := op # operations
-        | None     -> skip
-        end;
+        (* Concat claim or burn rewards operations with list of operations *)
+        operations := concat_op_lists(res.0, operations);
       }
     | _                                 -> skip
     end
@@ -541,22 +550,26 @@ function harvest(
           abs(user.staked * farm.rps - user.prev_earned);
 
         (* Prepare claiming params *)
-        var res : (option(operation) * user_info_type) :=
-          ((None : option(operation)), user);
+        var res : (list(operation) * user_info_type) := (operations, user);
 
         (* Check timelock (if timelock is finished - claim rewards) *)
         if abs(Tezos.now - user.last_staked) >= farm.timelock.duration
-        then res := claim_rewards(user, farm, params.rewards_receiver, s)
+        then {
+          res := claim_rewards(
+            user,
+            operations,
+            farm,
+            params.rewards_receiver,
+            s
+          )
+        }
         else failwith("TFarm/timelock-is-not-finished");
 
         (* Update user's info *)
         user := res.1;
 
-        (* Concat claim rewards operation with list of operations *)
-        case res.0 of
-          Some(op) -> operations := op # operations
-        | None     -> skip
-        end;
+        (* Concat claim rewards operations with list of operations *)
+        operations := concat_op_lists(res.0, operations);
 
         (* Update user's earned tokens amount *)
         user.prev_earned := user.staked * farm.rps;
@@ -628,18 +641,15 @@ function burn_farm_rewards(
         user.earned := user.earned +
           abs(user.staked * farm.rps - user.prev_earned);
 
-        (* Burn QS GOV tokens (farm's rewards) *)
-        var res : (option(operation) * user_info_type) :=
-          burn_rewards(user, True, s);
+        (* Burn reward tokens (farm's rewards) *)
+        var res : (list(operation) * user_info_type) :=
+          burn_rewards(user, operations, True, s);
 
         (* Update user's info *)
         user := res.1;
 
-        (* Concat burn QS GOV tokens operation with list of operations *)
-        case res.0 of
-          Some(op) -> operations := op # operations
-        | None     -> skip
-        end;
+        (* Concat burn reward tokens operation with list of operations *)
+        operations := res.0;
 
         (* Update user's earned tokens amount *)
         user.prev_earned := user.staked * farm.rps;

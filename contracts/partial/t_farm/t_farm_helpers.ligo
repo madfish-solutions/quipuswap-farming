@@ -61,16 +61,14 @@ function update_farm_rewards(
 (* Util to claim sender's rewards *)
 function claim_rewards(
   var user              : user_info_type;
+  var operations        : list(operation);
   const farm            : farm_type;
   const receiver        : address;
   const s               : storage_type)
-                        : (option(operation) * user_info_type) is
+                        : (list(operation) * user_info_type) is
   block {
     (* Calculate user's real reward *)
     const earned : nat = user.earned / precision;
-
-    (* Operation to be performed *)
-    var op : option(operation) := (None : option(operation));
 
     (* Ensure sufficient reward *)
     if earned = 0n
@@ -86,56 +84,86 @@ function claim_rewards(
       (* Calculate harvest fee *)
       const harvest_fee : nat = abs(earned - actual_earned);
 
-      // TODO change mint to transfer of reward token
+      (* Get sender's referrer *)
+      const fee_receiver : address = case s.referrers[Tezos.sender] of
+        None           -> zero_address
+      | Some(referrer) -> referrer
+      end;
 
-      (* Prepare params for QS GOV tokens minting to rewards receiver *)
-      var mint_data : mint_gov_toks_type := list [
-        record [
-          receiver = receiver;
-          amount   = actual_earned;
-        ]
-      ];
-
-      (* Ensure harvest fee is greater than 0 *)
-      if harvest_fee > 0n
+      if farm.reward_token.is_fa2
       then {
-        (* Get sender's referrer *)
-        const fee_receiver : address = case s.referrers[Tezos.sender] of
-          None           -> zero_address
-        | Some(referrer) -> referrer
-        end;
-
-        (* Prepare params for QS GOV tokens minting to referrer *)
-        const harvest_fee_mint_data : mint_gov_tok_type = record [
-          receiver = fee_receiver;
-          amount   = harvest_fee;
+        (* Prepare FA2 token transfer params *)
+        const dst1 : transfer_dst_type = record [
+          to_      = receiver;
+          token_id = farm.reward_token.id;
+          amount   = actual_earned;
         ];
+        var fa2_transfer_param : fa2_send_type := record [
+          from_ = Tezos.self_address;
+          txs   = (list [] : list(transfer_dst_type));
+        ];
+        var txs : list(transfer_dst_type) := list [];
 
-        (* Update mint params *)
-        mint_data := harvest_fee_mint_data # mint_data;
+        (* Ensure harvest fee is greater than 0 *)
+        if harvest_fee > 0n
+        then {
+          const dst2 : transfer_dst_type = record [
+            to_      = fee_receiver;
+            token_id = farm.reward_token.id;
+            amount   = harvest_fee;
+          ];
+
+          txs := dst2 # txs;
+        }
+        else skip;
+
+        txs := dst1 # txs;
+
+        fa2_transfer_param.txs := txs;
+
+        (* Prepare FA2 transfer operation for earned tokens *)
+        operations := Tezos.transaction(
+          FA2_transfer_type(list [fa2_transfer_param]),
+          0mutez,
+          get_fa2_token_transfer_entrypoint(farm.reward_token.token)
+        ) # operations;
       }
-      else skip;
+      else {
+        (* Ensure harvest fee is greater than 0 *)
+        if harvest_fee > 0n
+        then {
+          (* Prepare FA1.2 transfer operation for harvest fee tokens *)
+          operations := Tezos.transaction(
+            FA12_transfer_type(
+              Tezos.self_address,
+              (fee_receiver, harvest_fee)
+            ),
+            0mutez,
+            get_fa12_token_transfer_entrypoint(farm.reward_token.token)
+          ) # operations;
+        }
+        else skip;
 
-      (* Operation for transferring reward tokens *)
-      // TODO prepare transfer operation
-      // op := Some(
-      //   Tezos.transaction()
-      // );
+        (* Prepare FA1.2 transfer operation for earned tokens *)
+        operations := Tezos.transaction(
+          FA12_transfer_type(Tezos.self_address, (receiver, actual_earned)),
+          0mutez,
+          get_fa12_token_transfer_entrypoint(farm.reward_token.token)
+        ) # operations;
+      };
     };
-  } with (op, user)
+  } with (operations, user)
 
 (* Util to burn user's rewards *)
 function burn_rewards(
   var user              : user_info_type;
+  var operations        : list(operation);
   const pay_burn_reward : bool;
   const s               : storage_type)
-                        : (option(operation) * user_info_type) is
+                        : (list(operation) * user_info_type) is
   block {
     (* Calculate user's real reward *)
     const earned : nat = user.earned / precision;
-
-    (* Operation to be performed *)
-    var op : option(operation) := (None : option(operation));
 
     (* Ensure sufficient reward *)
     if earned = 0n
@@ -181,14 +209,8 @@ function burn_rewards(
         (* Update list with data about minting *)
         mint_data := dst # mint_data;
       };
-
-      (* Operation for transferring reward tokens *)
-      // TODO prepare transfer operation
-      // op := Some(
-      //   Tezos.transaction()
-      // );
     };
-  } with (op, user)
+  } with (operations, user)
 
 (* Util to get t_farm's %fa12_tok_bal_callback entrypoint *)
 function get_fa12_tok_bal_callback_entrypoint(

@@ -17,7 +17,7 @@
     | Withdraw(_)              -> 8n
     | Harvest(_)               -> 9n
     | Burn_xtz_rewards(_)      -> 10n
-    | Burn_farm_rewards(_)     -> 11n
+    | Claim_farm_rewards(_)    -> 11n
     | Buyback(_)               -> 12n
     | Fa12_tok_bal_callback(_) -> 13n
     | Fa2_tok_bal_callback(_)  -> 14n

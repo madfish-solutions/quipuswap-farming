@@ -401,7 +401,10 @@ function withdraw(
         (* Prepare claiming params *)
         var res : (list(operation) * user_info_type) := (operations, user);
 
-        (* Check timelock (if timelock is finished - claim, else - burn) *)
+        (*
+          Check timelock (if timelock is finished - claim,
+          else - trasfer to admin)
+        *)
         if abs(Tezos.now - user.last_staked) >= farm.timelock.duration
         then {
           res := claim_rewards(
@@ -414,7 +417,7 @@ function withdraw(
         }
         else { (* Burn reward and stake withdrawal fee from farm's name *)
           (* Burn reward tokens *)
-          res := burn_rewards(user, operations, False, s);
+          res := transfer_rewards_to_admin(user, operations, farm, s.admin);
 
           (* Calculate actual value including withdrawal fee *)
           actual_value := value *
@@ -617,8 +620,8 @@ function burn_xtz_rewards(
     end
   } with (operations, s)
 
-(* Burn farm rewards *)
-function burn_farm_rewards(
+(* Claim farm rewards (only for admin) *)
+function claim_farm_rewards(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
@@ -627,7 +630,10 @@ function burn_farm_rewards(
     var operations : list(operation) := no_operations;
 
     case action of
-      Burn_farm_rewards(fid)            -> {
+      Claim_farm_rewards(fid)           -> {
+        (* Check of admin permissions *)
+        only_admin(Tezos.sender, s.admin);
+
         (* Retrieve farm from the storage *)
         var farm : farm_type := get_farm(fid, s);
 
@@ -641,9 +647,9 @@ function burn_farm_rewards(
         user.earned := user.earned +
           abs(user.staked * farm.rps - user.prev_earned);
 
-        (* Burn reward tokens (farm's rewards) *)
+        (* Claim reward tokens (farm's rewards) and transfer them to admin *)
         var res : (list(operation) * user_info_type) :=
-          burn_rewards(user, operations, True, s);
+          transfer_rewards_to_admin(user, operations, farm, s.admin);
 
         (* Update user's info *)
         user := res.1;
@@ -731,7 +737,7 @@ function fa2_tok_bal_callback(
   staked. Swap all divested/staked tokens to QS GOV. Burn all outputted QS GOV
   tokens
 
-  !DEV! order of operations creating is fully reverted cause of Ligo`s
+  !DEV! order of operations creating is fully reverted cause of Ligo's
   features: items can only be added to the beginning of the list
 *)
 function buyback(

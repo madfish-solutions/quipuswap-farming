@@ -45,7 +45,7 @@ module.exports = [
   },
   {
     index: 11,
-    name: "burn_farm_rewards",
+    name: "claim_farm_rewards",
   },
   {
     index: 12,

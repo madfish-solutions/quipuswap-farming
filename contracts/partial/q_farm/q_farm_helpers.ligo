@@ -241,7 +241,7 @@ function get_fa2_tok_bal_callback_entrypoint(
 (*
   Swap tokens to XTZ. XTZ swap for QS GOV tokens and burn all of them.
 
-  !DEV! order of operations creating is fully reverted cause of Ligo`s
+  !DEV! order of operations creating is fully reverted cause of Ligo's
   features: items can only be added to the beginning of the list
 *)
 function swap(
@@ -391,7 +391,7 @@ function get_vote_op(
 (*
   Vote for the preferred baker using user's LP tokens (shares)
 
-  !DEV! order of operations creating is reverted cause of Ligo`s features:
+  !DEV! order of operations creating is reverted cause of Ligo's features:
   items can only be added to the beginning of the list
 *)
 function vote(
@@ -506,7 +506,7 @@ function vote(
 (*
   Revote for the preferred baker using user's LP tokens (shares)
 
-  !DEV! order of operations creating is reverted cause of Ligo`s features:
+  !DEV! order of operations creating is reverted cause of Ligo's features:
   items can only be added to the beginning of the list
 *)
 function revote(

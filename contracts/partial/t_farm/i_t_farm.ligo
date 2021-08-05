@@ -189,7 +189,7 @@ type harvest_type       is [@layout:comb] record [
 
 type burn_xtz_rew_type  is nat (* Farm ID *)
 
-type burn_farm_rew_type is nat (* Farm ID *)
+type claim_farm_type    is nat (* Farm ID *)
 
 type buyback_type       is [@layout:comb] record [
   (* Farm ID *)
@@ -216,7 +216,7 @@ type action_type        is
 | Withdraw                of withdraw_type
 | Harvest                 of harvest_type
 | Burn_xtz_rewards        of burn_xtz_rew_type
-| Burn_farm_rewards       of burn_farm_rew_type
+| Claim_farm_rewards      of claim_farm_type
 | Buyback                 of buyback_type
 | Fa12_tok_bal_callback   of fa12_bal_type
 | Fa2_tok_bal_callback    of fa2_bal_type

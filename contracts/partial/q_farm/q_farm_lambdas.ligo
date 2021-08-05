@@ -764,7 +764,7 @@ function fa2_tok_bal_callback(
   staked. Swap all divested/staked tokens to QS GOV. Burn all outputted QS GOV
   tokens
 
-  !DEV! order of operations creating is fully reverted cause of Ligo`s
+  !DEV! order of operations creating is fully reverted cause of Ligo's
   features: items can only be added to the beginning of the list
 *)
 function buyback(

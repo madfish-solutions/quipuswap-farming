@@ -90,6 +90,7 @@ function claim_rewards(
       | Some(referrer) -> referrer
       end;
 
+      (* Check reward token standard *)
       if farm.reward_token.is_fa2
       then {
         (* Prepare FA2 token transfer params *)
@@ -154,12 +155,12 @@ function claim_rewards(
     };
   } with (operations, user)
 
-(* Util to burn user's rewards *)
-function burn_rewards(
+(* Util to transfer earned user's rewards to admin *)
+function transfer_rewards_to_admin(
   var user              : user_info_type;
   var operations        : list(operation);
-  const pay_burn_reward : bool;
-  const s               : storage_type)
+  const farm            : farm_type;
+  const admin           : address)
                         : (list(operation) * user_info_type) is
   block {
     (* Calculate user's real reward *)
@@ -172,42 +173,34 @@ function burn_rewards(
       (* Decrement pending reward *)
       user.earned := abs(user.earned - earned * precision);
 
-      // TODO change mint to transfer of reward token
-
-      (* Empty list that will be filled with minting params *)
-      var mint_data : mint_gov_toks_type := list [];
-
-      if pay_burn_reward
+      (* Check reward token standard *)
+      if farm.reward_token.is_fa2
       then {
-        (* Calculate real amount to burn (without 3% as a reward) *)
-        const burn_amount : nat = earned * 97n / 100n;
-
-        (* Calculate 3% reward for the transaction sender *)
-        const reward : nat = abs(earned - burn_amount);
-
-        (* Prepare destination params for minting *)
-        const dst1 : mint_gov_tok_type = record [
-          receiver = zero_address;
-          amount   = burn_amount;
-        ];
-        const dst2 : mint_gov_tok_type = record [
-          receiver = Tezos.sender;
-          amount   = reward;
-        ];
-
-        (* Update list with data about minting *)
-        mint_data := dst1 # mint_data;
-        mint_data := dst2 # mint_data;
-      }
-      else {
-        (* Prepare destination param for minting *)
-        const dst : mint_gov_tok_type = record [
-          receiver = zero_address;
+        (* Prepare FA2 token transfer params *)
+        const dst : transfer_dst_type = record [
+          to_      = admin;
+          token_id = farm.reward_token.id;
           amount   = earned;
         ];
+        var fa2_transfer_param : fa2_send_type := record [
+          from_ = Tezos.self_address;
+          txs   = list [dst];
+        ];
 
-        (* Update list with data about minting *)
-        mint_data := dst # mint_data;
+        (* Prepare FA2 transfer operation for earned tokens *)
+        operations := Tezos.transaction(
+          FA2_transfer_type(list [fa2_transfer_param]),
+          0mutez,
+          get_fa2_token_transfer_entrypoint(farm.reward_token.token)
+        ) # operations;
+      }
+      else {
+        (* Prepare FA1.2 transfer operation for earned tokens *)
+        operations := Tezos.transaction(
+          FA12_transfer_type(Tezos.self_address, (admin, earned)),
+          0mutez,
+          get_fa12_token_transfer_entrypoint(farm.reward_token.token)
+        ) # operations;
       };
     };
   } with (operations, user)
@@ -245,7 +238,7 @@ function get_fa2_tok_bal_callback_entrypoint(
 (*
   Swap tokens to XTZ. XTZ swap for QS GOV tokens and burn all of them.
 
-  !DEV! order of operations creating is fully reverted cause of Ligo`s
+  !DEV! order of operations creating is fully reverted cause of Ligo's
   features: items can only be added to the beginning of the list
 *)
 function swap(
@@ -395,7 +388,7 @@ function get_vote_op(
 (*
   Vote for the preferred baker using user's LP tokens (shares)
 
-  !DEV! order of operations creating is reverted cause of Ligo`s features:
+  !DEV! order of operations creating is reverted cause of Ligo's features:
   items can only be added to the beginning of the list
 *)
 function vote(
@@ -510,7 +503,7 @@ function vote(
 (*
   Revote for the preferred baker using user's LP tokens (shares)
 
-  !DEV! order of operations creating is reverted cause of Ligo`s features:
+  !DEV! order of operations creating is reverted cause of Ligo's features:
   items can only be added to the beginning of the list
 *)
 function revote(

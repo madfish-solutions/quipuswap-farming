@@ -65,8 +65,8 @@ type farm_type          is [@layout:comb] record [
   rps                     : nat;
   (* Total count of staked tokens in the farm *)
   staked                  : nat;
-  (* Farm start block *)
-  start_block             : nat;
+  (* Farm start timestamp *)
+  start_time              : timestamp;
   (* Farm ID *)
   fid                     : nat;
   (* Total votes participated in voting *)
@@ -158,8 +158,8 @@ type add_new_farm_type  is [@layout:comb] record [
   timelock                : timelock_type;
   (* Farm allocation point *)
   alloc_point             : nat;
-  (* Farm start block *)
-  start_block             : nat;
+  (* Farm start timestamp *)
+  start_time              : timestamp;
 ]
 
 type pause_farm_type    is [@layout:comb] record [

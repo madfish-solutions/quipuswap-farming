@@ -33,7 +33,7 @@ function update_farm_rewards(
                         : storage_type is
   block {
     (* Check if farm is already started *)
-    if Tezos.level <= _farm.start_block
+    if Tezos.now <= _farm.start_time
     then skip
     else {
       (* Check if some tokens is already staked *)

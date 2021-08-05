@@ -119,9 +119,14 @@ function add_new_farm(
         (* Check of admin permissions *)
         only_admin(Tezos.sender, s.admin);
 
-        (* Ensure start block is correct *)
-        if params.start_block < Tezos.level
+        (* Ensure start timestamp is correct *)
+        if params.start_time < Tezos.now
         then failwith("TFarm/wrong-start-block")
+        else skip;
+
+        (* Ensure end timestamp is correct *)
+        if params.end_time <= params.start_time
+        then failwith("TFarm/wrong-end-block")
         else skip;
 
         (* Add new farm info to the storage *)
@@ -132,7 +137,7 @@ function add_new_farm(
           fees              = params.fees;
           upd               = Tezos.now;
           stake_params      = params.stake_params;
-          reward_token      = s.qsgov;
+          reward_token      = params.reward_token;
           timelock          = params.timelock;
           current_delegated = zero_key_hash;
           current_candidate = zero_key_hash;
@@ -140,7 +145,8 @@ function add_new_farm(
           reward_per_second = params.reward_per_second;
           rps               = 0n;
           staked            = 0n;
-          start_block       = params.start_block;
+          start_time        = params.start_time;
+          end_time          = params.end_time;
           fid               = s.farms_count;
           total_votes       = 0n;
         ];
@@ -148,7 +154,41 @@ function add_new_farm(
         (* Update farms count *)
         s.farms_count := s.farms_count + 1n;
 
-        // TODO prepare reward token transfer operation + calculate amount
+        (* Calculate reward tokens amount to be transferred to contract *)
+        const rew_amt : nat = abs(params.end_time - params.start_time) *
+          params.reward_per_second;
+
+        (* Check reward token standard *)
+        if params.reward_token.is_fa2
+        then {
+          (* Prepare FA2 token transfer params *)
+          const dst : transfer_dst_type = record [
+            to_      = Tezos.self_address;
+            token_id = params.reward_token.id;
+            amount   = rew_amt;
+          ];
+          const fa2_transfer_param : fa2_send_type = record [
+            from_ = Tezos.sender;
+            txs   = list [dst];
+          ];
+
+          (* Prepare FA2 transfer operation for reward token *)
+          operations := Tezos.transaction(
+            FA2_transfer_type(list [fa2_transfer_param]),
+            0mutez,
+            get_fa2_token_transfer_entrypoint(
+              params.reward_token.token
+            )
+          ) # operations;
+        }
+        else {
+          (* Prepare FA1.2 transfer operation for reward token *)
+          operations := Tezos.transaction(
+            FA12_transfer_type(Tezos.sender, (Tezos.self_address, rew_amt)),
+            0mutez,
+            get_fa12_token_transfer_entrypoint(params.reward_token.token)
+          ) # operations;
+        };
       }
     | _                                 -> skip
     end

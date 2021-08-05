@@ -17,50 +17,46 @@ module.exports = [
   },
   {
     index: 4,
-    name: "set_proxy_minter",
-  },
-  {
-    index: 5,
     name: "set_baker_registry",
   },
   {
-    index: 6,
+    index: 5,
     name: "add_new_farm",
   },
   {
-    index: 7,
+    index: 6,
     name: "pause_farms",
   },
   {
-    index: 8,
+    index: 7,
     name: "deposit",
   },
   {
-    index: 9,
+    index: 8,
     name: "withdraw",
   },
   {
-    index: 10,
+    index: 9,
     name: "harvest",
   },
   {
-    index: 11,
+    index: 10,
     name: "burn_xtz_rewards",
   },
   {
-    index: 12,
+    index: 11,
     name: "burn_farm_rewards",
   },
   {
-    index: 13,
+    index: 12,
     name: "buyback",
   },
   {
-    index: 14,
+    index: 13,
     name: "fa12_tok_bal_callback",
   },
   {
-    index: 15,
+    index: 14,
     name: "fa2_tok_bal_callback",
   },
 ];

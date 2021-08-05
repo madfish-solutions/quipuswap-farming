@@ -201,9 +201,9 @@ function add_new_farm(
         (* Check of admin permissions *)
         only_admin(Tezos.sender, s.admin);
 
-        (* Ensure start block is correct *)
-        if params.start_block < Tezos.level
-        then failwith("QFarm/wrong-start-block")
+        (* Ensure start timestamp is correct *)
+        if params.start_time < Tezos.now
+        then failwith("QFarm/wrong-start-time")
         else skip;
 
         (* Update total allocation point *)
@@ -225,7 +225,7 @@ function add_new_farm(
           alloc_point       = params.alloc_point;
           rps               = 0n;
           staked            = 0n;
-          start_block       = params.start_block;
+          start_time        = params.start_time;
           fid               = s.farms_count;
           total_votes       = 0n;
         ];

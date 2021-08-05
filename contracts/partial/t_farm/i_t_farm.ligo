@@ -65,8 +65,10 @@ type farm_type          is [@layout:comb] record [
   rps                     : nat;
   (* Total count of staked tokens in the farm *)
   staked                  : nat;
-  (* Farm start block *)
-  start_block             : nat;
+  (* Farm start timestamp *)
+  start_time              : timestamp;
+  (* Farm end timestamp *)
+  end_time                : timestamp;
   (* Farm ID *)
   fid                     : nat;
   (* Total votes participated in voting *)
@@ -127,6 +129,8 @@ type add_new_farm_type  is [@layout:comb] record [
   fees                    : fees_type;
   (* Staking params *)
   stake_params            : stake_params_type;
+  (* Token in which rewards are paid *)
+  reward_token            : token_type;
   (* Flag: LP token staked or not *)
   is_lp_farm              : bool;
   (* Flag: staked tok standard is FA2 or not *)
@@ -135,8 +139,10 @@ type add_new_farm_type  is [@layout:comb] record [
   paused                  : bool;
   (* Timelock info *)
   timelock                : timelock_type;
-  (* Farm start block *)
-  start_block             : nat;
+  (* Farm start timestamp *)
+  start_time              : timestamp;
+  (* Farm end timestamp *)
+  end_time                : timestamp;
   (* Reward per second *)
   reward_per_second       : nat;
 ]

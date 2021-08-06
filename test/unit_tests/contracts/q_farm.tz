@@ -1,0 +1,358 @@
+{ parameter
+    (or (pair %setup_func
+           (nat %index)
+           (lambda %func
+              (pair (or (or (or (or (or (pair %add_new_farm
+                                           (pair %fees (nat %harvest_fee) (nat %withdrawal_fee))
+                                           (pair (pair %stake_params
+                                                    (pair %staked_token (address %token) (pair (nat %id) (bool %is_fa2)))
+                                                    (pair (bool %is_lp_staked_token)
+                                                          (pair (pair %token (address %token) (pair (nat %id) (bool %is_fa2))) (address %qs_pool))))
+                                                 (pair (bool %is_lp_farm)
+                                                       (pair (bool %is_fa2_token)
+                                                             (pair (bool %paused)
+                                                                   (pair (nat %timelock) (pair (nat %alloc_point) (timestamp %start_time))))))))
+                                        (nat %burn_farm_rewards))
+                                    (or (nat %burn_xtz_rewards)
+                                        (pair %buyback (nat %fid) (pair (nat %amt) (nat %min_qs_gov_output)))))
+                                (or (or (unit %confirm_admin)
+                                        (pair %deposit
+                                           (nat %fid)
+                                           (pair (nat %amt)
+                                                 (pair (option %referrer address)
+                                                       (pair (address %rewards_receiver) (key_hash %candidate))))))
+                                    (or (nat %fa12_tok_bal_callback)
+                                        (list %fa2_tok_bal_callback
+                                           (pair (pair %request (address %owner) (nat %token_id)) (nat %balance))))))
+                            (or (or (or (pair %harvest (nat %fid) (address %rewards_receiver))
+                                        (list %pause_farms (pair (nat %fid) (bool %pause))))
+                                    (or (address %set_admin)
+                                        (list %set_alloc_points
+                                           (pair (nat %fid) (pair (nat %alloc_point) (bool %with_update))))))
+                                (or (or (address %set_baker_registry) (address %set_burner))
+                                    (or (list %set_fees
+                                           (pair (nat %fid) (pair %fees (nat %harvest_fee) (nat %withdrawal_fee))))
+                                        (address %set_proxy_minter)))))
+                        (or (nat %set_reward_per_second)
+                            (pair %withdraw
+                               (nat %fid)
+                               (pair (nat %amt) (pair (address %receiver) (address %rewards_receiver))))))
+                    (pair (big_map %farms
+                             nat
+                             (pair (map %users_info
+                                      address
+                                      (pair (timestamp %last_staked)
+                                            (pair (nat %staked) (pair (nat %earned) (pair (nat %prev_earned) (nat %used_votes))))))
+                                   (pair (map %votes key_hash nat)
+                                         (pair (map %candidates address key_hash)
+                                               (pair (pair %fees (nat %harvest_fee) (nat %withdrawal_fee))
+                                                     (pair (timestamp %upd)
+                                                           (pair (pair %stake_params
+                                                                    (pair %staked_token (address %token) (pair (nat %id) (bool %is_fa2)))
+                                                                    (pair (bool %is_lp_staked_token)
+                                                                          (pair (pair %token (address %token) (pair (nat %id) (bool %is_fa2))) (address %qs_pool))))
+                                                                 (pair (pair %reward_token (address %token) (pair (nat %id) (bool %is_fa2)))
+                                                                       (pair (nat %timelock)
+                                                                             (pair (key_hash %current_delegated)
+                                                                                   (pair (key_hash %current_candidate)
+                                                                                         (pair (bool %paused)
+                                                                                               (pair (nat %alloc_point)
+                                                                                                     (pair (nat %rps)
+                                                                                                           (pair (nat %staked) (pair (timestamp %start_time) (pair (nat %fid) (nat %total_votes))))))))))))))))))
+                          (pair (big_map %referrers address address)
+                                (pair (pair %temp
+                                         (nat %min_qs_gov_output)
+                                         (pair (pair %token (address %token) (pair (nat %id) (bool %is_fa2))) (address %qs_pool)))
+                                      (pair (pair %qsgov (address %token) (pair (nat %id) (bool %is_fa2)))
+                                            (pair (address %qsgov_pool)
+                                                  (pair (address %admin)
+                                                        (pair (address %pending_admin)
+                                                              (pair (address %burner)
+                                                                    (pair (address %proxy_minter)
+                                                                          (pair (address %baker_registry)
+                                                                                (pair (nat %farms_count) (pair (nat %qsgov_per_second) (nat %total_alloc_point))))))))))))))
+              (pair (list operation)
+                    (pair (big_map %farms
+                             nat
+                             (pair (map %users_info
+                                      address
+                                      (pair (timestamp %last_staked)
+                                            (pair (nat %staked) (pair (nat %earned) (pair (nat %prev_earned) (nat %used_votes))))))
+                                   (pair (map %votes key_hash nat)
+                                         (pair (map %candidates address key_hash)
+                                               (pair (pair %fees (nat %harvest_fee) (nat %withdrawal_fee))
+                                                     (pair (timestamp %upd)
+                                                           (pair (pair %stake_params
+                                                                    (pair %staked_token (address %token) (pair (nat %id) (bool %is_fa2)))
+                                                                    (pair (bool %is_lp_staked_token)
+                                                                          (pair (pair %token (address %token) (pair (nat %id) (bool %is_fa2))) (address %qs_pool))))
+                                                                 (pair (pair %reward_token (address %token) (pair (nat %id) (bool %is_fa2)))
+                                                                       (pair (nat %timelock)
+                                                                             (pair (key_hash %current_delegated)
+                                                                                   (pair (key_hash %current_candidate)
+                                                                                         (pair (bool %paused)
+                                                                                               (pair (nat %alloc_point)
+                                                                                                     (pair (nat %rps)
+                                                                                                           (pair (nat %staked) (pair (timestamp %start_time) (pair (nat %fid) (nat %total_votes))))))))))))))))))
+                          (pair (big_map %referrers address address)
+                                (pair (pair %temp
+                                         (nat %min_qs_gov_output)
+                                         (pair (pair %token (address %token) (pair (nat %id) (bool %is_fa2))) (address %qs_pool)))
+                                      (pair (pair %qsgov (address %token) (pair (nat %id) (bool %is_fa2)))
+                                            (pair (address %qsgov_pool)
+                                                  (pair (address %admin)
+                                                        (pair (address %pending_admin)
+                                                              (pair (address %burner)
+                                                                    (pair (address %proxy_minter)
+                                                                          (pair (address %baker_registry)
+                                                                                (pair (nat %farms_count) (pair (nat %qsgov_per_second) (nat %total_alloc_point))))))))))))))))
+        (or %use
+           (or (or (or (or (pair %add_new_farm
+                              (pair %fees (nat %harvest_fee) (nat %withdrawal_fee))
+                              (pair (pair %stake_params
+                                       (pair %staked_token (address %token) (pair (nat %id) (bool %is_fa2)))
+                                       (pair (bool %is_lp_staked_token)
+                                             (pair (pair %token (address %token) (pair (nat %id) (bool %is_fa2))) (address %qs_pool))))
+                                    (pair (bool %is_lp_farm)
+                                          (pair (bool %is_fa2_token)
+                                                (pair (bool %paused)
+                                                      (pair (nat %timelock) (pair (nat %alloc_point) (timestamp %start_time))))))))
+                           (nat %burn_farm_rewards))
+                       (or (nat %burn_xtz_rewards)
+                           (pair %buyback (nat %fid) (pair (nat %amt) (nat %min_qs_gov_output)))))
+                   (or (or (unit %confirm_admin)
+                           (pair %deposit
+                              (nat %fid)
+                              (pair (nat %amt)
+                                    (pair (option %referrer address)
+                                          (pair (address %rewards_receiver) (key_hash %candidate))))))
+                       (or (nat %fa12_tok_bal_callback)
+                           (list %fa2_tok_bal_callback
+                              (pair (pair %request (address %owner) (nat %token_id)) (nat %balance))))))
+               (or (or (or (pair %harvest (nat %fid) (address %rewards_receiver))
+                           (list %pause_farms (pair (nat %fid) (bool %pause))))
+                       (or (address %set_admin)
+                           (list %set_alloc_points
+                              (pair (nat %fid) (pair (nat %alloc_point) (bool %with_update))))))
+                   (or (or (address %set_baker_registry) (address %set_burner))
+                       (or (list %set_fees
+                              (pair (nat %fid) (pair %fees (nat %harvest_fee) (nat %withdrawal_fee))))
+                           (address %set_proxy_minter)))))
+           (or (nat %set_reward_per_second)
+               (pair %withdraw
+                  (nat %fid)
+                  (pair (nat %amt) (pair (address %receiver) (address %rewards_receiver))))))) ;
+  storage
+    (pair (pair %storage
+             (big_map %farms
+                nat
+                (pair (map %users_info
+                         address
+                         (pair (timestamp %last_staked)
+                               (pair (nat %staked) (pair (nat %earned) (pair (nat %prev_earned) (nat %used_votes))))))
+                      (pair (map %votes key_hash nat)
+                            (pair (map %candidates address key_hash)
+                                  (pair (pair %fees (nat %harvest_fee) (nat %withdrawal_fee))
+                                        (pair (timestamp %upd)
+                                              (pair (pair %stake_params
+                                                       (pair %staked_token (address %token) (pair (nat %id) (bool %is_fa2)))
+                                                       (pair (bool %is_lp_staked_token)
+                                                             (pair (pair %token (address %token) (pair (nat %id) (bool %is_fa2))) (address %qs_pool))))
+                                                    (pair (pair %reward_token (address %token) (pair (nat %id) (bool %is_fa2)))
+                                                          (pair (nat %timelock)
+                                                                (pair (key_hash %current_delegated)
+                                                                      (pair (key_hash %current_candidate)
+                                                                            (pair (bool %paused)
+                                                                                  (pair (nat %alloc_point)
+                                                                                        (pair (nat %rps)
+                                                                                              (pair (nat %staked) (pair (timestamp %start_time) (pair (nat %fid) (nat %total_votes))))))))))))))))))
+             (pair (big_map %referrers address address)
+                   (pair (pair %temp
+                            (nat %min_qs_gov_output)
+                            (pair (pair %token (address %token) (pair (nat %id) (bool %is_fa2))) (address %qs_pool)))
+                         (pair (pair %qsgov (address %token) (pair (nat %id) (bool %is_fa2)))
+                               (pair (address %qsgov_pool)
+                                     (pair (address %admin)
+                                           (pair (address %pending_admin)
+                                                 (pair (address %burner)
+                                                       (pair (address %proxy_minter)
+                                                             (pair (address %baker_registry)
+                                                                   (pair (nat %farms_count) (pair (nat %qsgov_per_second) (nat %total_alloc_point)))))))))))))
+          (big_map %q_farm_lambdas
+             nat
+             (lambda
+                (pair (or (or (or (or (or (pair %add_new_farm
+                                             (pair %fees (nat %harvest_fee) (nat %withdrawal_fee))
+                                             (pair (pair %stake_params
+                                                      (pair %staked_token (address %token) (pair (nat %id) (bool %is_fa2)))
+                                                      (pair (bool %is_lp_staked_token)
+                                                            (pair (pair %token (address %token) (pair (nat %id) (bool %is_fa2))) (address %qs_pool))))
+                                                   (pair (bool %is_lp_farm)
+                                                         (pair (bool %is_fa2_token)
+                                                               (pair (bool %paused)
+                                                                     (pair (nat %timelock) (pair (nat %alloc_point) (timestamp %start_time))))))))
+                                          (nat %burn_farm_rewards))
+                                      (or (nat %burn_xtz_rewards)
+                                          (pair %buyback (nat %fid) (pair (nat %amt) (nat %min_qs_gov_output)))))
+                                  (or (or (unit %confirm_admin)
+                                          (pair %deposit
+                                             (nat %fid)
+                                             (pair (nat %amt)
+                                                   (pair (option %referrer address)
+                                                         (pair (address %rewards_receiver) (key_hash %candidate))))))
+                                      (or (nat %fa12_tok_bal_callback)
+                                          (list %fa2_tok_bal_callback
+                                             (pair (pair %request (address %owner) (nat %token_id)) (nat %balance))))))
+                              (or (or (or (pair %harvest (nat %fid) (address %rewards_receiver))
+                                          (list %pause_farms (pair (nat %fid) (bool %pause))))
+                                      (or (address %set_admin)
+                                          (list %set_alloc_points
+                                             (pair (nat %fid) (pair (nat %alloc_point) (bool %with_update))))))
+                                  (or (or (address %set_baker_registry) (address %set_burner))
+                                      (or (list %set_fees
+                                             (pair (nat %fid) (pair %fees (nat %harvest_fee) (nat %withdrawal_fee))))
+                                          (address %set_proxy_minter)))))
+                          (or (nat %set_reward_per_second)
+                              (pair %withdraw
+                                 (nat %fid)
+                                 (pair (nat %amt) (pair (address %receiver) (address %rewards_receiver))))))
+                      (pair (big_map %farms
+                               nat
+                               (pair (map %users_info
+                                        address
+                                        (pair (timestamp %last_staked)
+                                              (pair (nat %staked) (pair (nat %earned) (pair (nat %prev_earned) (nat %used_votes))))))
+                                     (pair (map %votes key_hash nat)
+                                           (pair (map %candidates address key_hash)
+                                                 (pair (pair %fees (nat %harvest_fee) (nat %withdrawal_fee))
+                                                       (pair (timestamp %upd)
+                                                             (pair (pair %stake_params
+                                                                      (pair %staked_token (address %token) (pair (nat %id) (bool %is_fa2)))
+                                                                      (pair (bool %is_lp_staked_token)
+                                                                            (pair (pair %token (address %token) (pair (nat %id) (bool %is_fa2))) (address %qs_pool))))
+                                                                   (pair (pair %reward_token (address %token) (pair (nat %id) (bool %is_fa2)))
+                                                                         (pair (nat %timelock)
+                                                                               (pair (key_hash %current_delegated)
+                                                                                     (pair (key_hash %current_candidate)
+                                                                                           (pair (bool %paused)
+                                                                                                 (pair (nat %alloc_point)
+                                                                                                       (pair (nat %rps)
+                                                                                                             (pair (nat %staked) (pair (timestamp %start_time) (pair (nat %fid) (nat %total_votes))))))))))))))))))
+                            (pair (big_map %referrers address address)
+                                  (pair (pair %temp
+                                           (nat %min_qs_gov_output)
+                                           (pair (pair %token (address %token) (pair (nat %id) (bool %is_fa2))) (address %qs_pool)))
+                                        (pair (pair %qsgov (address %token) (pair (nat %id) (bool %is_fa2)))
+                                              (pair (address %qsgov_pool)
+                                                    (pair (address %admin)
+                                                          (pair (address %pending_admin)
+                                                                (pair (address %burner)
+                                                                      (pair (address %proxy_minter)
+                                                                            (pair (address %baker_registry)
+                                                                                  (pair (nat %farms_count) (pair (nat %qsgov_per_second) (nat %total_alloc_point))))))))))))))
+                (pair (list operation)
+                      (pair (big_map %farms
+                               nat
+                               (pair (map %users_info
+                                        address
+                                        (pair (timestamp %last_staked)
+                                              (pair (nat %staked) (pair (nat %earned) (pair (nat %prev_earned) (nat %used_votes))))))
+                                     (pair (map %votes key_hash nat)
+                                           (pair (map %candidates address key_hash)
+                                                 (pair (pair %fees (nat %harvest_fee) (nat %withdrawal_fee))
+                                                       (pair (timestamp %upd)
+                                                             (pair (pair %stake_params
+                                                                      (pair %staked_token (address %token) (pair (nat %id) (bool %is_fa2)))
+                                                                      (pair (bool %is_lp_staked_token)
+                                                                            (pair (pair %token (address %token) (pair (nat %id) (bool %is_fa2))) (address %qs_pool))))
+                                                                   (pair (pair %reward_token (address %token) (pair (nat %id) (bool %is_fa2)))
+                                                                         (pair (nat %timelock)
+                                                                               (pair (key_hash %current_delegated)
+                                                                                     (pair (key_hash %current_candidate)
+                                                                                           (pair (bool %paused)
+                                                                                                 (pair (nat %alloc_point)
+                                                                                                       (pair (nat %rps)
+                                                                                                             (pair (nat %staked) (pair (timestamp %start_time) (pair (nat %fid) (nat %total_votes))))))))))))))))))
+                            (pair (big_map %referrers address address)
+                                  (pair (pair %temp
+                                           (nat %min_qs_gov_output)
+                                           (pair (pair %token (address %token) (pair (nat %id) (bool %is_fa2))) (address %qs_pool)))
+                                        (pair (pair %qsgov (address %token) (pair (nat %id) (bool %is_fa2)))
+                                              (pair (address %qsgov_pool)
+                                                    (pair (address %admin)
+                                                          (pair (address %pending_admin)
+                                                                (pair (address %burner)
+                                                                      (pair (address %proxy_minter)
+                                                                            (pair (address %baker_registry)
+                                                                                  (pair (nat %farms_count) (pair (nat %qsgov_per_second) (nat %total_alloc_point))))))))))))))))) ;
+  code { UNPAIR ;
+         IF_LEFT
+           { PUSH nat 17 ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             CAR ;
+             COMPARE ;
+             GT ;
+             IF { PUSH string "QFarm/wrong-index" ; FAILWITH } {} ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             CDR ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             CAR ;
+             GET ;
+             IF_NONE
+               { SWAP ;
+                 DUP ;
+                 CDR ;
+                 DUP 3 ;
+                 CDR ;
+                 DIG 3 ;
+                 CAR ;
+                 SWAP ;
+                 SOME ;
+                 SWAP ;
+                 UPDATE ;
+                 UPDATE 2 }
+               { DROP 2 ; PUSH string "QFarm/func-set" ; FAILWITH } ;
+             NIL operation ;
+             PAIR }
+           { SWAP ;
+             DUP ;
+             DUG 2 ;
+             CDR ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             IF_LEFT
+               { IF_LEFT
+                   { IF_LEFT
+                       { IF_LEFT
+                           { IF_LEFT { DROP ; PUSH nat 8 } { DROP ; PUSH nat 14 } }
+                           { IF_LEFT { DROP ; PUSH nat 13 } { DROP ; PUSH nat 15 } } }
+                       { IF_LEFT
+                           { IF_LEFT { DROP ; PUSH nat 1 } { DROP ; PUSH nat 10 } }
+                           { IF_LEFT { DROP ; PUSH nat 16 } { DROP ; PUSH nat 17 } } } }
+                   { IF_LEFT
+                       { IF_LEFT
+                           { IF_LEFT { DROP ; PUSH nat 12 } { DROP ; PUSH nat 9 } }
+                           { IF_LEFT { DROP ; PUSH nat 0 } { DROP ; PUSH nat 2 } } }
+                       { IF_LEFT
+                           { IF_LEFT { DROP ; PUSH nat 7 } { DROP ; PUSH nat 5 } }
+                           { IF_LEFT { DROP ; PUSH nat 3 } { DROP ; PUSH nat 6 } } } } }
+               { IF_LEFT { DROP ; PUSH nat 4 } { DROP ; PUSH nat 11 } } ;
+             GET ;
+             IF_NONE
+               { DROP ; PUSH string "QFarm/func-not-set" ; FAILWITH }
+               { DUP 3 ; CAR ; DIG 2 ; PAIR ; EXEC } ;
+             DUP ;
+             DUG 2 ;
+             CDR ;
+             UPDATE 1 ;
+             SWAP ;
+             CAR ;
+             PAIR } } }
+

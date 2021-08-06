@@ -1,0 +1,139 @@
+{ parameter
+    (or (list %burn_callback
+           (pair (pair %request (address %owner) (nat %token_id)) (nat %balance)))
+        (unit %default)) ;
+  storage
+    (pair (address %qsgov_lp)
+          (pair %qsgov (address %token) (pair (nat %id) (bool %is_fa2)))) ;
+  code { UNPAIR ;
+         IF_LEFT
+           { SWAP ;
+             DUP ;
+             DUG 2 ;
+             CDR ;
+             CAR ;
+             SENDER ;
+             COMPARE ;
+             NEQ ;
+             IF { PUSH string "Burner/not-QS-GOV-token" ; FAILWITH } {} ;
+             NIL operation ;
+             DUP 3 ;
+             CDR ;
+             GET 3 ;
+             SELF_ADDRESS ;
+             DIG 3 ;
+             PUSH nat 0 ;
+             PUSH bool False ;
+             SWAP ;
+             PAIR ;
+             SWAP ;
+             ITER { SWAP ;
+                    DUP 3 ;
+                    DUP 5 ;
+                    SWAP ;
+                    PAIR ;
+                    DUP 3 ;
+                    CAR ;
+                    COMPARE ;
+                    EQ ;
+                    SWAP ;
+                    DUP ;
+                    DUG 2 ;
+                    CDR ;
+                    NOT ;
+                    AND ;
+                    IF { SWAP ; CDR ; UPDATE 1 ; PUSH bool True ; UPDATE 2 } { SWAP ; DROP } } ;
+             SWAP ;
+             DIG 2 ;
+             DROP 2 ;
+             CAR ;
+             PUSH nat 0 ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             COMPARE ;
+             GT ;
+             IF { SELF_ADDRESS ;
+                  NIL (pair address (pair nat nat)) ;
+                  PUSH address "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" ;
+                  DUP 6 ;
+                  CDR ;
+                  GET 3 ;
+                  DIG 4 ;
+                  SWAP ;
+                  PAIR ;
+                  SWAP ;
+                  PAIR ;
+                  CONS ;
+                  SWAP ;
+                  PAIR ;
+                  SWAP ;
+                  DUP 3 ;
+                  CDR ;
+                  CAR ;
+                  CONTRACT %transfer
+                    (list (pair (address %from_)
+                                (list %txs (pair (address %to_) (pair (nat %token_id) (nat %amount)))))) ;
+                  IF_NONE { PUSH string "FA2/transfer-entrypoint-404" ; FAILWITH } {} ;
+                  PUSH mutez 0 ;
+                  NIL (pair address (list (pair address (pair nat nat)))) ;
+                  DIG 4 ;
+                  CONS ;
+                  TRANSFER_TOKENS ;
+                  CONS }
+                { DROP } ;
+             PAIR }
+           { DROP ;
+             NIL (pair address nat) ;
+             SELF_ADDRESS ;
+             DUP 3 ;
+             CDR ;
+             GET 3 ;
+             SWAP ;
+             PAIR ;
+             CONS ;
+             SELF_ADDRESS ;
+             CONTRACT %burn_callback
+               (list (pair (pair %request (address %owner) (nat %token_id)) (nat %balance))) ;
+             IF_NONE { PUSH string "Burner/burn-callback-entrypoint-404" ; FAILWITH } {} ;
+             SWAP ;
+             PAIR ;
+             NIL operation ;
+             DUP 3 ;
+             CDR ;
+             CAR ;
+             CONTRACT %balance_of
+               (pair (list %requests (pair (address %owner) (nat %token_id)))
+                     (contract %callback
+                        (list (pair (pair %request (address %owner) (nat %token_id)) (nat %balance))))) ;
+             IF_NONE { PUSH string "FA2/balance-of-entrypoint-404" ; FAILWITH } {} ;
+             PUSH mutez 0 ;
+             DIG 3 ;
+             TRANSFER_TOKENS ;
+             CONS ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             CAR ;
+             CONTRACT %use
+               (or (or (or (pair %divestLiquidity (pair (nat %min_tez) (nat %min_tokens)) (nat %shares))
+                           (nat %initializeExchange))
+                       (or (nat %investLiquidity)
+                           (pair %tezToTokenPayment (nat %min_out) (address %receiver))))
+                   (or (or (pair %tokenToTezPayment (pair (nat %amount) (nat %min_out)) (address %receiver))
+                           (pair %veto (nat %value) (address %voter)))
+                       (or (pair %vote (pair (key_hash %candidate) (nat %value)) (address %voter))
+                           (address %withdrawProfit)))) ;
+             IF_NONE { PUSH string "QS/use-entrypoint-404" ; FAILWITH } {} ;
+             AMOUNT ;
+             SELF_ADDRESS ;
+             PUSH nat 1 ;
+             PAIR ;
+             RIGHT nat ;
+             RIGHT (or (pair (pair nat nat) nat) nat) ;
+             LEFT (or (or (pair (pair nat nat) address) (pair nat address))
+                      (or (pair (pair key_hash nat) address) address)) ;
+             TRANSFER_TOKENS ;
+             CONS ;
+             PAIR } } }
+

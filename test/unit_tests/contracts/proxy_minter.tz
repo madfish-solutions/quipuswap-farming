@@ -1,0 +1,220 @@
+{ parameter
+    (or (or (or (unit %confirm_admin)
+                (list %mint_qsgov_tokens (pair (address %receiver) (nat %amount))))
+            (or (pair %register_farm (address %farm) (bool %register)) (address %set_admin)))
+        (or (list %withdraw_callback
+               (pair (pair %request (address %owner) (nat %token_id)) (nat %balance)))
+            (unit %withdraw_qsgov_tokens))) ;
+  storage
+    (pair (set %farms address)
+          (pair (pair %qsgov (address %token) (pair (nat %id) (bool %is_fa2)))
+                (pair (address %admin) (address %pending_admin)))) ;
+  code { LAMBDA
+           (pair address address)
+           unit
+           { UNPAIR ;
+             COMPARE ;
+             NEQ ;
+             IF { PUSH string "Not-admin" ; FAILWITH } {} ;
+             UNIT } ;
+         SWAP ;
+         UNPAIR ;
+         IF_LEFT
+           { IF_LEFT
+               { DIG 2 ;
+                 DROP ;
+                 IF_LEFT
+                   { DROP ;
+                     DUP ;
+                     GET 6 ;
+                     SENDER ;
+                     COMPARE ;
+                     NEQ ;
+                     IF { PUSH string "Not-pending-admin" ; FAILWITH } {} ;
+                     DUP ;
+                     GET 6 ;
+                     UPDATE 5 ;
+                     PUSH address "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" ;
+                     UPDATE 6 ;
+                     NIL operation ;
+                     PAIR }
+                   { SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     CAR ;
+                     SENDER ;
+                     MEM ;
+                     NOT ;
+                     IF { PUSH string "ProxyMinter/sender-is-not-farm" ; FAILWITH } {} ;
+                     SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     NIL operation ;
+                     DIG 3 ;
+                     GET 3 ;
+                     CAR ;
+                     CONTRACT %mint_gov_token (list (pair (address %receiver) (nat %amount))) ;
+                     IF_NONE { PUSH string "QSGOV/mint-gov-token-entrypoint-404" ; FAILWITH } {} ;
+                     PUSH mutez 0 ;
+                     DIG 4 ;
+                     TRANSFER_TOKENS ;
+                     CONS ;
+                     PAIR } }
+               { IF_LEFT
+                   { SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     GET 5 ;
+                     SENDER ;
+                     PAIR ;
+                     DIG 3 ;
+                     SWAP ;
+                     EXEC ;
+                     DROP ;
+                     SWAP ;
+                     DUP ;
+                     CAR ;
+                     DUP 3 ;
+                     CDR ;
+                     DIG 3 ;
+                     CAR ;
+                     UPDATE ;
+                     UPDATE 1 ;
+                     NIL operation ;
+                     PAIR }
+                   { SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     GET 5 ;
+                     SENDER ;
+                     PAIR ;
+                     DIG 3 ;
+                     SWAP ;
+                     EXEC ;
+                     DROP ;
+                     UPDATE 6 ;
+                     NIL operation ;
+                     PAIR } } }
+           { IF_LEFT
+               { DIG 2 ;
+                 DROP ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 GET 3 ;
+                 CAR ;
+                 SENDER ;
+                 COMPARE ;
+                 NEQ ;
+                 IF { PUSH string "ProxyMinter/not-QS-GOV-token" ; FAILWITH } {} ;
+                 NIL operation ;
+                 DUP 3 ;
+                 GET 3 ;
+                 GET 3 ;
+                 SELF_ADDRESS ;
+                 DIG 3 ;
+                 PUSH nat 0 ;
+                 PUSH bool False ;
+                 SWAP ;
+                 PAIR ;
+                 SWAP ;
+                 ITER { SWAP ;
+                        DUP 3 ;
+                        DUP 5 ;
+                        SWAP ;
+                        PAIR ;
+                        DUP 3 ;
+                        CAR ;
+                        COMPARE ;
+                        EQ ;
+                        SWAP ;
+                        DUP ;
+                        DUG 2 ;
+                        CDR ;
+                        NOT ;
+                        AND ;
+                        IF { SWAP ; CDR ; UPDATE 1 ; PUSH bool True ; UPDATE 2 } { SWAP ; DROP } } ;
+                 SWAP ;
+                 DIG 2 ;
+                 DROP 2 ;
+                 CAR ;
+                 PUSH nat 0 ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 COMPARE ;
+                 GT ;
+                 IF { SELF_ADDRESS ;
+                      NIL (pair address (pair nat nat)) ;
+                      DUP 5 ;
+                      GET 5 ;
+                      DUP 6 ;
+                      GET 3 ;
+                      GET 3 ;
+                      DIG 4 ;
+                      SWAP ;
+                      PAIR ;
+                      SWAP ;
+                      PAIR ;
+                      CONS ;
+                      SWAP ;
+                      PAIR ;
+                      SWAP ;
+                      DUP 3 ;
+                      GET 3 ;
+                      CAR ;
+                      CONTRACT %transfer
+                        (list (pair (address %from_)
+                                    (list %txs (pair (address %to_) (pair (nat %token_id) (nat %amount)))))) ;
+                      IF_NONE { PUSH string "FA2/transfer-entrypoint-404" ; FAILWITH } {} ;
+                      PUSH mutez 0 ;
+                      NIL (pair address (list (pair address (pair nat nat)))) ;
+                      DIG 4 ;
+                      CONS ;
+                      TRANSFER_TOKENS ;
+                      CONS }
+                    { DROP } ;
+                 PAIR }
+               { DROP ;
+                 DUP ;
+                 GET 5 ;
+                 SENDER ;
+                 PAIR ;
+                 DIG 2 ;
+                 SWAP ;
+                 EXEC ;
+                 DROP ;
+                 NIL (pair address nat) ;
+                 SELF_ADDRESS ;
+                 DUP 3 ;
+                 GET 3 ;
+                 GET 3 ;
+                 SWAP ;
+                 PAIR ;
+                 CONS ;
+                 SELF_ADDRESS ;
+                 CONTRACT %withdraw_callback
+                   (list (pair (pair %request (address %owner) (nat %token_id)) (nat %balance))) ;
+                 IF_NONE
+                   { PUSH string "ProxyMinter/withdraw-callback-entrypoint-404" ; FAILWITH }
+                   {} ;
+                 SWAP ;
+                 PAIR ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 NIL operation ;
+                 DIG 3 ;
+                 GET 3 ;
+                 CAR ;
+                 CONTRACT %balance_of
+                   (pair (list %requests (pair (address %owner) (nat %token_id)))
+                         (contract %callback
+                            (list (pair (pair %request (address %owner) (nat %token_id)) (nat %balance))))) ;
+                 IF_NONE { PUSH string "FA2/balance-of-entrypoint-404" ; FAILWITH } {} ;
+                 PUSH mutez 0 ;
+                 DIG 4 ;
+                 TRANSFER_TOKENS ;
+                 CONS ;
+                 PAIR } } } }
+

@@ -9,6 +9,7 @@ module.exports = {
     qsgov: {
       token: null,
       id: "0",
+      is_fa2: true,
     },
     qsgov_pool: null,
     admin: null,

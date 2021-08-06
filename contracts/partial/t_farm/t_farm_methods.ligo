@@ -6,19 +6,19 @@
   block {
     (* Get lambda function index by action *)
     const id : nat = case action of
-      Set_admin(_)             -> 0n
-    | Confirm_admin(_)         -> 1n
-    | Set_fees(_)              -> 2n
-    | Set_burner(_)            -> 3n
-    | Set_baker_registry(_)    -> 4n
-    | Add_new_farm(_)          -> 5n
-    | Pause_farms(_)           -> 6n
-    | Deposit(_)               -> 7n
-    | Withdraw(_)              -> 8n
-    | Harvest(_)               -> 9n
-    | Burn_xtz_rewards(_)      -> 10n
-    | Claim_farm_rewards(_)    -> 11n
-    | Withdraw_farm_depo(_)    -> 12n
+      Set_admin(_)          -> 0n
+    | Confirm_admin(_)      -> 1n
+    | Set_fees(_)           -> 2n
+    | Set_burner(_)         -> 3n
+    | Set_baker_registry(_) -> 4n
+    | Add_new_farm(_)       -> 5n
+    | Pause_farms(_)        -> 6n
+    | Deposit(_)            -> 7n
+    | Withdraw(_)           -> 8n
+    | Harvest(_)            -> 9n
+    | Burn_xtz_rewards(_)   -> 10n
+    | Claim_farm_rewards(_) -> 11n
+    | Withdraw_farm_depo(_) -> 12n
     end;
 
     (* Call lambda function *)
@@ -45,6 +45,6 @@
     (* Setup lambda function *)
     case s.t_farm_lambdas[params.index] of
       Some(_) -> failwith("TFarm/func-set")
-    | None     -> s.t_farm_lambdas[params.index] := params.func
+    | None    -> s.t_farm_lambdas[params.index] := params.func
     end;
   } with (no_operations, s)

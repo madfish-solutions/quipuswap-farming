@@ -50,6 +50,6 @@
     (* Setup lambda function *)
     case s.q_farm_lambdas[params.index] of
       Some(_) -> failwith("QFarm/func-set")
-    | None     -> s.q_farm_lambdas[params.index] := params.func
+    | None    -> s.q_farm_lambdas[params.index] := params.func
     end;
   } with (no_operations, s)

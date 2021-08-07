@@ -1,3 +1,5 @@
+import json
+
 from os import path
 
 from copy import deepcopy
@@ -11,8 +13,6 @@ from .storage.q_farm_storage import initial_q_farm_storage
 from .utils.users import alice
 from .utils.helpers import formatError, compile_func, exec
 
-import json
-
 
 class TestTempleTokenAdminActions(TestCase):
     @classmethod
@@ -20,29 +20,23 @@ class TestTempleTokenAdminActions(TestCase):
         cls.q_farm = ContractInterface.from_file(
             path.join(path.dirname(__file__), 'contracts', 'q_farm.tz')
         )
+        pwd = exec('pwd')[0:-1]
 
-        # compile_func()
+        with open(f'{pwd}/storage/json/QFarmFunctions.json', 'r') as file:
+            functions = json.load(file)
 
-        # pwd = exec('pwd')[0:-1]
-
-        # with open(f'{pwd}/storage/QFarmFunctions.js', 'r') as file:
-        #     json_data = file.read()
-        #     string = json_data[json_data.find('['):json_data.rfind(']') + 1]
-        # for i in len(string):
-
-        # print(arr)
-        # print(json.loads(arr))
-        # data = json.load(jsonfile)
-
-        # print(data)
+        for function in functions:
+            initial_q_farm_storage['q_farm_lambdas'][int(function['index'])] = compile_func(
+                function['index'],
+                function['name'],
+            )
 
     def test_update_admin_should_fail(self):
-        self.assertEqual(5, 5)
-        # with self.assertRaises(MichelsonRuntimeError) as err:
-        #     self.q_farm.set_admin(alice).interpret(
-        #         storage=deepcopy(initial_q_farm_storage),
-        #         sender=alice,
-        #     )
+        with self.assertRaises(MichelsonRuntimeError) as err:
+            self.q_farm.set_admin(alice).interpret(
+                storage=deepcopy(initial_q_farm_storage),
+                sender=alice,
+            )
 
-        # print(err.exception)
-        # self.assertEqual(formatError(err), 'Not-admin')
+        print(err.exception)
+        self.assertEqual(formatError(err), 'Not-admin')

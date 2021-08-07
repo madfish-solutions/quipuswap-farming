@@ -13,7 +13,7 @@ const { confirmOperation } = require("../scripts/confirmation");
 const { alice, dev } = require("../scripts/sandbox/accounts");
 
 const qFarmStorage = require("../storage/QFarm");
-const qFarmFunctions = require("../storage/QFarmFunctions");
+const qFarmFunctions = require("../storage/json/QFarmFunctions.json");
 
 const env = require("../env");
 

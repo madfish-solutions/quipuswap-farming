@@ -13,7 +13,7 @@ const { confirmOperation } = require("../scripts/confirmation");
 const { alice, dev } = require("../scripts/sandbox/accounts");
 
 const tFarmStorage = require("../storage/TFarm");
-const tFarmFunctions = require("../storage/TFarmFunctions");
+const tFarmFunctions = require("../storage/json/TFarmFunctions.json");
 
 const env = require("../env");
 
@@ -40,7 +40,7 @@ module.exports = async (tezos) => {
   tFarmStorage.storage.burner = Burner["networks"][env.network]["burner"];
   tFarmStorage.storage.proxy_minter =
     ProxyMinter["networks"][env.network]["proxy_minter"];
-    tFarmStorage.storage.baker_registry =
+  tFarmStorage.storage.baker_registry =
     BakerRegistry["networks"][env.network]["baker_registry"];
 
   const tFarmAddress = await migrate(tezos, "t_farm", tFarmStorage);

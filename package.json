@@ -10,9 +10,7 @@
     "compile": "yarn clean && node scripts/cli.js compile -f json --c q_farm t_farm burner proxy_minter baker_registry",
     "migrate": "yarn compile && node scripts/cli.js migrate",
     "migrate-granadanet": "yarn compile && node scripts/cli.js migrate -n granadanet",
-    "test": "yarn test:unit",
-    "test:unit": "pytest test/unit_tests -s",
-    "test:compile": "node scripts/cli.js compile --c q_farm t_farm burner proxy_minter baker_registry -f tz -o test/unit_tests/contracts"
+    "test": "mocha --bail"
   },
   "repository": {
     "type": "git",

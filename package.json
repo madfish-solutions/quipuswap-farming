@@ -10,7 +10,7 @@
     "compile": "yarn clean && node scripts/cli.js compile -f json --c q_farm t_farm burner proxy_minter baker_registry",
     "migrate": "yarn compile && node scripts/cli.js migrate",
     "migrate-granadanet": "yarn compile && node scripts/cli.js migrate -n granadanet",
-    "test": "mocha --bail"
+    "test": "mocha -r ts-node/register --bail"
   },
   "repository": {
     "type": "git",
@@ -21,6 +21,7 @@
     "@taquito/rpc": "^9.1.1",
     "@taquito/signer": "^9.1.1",
     "@taquito/taquito": "^9.1.1",
+    "assert": "^2.0.0",
     "child_process": "^1.0.2",
     "dotenv": "^10.0.0",
     "fs": "^0.0.1-security",

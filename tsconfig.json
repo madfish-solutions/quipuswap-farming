@@ -9,5 +9,5 @@
     "types": ["node", "@types/mocha", "@types/chai"],
   },
   "exclude": ["node_modules", "build", "cache", "artifacts"],
-  "include": ["./*.ts"],
+  "include": ["./*.ts", "./test/*.ts", "./test/helpers/*.ts"]
 }

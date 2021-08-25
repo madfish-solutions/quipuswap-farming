@@ -110,6 +110,16 @@ class QFarm {
 
     return operation;
   }
+
+  async confirmAdmin(): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .confirm_admin([])
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
 }
 
 export { QFarm };

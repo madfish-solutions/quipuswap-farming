@@ -34,7 +34,7 @@ describe("QFarm tests", async () => {
   it("should fail if not admin is trying to setup new pending admin", async () => {
     await utils.setProvider(bob.sk);
     await rejects(qFarm.setAdmin(bob.pkh), (err) => {
-      ok(err.message == "Not-admin", "Error message mismatch");
+      ok(err.message == "Not-admin");
 
       return true;
     });
@@ -47,5 +47,22 @@ describe("QFarm tests", async () => {
 
     strictEqual(qFarm.storage.storage.admin, alice.pkh);
     strictEqual(qFarm.storage.storage.pending_admin, bob.pkh);
+  });
+
+  it("should fail if not pending admin is trying to confirm new admin", async () => {
+    await rejects(qFarm.confirmAdmin(), (err) => {
+      ok(err.message == "Not-pending-admin");
+
+      return true;
+    });
+  });
+
+  it("should confirm new admin", async () => {
+    await utils.setProvider(bob.sk);
+    await qFarm.confirmAdmin();
+    await qFarm.updateStorage();
+
+    strictEqual(qFarm.storage.storage.admin, bob.pkh);
+    strictEqual(qFarm.storage.storage.pending_admin, zeroAddress);
   });
 });

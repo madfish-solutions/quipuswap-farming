@@ -5,7 +5,7 @@ const { migrate } = require("../scripts/helpers");
 
 const { alice, dev } = require("../scripts/sandbox/accounts");
 
-const burnerStorage = require("../storage/Burner");
+const { burnerStorage } = require("../storage/Burner");
 
 const env = require("../env");
 

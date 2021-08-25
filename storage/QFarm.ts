@@ -1,23 +1,25 @@
-const { MichelsonMap } = require("@taquito/michelson-encoder");
+import { MichelsonMap } from "@taquito/michelson-encoder";
+
+import { QFarmStorage } from "test/types/QFarm";
 
 const zeroAddress = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";
 
-module.exports = {
+export const qFarmStorage: QFarmStorage = {
   storage: {
     farms: MichelsonMap.fromLiteral({}),
     referrers: MichelsonMap.fromLiteral({}),
     temp: {
-      min_qs_gov_output: "0",
+      min_qs_gov_output: 0,
       token: {
         token: zeroAddress,
-        id: "0",
+        id: 0,
         is_fa2: false,
       },
       qs_pool: zeroAddress,
     },
     qsgov: {
       token: null,
-      id: "0",
+      id: 0,
       is_fa2: true,
     },
     qsgov_pool: null,
@@ -26,9 +28,9 @@ module.exports = {
     burner: null,
     proxy_minter: null,
     baker_registry: null,
-    farms_count: "0",
-    qsgov_per_second: "0",
-    total_alloc_point: "0",
+    farms_count: 0,
+    qsgov_per_second: 0,
+    total_alloc_point: 0,
   },
   q_farm_lambdas: MichelsonMap.fromLiteral({}),
 };

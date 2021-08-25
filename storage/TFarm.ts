@@ -1,4 +1,4 @@
-const { MichelsonMap } = require("@taquito/michelson-encoder");
+import { MichelsonMap } from "@taquito/michelson-encoder";
 
 module.exports = {
   storage: {

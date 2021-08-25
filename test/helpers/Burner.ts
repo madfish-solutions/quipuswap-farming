@@ -8,7 +8,7 @@ import { confirmOperation } from "../../scripts/confirmation";
 
 import { BurnerStorage } from "../types/Burner";
 
-class Burner {
+export class Burner {
   contract: Contract;
   storage: BurnerStorage;
   tezos: TezosToolkit;
@@ -52,10 +52,8 @@ class Burner {
   }
 
   async updateStorage(): Promise<void> {
-    let storage: BurnerStorage = await this.contract.storage();
+    const storage: BurnerStorage = await this.contract.storage();
 
     this.storage = storage;
   }
 }
-
-export { Burner };

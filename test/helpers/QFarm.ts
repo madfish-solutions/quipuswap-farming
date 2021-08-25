@@ -19,7 +19,7 @@ import qFarmFunctions from "../../storage/json/QFarmFunctions.json";
 
 import { QFarmStorage } from "../types/QFarm";
 
-class QFarm {
+export class QFarm {
   contract: Contract;
   storage: QFarmStorage;
   tezos: TezosToolkit;
@@ -57,7 +57,7 @@ class QFarm {
   }
 
   async updateStorage(maps = {}): Promise<void> {
-    let storage: QFarmStorage = await this.contract.storage();
+    const storage: QFarmStorage = await this.contract.storage();
 
     this.storage = {
       storage: storage.storage,
@@ -139,5 +139,3 @@ class QFarm {
     return operation;
   }
 }
-
-export { QFarm };

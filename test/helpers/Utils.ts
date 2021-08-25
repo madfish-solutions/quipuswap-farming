@@ -8,7 +8,7 @@ import { alice } from "../../scripts/sandbox/accounts";
 const defaultNetwork = "development";
 const network = env.network || defaultNetwork;
 
-class Utils {
+export class Utils {
   tezos: TezosToolkit;
 
   async init(): Promise<void> {
@@ -29,5 +29,3 @@ class Utils {
     });
   }
 }
-
-export { Utils };

@@ -1,4 +1,4 @@
-import { MichelsonMap } from "@taquito/michelson-encoder";
+import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 
 export type User = {
   last_staked: number;
@@ -31,9 +31,9 @@ export type Timelock = {
 };
 
 export type Farm = {
-  users_info: MichelsonMap<string, User>;
-  votes: MichelsonMap<string, string>;
-  candidates: MichelsonMap<string, string>;
+  users_info: MichelsonMap<MichelsonMapKey, unknown>;
+  votes: MichelsonMap<MichelsonMapKey, unknown>;
+  candidates: MichelsonMap<MichelsonMapKey, unknown>;
   fees: Fees;
   upd: number;
   stake_params: StakeParams;
@@ -51,8 +51,8 @@ export type Farm = {
 
 export type QFarmStorage = {
   storage: {
-    farms: MichelsonMap<number, Farm>;
-    referrers: MichelsonMap<string, string>;
+    farms: MichelsonMap<MichelsonMapKey, unknown>;
+    referrers: MichelsonMap<MichelsonMapKey, unknown>;
     temp: {
       min_qs_gov_output: number;
       token: Token;
@@ -69,5 +69,5 @@ export type QFarmStorage = {
     qsgov_per_second: number;
     total_alloc_point: number;
   };
-  q_farm_lambdas: MichelsonMap<number, any>;
+  q_farm_lambdas: MichelsonMap<MichelsonMapKey, unknown>;
 };

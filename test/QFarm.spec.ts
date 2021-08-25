@@ -1,17 +1,20 @@
-const { Utils } = require("./helpers/Utils.ts");
-const { QFarm } = require("./helpers/QFarm.ts");
+import { Utils } from "./helpers/Utils";
+import { QFarm } from "./helpers/QFarm";
+import { Burner } from "./helpers/Burner";
 
-const { rejects, ok, strictEqual } = require("assert");
+import { rejects, ok, strictEqual } from "assert";
 
-const { alice, bob } = require("../scripts/sandbox/accounts");
+import { alice, bob } from "../scripts/sandbox/accounts";
 
-const qFarmStorage = require("../storage/QFarm");
+import { qFarmStorage } from "../storage/QFarm";
+import { burnerStorage } from "../storage/Burner";
 
-const zeroAddress = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";
+const zeroAddress: string = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";
 
 describe("QFarm tests", async () => {
-  var utils;
-  var qFarm;
+  var utils: Utils;
+  var qFarm: QFarm;
+  var burner: Burner;
 
   before("setup", async () => {
     utils = new Utils();
@@ -26,14 +29,20 @@ describe("QFarm tests", async () => {
     qFarmStorage.storage.proxy_minter = zeroAddress;
     qFarmStorage.storage.baker_registry = zeroAddress;
 
+    burnerStorage.qsgov_lp = zeroAddress;
+    burnerStorage.qsgov.token = zeroAddress;
+
     qFarm = await QFarm.originate(utils.tezos, qFarmStorage);
+    // burner = await Burner.originate(utils.tezos, burnerStorage);
+
+    // console.log(burner.contract.address);
 
     await qFarm.setLambdas();
   });
 
   it("should fail if not admin is trying to setup new pending admin", async () => {
     await utils.setProvider(bob.sk);
-    await rejects(qFarm.setAdmin(bob.pkh), (err) => {
+    await rejects(qFarm.setAdmin(bob.pkh), (err: Error) => {
       ok(err.message == "Not-admin");
 
       return true;
@@ -50,7 +59,7 @@ describe("QFarm tests", async () => {
   });
 
   it("should fail if not pending admin is trying to confirm new admin", async () => {
-    await rejects(qFarm.confirmAdmin(), (err) => {
+    await rejects(qFarm.confirmAdmin(), (err: Error) => {
       ok(err.message == "Not-pending-admin");
 
       return true;
@@ -70,7 +79,7 @@ describe("QFarm tests", async () => {
     const newRPS: number = 100;
 
     await utils.setProvider(alice.sk);
-    await rejects(qFarm.setRewardPerSecond(newRPS), (err) => {
+    await rejects(qFarm.setRewardPerSecond(newRPS), (err: Error) => {
       ok(err.message == "Not-admin");
 
       return true;
@@ -84,6 +93,6 @@ describe("QFarm tests", async () => {
     await qFarm.setRewardPerSecond(newRPS);
     await qFarm.updateStorage();
 
-    strictEqual(qFarm.storage.storage.qsgov_per_second.toNumber(), newRPS);
+    strictEqual(+qFarm.storage.storage.qsgov_per_second, newRPS);
   });
 });

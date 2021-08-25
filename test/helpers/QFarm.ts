@@ -2,6 +2,7 @@ import {
   TezosToolkit,
   TransactionOperation,
   OriginationOperation,
+  Contract,
 } from "@taquito/taquito";
 
 import { execSync } from "child_process";
@@ -16,12 +17,14 @@ import { getLigo } from "../../scripts/helpers";
 
 import qFarmFunctions from "../../storage/json/QFarmFunctions.json";
 
+import { QFarmStorage } from "../types/QFarm";
+
 class QFarm {
-  contract: any;
-  storage: any;
+  contract: Contract;
+  storage: QFarmStorage;
   tezos: TezosToolkit;
 
-  constructor(contract: any, tezos: TezosToolkit) {
+  constructor(contract: Contract, tezos: TezosToolkit) {
     this.contract = contract;
     this.tezos = tezos;
   }
@@ -30,7 +33,10 @@ class QFarm {
     return new QFarm(await tezos.contract.at(qFarmAddress), tezos);
   }
 
-  static async originate(tezos: TezosToolkit, storage: any): Promise<QFarm> {
+  static async originate(
+    tezos: TezosToolkit,
+    storage: QFarmStorage
+  ): Promise<QFarm> {
     const artifacts: any = JSON.parse(
       fs.readFileSync(`${env.buildDir}/q_farm.json`).toString()
     );
@@ -50,8 +56,8 @@ class QFarm {
     return new QFarm(await tezos.contract.at(operation.contractAddress), tezos);
   }
 
-  async updateStorage(maps = {}) {
-    let storage: any = await this.contract.storage();
+  async updateStorage(maps = {}): Promise<void> {
+    let storage: QFarmStorage = await this.contract.storage();
 
     this.storage = {
       storage: storage.storage,
@@ -114,6 +120,18 @@ class QFarm {
   async confirmAdmin(): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .confirm_admin([])
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async setRewardPerSecond(
+    newRewardperSecond: number
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .set_reward_per_second(newRewardperSecond)
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

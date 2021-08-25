@@ -70,7 +70,7 @@ type farm_type          is [@layout:comb] record [
   (* Farm end timestamp *)
   end_time                : timestamp;
   (* Farm ID *)
-  fid                     : nat;
+  fid                     : fid_type;
   (* Total votes participated in voting *)
   total_votes             : nat;
 ]

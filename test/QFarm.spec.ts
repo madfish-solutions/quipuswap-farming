@@ -65,4 +65,25 @@ describe("QFarm tests", async () => {
     strictEqual(qFarm.storage.storage.admin, bob.pkh);
     strictEqual(qFarm.storage.storage.pending_admin, zeroAddress);
   });
+
+  it("should fail if not admin is trying to set reward per second", async () => {
+    const newRPS: number = 100;
+
+    await utils.setProvider(alice.sk);
+    await rejects(qFarm.setRewardPerSecond(newRPS), (err) => {
+      ok(err.message == "Not-admin");
+
+      return true;
+    });
+  });
+
+  it("should change reward per second", async () => {
+    const newRPS: number = 100;
+
+    await utils.setProvider(bob.sk);
+    await qFarm.setRewardPerSecond(newRPS);
+    await qFarm.updateStorage();
+
+    strictEqual(qFarm.storage.storage.qsgov_per_second.toNumber(), newRPS);
+  });
 });

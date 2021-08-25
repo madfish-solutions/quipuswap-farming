@@ -5,7 +5,7 @@
   "description": "Quipuswap Farming",
   "scripts": {
     "postinstall": "patch-package",
-    "start-sandbox": "docker run --rm --name my-sandbox -e flextesa_node_cors_origin='*' --detach -p 8732:20000 tqtezos/flextesa:20210602 flobox start",
+    "start-sandbox": "docker run --rm --name my-sandbox -e flextesa_node_cors_origin='*' -e block_time=1 --detach -p 8732:20000 tqtezos/flextesa:20210602 granabox start",
     "clean": "rm -rf ./build",
     "compile": "yarn clean && node scripts/cli.js compile -f json --c q_farm t_farm burner proxy_minter baker_registry",
     "migrate": "yarn compile && node scripts/cli.js migrate",

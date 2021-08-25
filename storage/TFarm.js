@@ -1,7 +1,5 @@
 const { MichelsonMap } = require("@taquito/michelson-encoder");
 
-const zero_address = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";
-
 module.exports = {
   storage: {
     farms: MichelsonMap.fromLiteral({}),

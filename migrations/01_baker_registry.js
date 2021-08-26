@@ -5,7 +5,7 @@ const { migrate } = require("../scripts/helpers");
 
 const { alice, dev } = require("../scripts/sandbox/accounts");
 
-const bakerRegistryStorage = require("../storage/BakerRegistry");
+const { bakerRegistryStorage } = require("../storage/BakerRegistry");
 
 const env = require("../env");
 

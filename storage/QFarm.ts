@@ -20,7 +20,7 @@ export const qFarmStorage: QFarmStorage = {
     qsgov: {
       token: null,
       id: 0,
-      is_fa2: true,
+      is_fa2: false,
     },
     qsgov_pool: null,
     admin: null,

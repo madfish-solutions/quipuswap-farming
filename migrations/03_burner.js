@@ -25,7 +25,8 @@ module.exports = async (tezos) => {
 
   burnerStorage.qsgov_lp = zeroAddress;
   burnerStorage.qsgov.token = zeroAddress;
-  burnerStorage.qsgov.id = "0";
+  burnerStorage.qsgov.id = 0;
+  burnerStorage.qsgov.is_fa2 = true;
 
   const burnerAddress = await migrate(tezos, "burner", burnerStorage);
 

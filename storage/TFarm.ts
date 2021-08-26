@@ -1,13 +1,15 @@
 import { MichelsonMap } from "@taquito/michelson-encoder";
 
-module.exports = {
+import { TFarmStorage } from "../test/types/TFarm";
+
+export const tFarmStorage: TFarmStorage = {
   storage: {
     farms: MichelsonMap.fromLiteral({}),
     referrers: MichelsonMap.fromLiteral({}),
     qsgov: {
       token: null,
-      id: "0",
-      is_fa2: true,
+      id: 0,
+      is_fa2: false,
     },
     qsgov_pool: null,
     admin: null,
@@ -15,7 +17,7 @@ module.exports = {
     burner: null,
     proxy_minter: null,
     baker_registry: null,
-    farms_count: "0",
+    farms_count: 0,
   },
   t_farm_lambdas: MichelsonMap.fromLiteral({}),
 };

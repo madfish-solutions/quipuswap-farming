@@ -33,7 +33,8 @@ module.exports = async (tezos) => {
   const zeroAddress = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";
 
   qFarmStorage.storage.qsgov.token = zeroAddress;
-  qFarmStorage.storage.qsgov.id = "0";
+  qFarmStorage.storage.qsgov.id = 0;
+  qFarmStorage.storage.qsgov.is_fa2 = true;
   qFarmStorage.storage.qsgov_pool = zeroAddress;
   qFarmStorage.storage.admin = deployer;
   qFarmStorage.storage.pending_admin = zeroAddress;

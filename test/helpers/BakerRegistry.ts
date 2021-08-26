@@ -6,11 +6,11 @@ import env from "../../env";
 
 import { confirmOperation } from "../../scripts/confirmation";
 
-import { BurnerStorage } from "../types/Burner";
+import { BakerRegistryStorage } from "../types/BakerRegistry";
 
-export class Burner {
+export class BakerRegistry {
   contract: Contract;
-  storage: BurnerStorage;
+  storage: BakerRegistryStorage;
   tezos: TezosToolkit;
 
   constructor(contract: Contract, tezos: TezosToolkit) {
@@ -19,18 +19,21 @@ export class Burner {
   }
 
   static async init(
-    burnerAddress: string,
+    bakerRegistryAddress: string,
     tezos: TezosToolkit
-  ): Promise<Burner> {
-    return new Burner(await tezos.contract.at(burnerAddress), tezos);
+  ): Promise<BakerRegistry> {
+    return new BakerRegistry(
+      await tezos.contract.at(bakerRegistryAddress),
+      tezos
+    );
   }
 
   static async originate(
     tezos: TezosToolkit,
-    storage: BurnerStorage
-  ): Promise<Burner> {
+    storage: BakerRegistryStorage
+  ): Promise<BakerRegistry> {
     const artifacts: any = JSON.parse(
-      fs.readFileSync(`${env.buildDir}/burner.json`).toString()
+      fs.readFileSync(`${env.buildDir}/baker_registry.json`).toString()
     );
     const operation: OriginationOperation = await tezos.contract
       .originate({
@@ -45,14 +48,14 @@ export class Burner {
 
     await confirmOperation(tezos, operation.hash);
 
-    return new Burner(
+    return new BakerRegistry(
       await tezos.contract.at(operation.contractAddress),
       tezos
     );
   }
 
   async updateStorage(): Promise<void> {
-    const storage: BurnerStorage = await this.contract.storage();
+    const storage: BakerRegistryStorage = await this.contract.storage();
 
     this.storage = storage;
   }

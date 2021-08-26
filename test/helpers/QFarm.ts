@@ -46,7 +46,7 @@ export class QFarm {
         storage: storage,
       })
       .catch((e) => {
-        console.error(JSON.stringify(e));
+        console.error(e);
 
         return null;
       });
@@ -132,6 +132,38 @@ export class QFarm {
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .set_reward_per_second(newRewardperSecond)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async setBurner(newBurner: string): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .set_burner(newBurner)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async setProxyMinter(newProxyMinter: string): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .set_proxy_minter(newProxyMinter)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async setBakerRegistry(
+    newBakerRegistry: string
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .set_baker_registry(newBakerRegistry)
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

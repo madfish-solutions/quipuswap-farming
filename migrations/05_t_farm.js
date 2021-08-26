@@ -12,7 +12,7 @@ const { confirmOperation } = require("../scripts/confirmation");
 
 const { alice, dev } = require("../scripts/sandbox/accounts");
 
-const tFarmStorage = require("../storage/TFarm");
+const { tFarmStorage } = require("../storage/TFarm");
 const tFarmFunctions = require("../storage/json/TFarmFunctions.json");
 
 const env = require("../env");
@@ -33,7 +33,8 @@ module.exports = async (tezos) => {
   const zeroAddress = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";
 
   tFarmStorage.storage.qsgov.token = zeroAddress;
-  tFarmStorage.storage.qsgov.id = "0";
+  tFarmStorage.storage.qsgov.id = 0;
+  tFarmStorage.storage.qsgov.is_fa2 = true;
   tFarmStorage.storage.qsgov_pool = zeroAddress;
   tFarmStorage.storage.admin = deployer;
   tFarmStorage.storage.pending_admin = zeroAddress;

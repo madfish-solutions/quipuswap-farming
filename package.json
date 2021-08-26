@@ -7,9 +7,9 @@
     "postinstall": "patch-package",
     "start-sandbox": "docker run --rm --name my-sandbox -e flextesa_node_cors_origin='*' -e block_time=1 --detach -p 8732:20000 tqtezos/flextesa:20210602 granabox start",
     "clean": "rm -rf ./build",
-    "compile": "yarn clean && node scripts/cli.js compile -f json --c q_farm t_farm burner proxy_minter baker_registry",
-    "migrate": "yarn compile && node scripts/cli.js migrate",
-    "migrate-granadanet": "yarn compile && node scripts/cli.js migrate -n granadanet",
+    "compile": "yarn clean && ts-node scripts/cli.js compile -f json --c q_farm t_farm burner proxy_minter baker_registry",
+    "migrate": "yarn compile && ts-node scripts/cli.js migrate",
+    "migrate-granadanet": "yarn compile && ts-node scripts/cli.js migrate -n granadanet",
     "test": "ts-mocha --paths test/*.spec.ts"
   },
   "repository": {

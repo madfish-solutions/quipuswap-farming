@@ -5,5 +5,6 @@ export const burnerStorage: BurnerStorage = {
   qsgov: {
     token: null,
     id: 0,
+    is_fa2: false,
   },
 };

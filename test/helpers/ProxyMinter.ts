@@ -6,11 +6,11 @@ import env from "../../env";
 
 import { confirmOperation } from "../../scripts/confirmation";
 
-import { BurnerStorage } from "../types/Burner";
+import { ProxyMinterStorage } from "../types/ProxyMinter";
 
-export class Burner {
+export class ProxyMinter {
   contract: Contract;
-  storage: BurnerStorage;
+  storage: ProxyMinterStorage;
   tezos: TezosToolkit;
 
   constructor(contract: Contract, tezos: TezosToolkit) {
@@ -19,18 +19,18 @@ export class Burner {
   }
 
   static async init(
-    burnerAddress: string,
+    proxyMinterAddress: string,
     tezos: TezosToolkit
-  ): Promise<Burner> {
-    return new Burner(await tezos.contract.at(burnerAddress), tezos);
+  ): Promise<ProxyMinter> {
+    return new ProxyMinter(await tezos.contract.at(proxyMinterAddress), tezos);
   }
 
   static async originate(
     tezos: TezosToolkit,
-    storage: BurnerStorage
-  ): Promise<Burner> {
+    storage: ProxyMinterStorage
+  ): Promise<ProxyMinter> {
     const artifacts: any = JSON.parse(
-      fs.readFileSync(`${env.buildDir}/burner.json`).toString()
+      fs.readFileSync(`${env.buildDir}/proxy_minter.json`).toString()
     );
     const operation: OriginationOperation = await tezos.contract
       .originate({
@@ -45,14 +45,14 @@ export class Burner {
 
     await confirmOperation(tezos, operation.hash);
 
-    return new Burner(
+    return new ProxyMinter(
       await tezos.contract.at(operation.contractAddress),
       tezos
     );
   }
 
   async updateStorage(): Promise<void> {
-    const storage: BurnerStorage = await this.contract.storage();
+    const storage: ProxyMinterStorage = await this.contract.storage();
 
     this.storage = storage;
   }

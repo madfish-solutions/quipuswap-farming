@@ -1,3 +1,6 @@
 import { MichelsonMap } from "@taquito/michelson-encoder";
 
-module.exports = MichelsonMap.fromLiteral({});
+import { BakerRegistryStorage } from "../test/types/BakerRegistry";
+
+export const bakerRegistryStorage: BakerRegistryStorage =
+  MichelsonMap.fromLiteral({});

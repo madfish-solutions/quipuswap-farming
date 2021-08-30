@@ -211,9 +211,6 @@ function add_new_farm(
 
         (* Add new farm info to the storage *)
         s.farms[s.farms_count] := record [
-          users_info        = (Map.empty : map(address, user_info_type));
-          votes             = (Map.empty : map(key_hash, nat));
-          candidates        = (Map.empty : map(address, key_hash));
           fees              = params.fees;
           upd               = params.start_time;
           stake_params      = params.stake_params;
@@ -293,7 +290,7 @@ function deposit(
         s := update_farm_rewards(farm, s);
 
         (* Retrieve user data for the specified farm *)
-        var user : user_info_type := get_user_info(farm, Tezos.sender);
+        var user : user_info_type := get_user_info(farm.fid, Tezos.sender, s);
 
         (* Update users's reward *)
         user.earned := user.earned +
@@ -329,7 +326,7 @@ function deposit(
         user.last_staked := Tezos.now;
 
         (* Save user's info in the farm and update farm's staked amount *)
-        farm.users_info[Tezos.sender] := user;
+        s.users_info[(params.fid, Tezos.sender)] := user;
         farm.staked := farm.staked + params.amt;
 
         (* Save farm to the storage *)
@@ -415,7 +412,7 @@ function withdraw(
         s := update_farm_rewards(farm, s);
 
         (* Retrieve user data for the specified farm *)
-        var user : user_info_type := get_user_info(farm, Tezos.sender);
+        var user : user_info_type := get_user_info(farm.fid, Tezos.sender, s);
 
         (* Value for withdrawal (without calculated withdrawal fee) *)
         var value : nat := params.amt;
@@ -460,7 +457,7 @@ function withdraw(
           else {
             (* Retrieve farm user data for the specified farm *)
             var farm_user : user_info_type :=
-              get_user_info(farm, Tezos.self_address);
+              get_user_info(farm.fid, Tezos.self_address, s);
 
             (* Update farm users's earned amount *)
             farm_user.earned := farm_user.earned +
@@ -474,7 +471,7 @@ function withdraw(
             farm_user.last_staked := Tezos.now;
 
             (* Save farm user's info in the farm *)
-            farm.users_info[Tezos.self_address] := farm_user;
+            s.users_info[(params.fid, Tezos.self_address)] := farm_user;
           };
         };
 
@@ -489,7 +486,7 @@ function withdraw(
         user.last_staked := Tezos.now;
 
         (* Save user's info in the farm and update farm's staked amount *)
-        farm.users_info[Tezos.sender] := user;
+        s.users_info[(params.fid, Tezos.sender)] := user;
         farm.staked := abs(farm.staked - actual_value);
 
         (* Save farm to the storage *)
@@ -577,7 +574,7 @@ function harvest(
         s := update_farm_rewards(farm, s);
 
         (* Retrieve user data for the specified farm *)
-        var user : user_info_type := get_user_info(farm, Tezos.sender);
+        var user : user_info_type := get_user_info(farm.fid, Tezos.sender, s);
 
         (* Update users's reward *)
         user.earned := user.earned +
@@ -588,7 +585,7 @@ function harvest(
           ((None : option(operation)), user);
 
         (* Check timelock (if timelock is finished - claim rewards) *)
-        if abs(Tezos.now - user.last_staked) >= farm.timelock 
+        if abs(Tezos.now - user.last_staked) >= farm.timelock
         then res := claim_rewards(user, farm, params.rewards_receiver, s)
         else failwith("QFarm/timelock-is-not-finished");
 
@@ -605,7 +602,7 @@ function harvest(
         user.prev_earned := user.staked * farm.rps;
 
         (* Save user's info in the farm *)
-        farm.users_info[Tezos.sender] := user;
+        s.users_info[(params.fid, Tezos.sender)] := user;
 
         (* Save farm to the storage *)
         s.farms[params.fid] := farm;
@@ -665,7 +662,8 @@ function burn_farm_rewards(
         s := update_farm_rewards(farm, s);
 
         (* Retrieve user data for the specified farm *)
-        var user : user_info_type := get_user_info(farm, Tezos.self_address);
+        var user : user_info_type :=
+          get_user_info(farm.fid, Tezos.self_address, s);
 
         (* Update users's reward *)
         user.earned := user.earned +
@@ -688,7 +686,7 @@ function burn_farm_rewards(
         user.prev_earned := user.staked * farm.rps;
 
         (* Save user's info in the farm *)
-        farm.users_info[Tezos.self_address] := user;
+        s.users_info[(fid, Tezos.self_address)] := user;
 
         (* Save farm to the storage *)
         s.farms[fid] := farm;
@@ -787,7 +785,8 @@ function buyback(
         s := update_farm_rewards(farm, s);
 
         (* Retrieve user data for the specified farm *)
-        var user : user_info_type := get_user_info(farm, Tezos.self_address);
+        var user : user_info_type :=
+          get_user_info(farm.fid, Tezos.self_address, s);
 
         (* Value for withdrawal *)
         var value : nat := params.amt;
@@ -814,7 +813,7 @@ function buyback(
         user.last_staked := Tezos.now;
 
         (* Save user's info in the farm and update farm's staked amount *)
-        farm.users_info[Tezos.self_address] := user;
+        s.users_info[(params.fid, Tezos.self_address)] := user;
         farm.staked := abs(farm.staked - value);
 
         (* Save farm to the storage *)

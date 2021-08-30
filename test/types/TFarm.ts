@@ -6,6 +6,9 @@ export type TFarmStorage = {
   storage: {
     farms: MichelsonMap<MichelsonMapKey, unknown>;
     referrers: MichelsonMap<MichelsonMapKey, unknown>;
+    users_info: MichelsonMap<MichelsonMapKey, unknown>;
+    votes: MichelsonMap<MichelsonMapKey, unknown>;
+    candidates: MichelsonMap<MichelsonMapKey, unknown>;
     qsgov: Token;
     qsgov_pool: string;
     admin: string;

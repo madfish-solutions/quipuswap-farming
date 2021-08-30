@@ -6,6 +6,9 @@ export const tFarmStorage: TFarmStorage = {
   storage: {
     farms: MichelsonMap.fromLiteral({}),
     referrers: MichelsonMap.fromLiteral({}),
+    users_info: MichelsonMap.fromLiteral({}),
+    votes: MichelsonMap.fromLiteral({}),
+    candidates: MichelsonMap.fromLiteral({}),
     qsgov: {
       token: null,
       id: 0,

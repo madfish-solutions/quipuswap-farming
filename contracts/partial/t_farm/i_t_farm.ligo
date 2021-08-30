@@ -32,12 +32,6 @@ type stake_params_type  is [@layout:comb] record [
 ]
 
 type farm_type          is [@layout:comb] record [
-  (* Users data *)
-  users_info              : map(address, user_info_type);
-  (* Votes per candidate (baker) *)
-  votes                   : map(key_hash, nat);
-  (* User and choosen candidate *)
-  candidates              : map(address, key_hash);
   (* Fees data *)
   fees                    : fees_type;
   (* Last farm updated timestamp *)
@@ -75,6 +69,12 @@ type storage_type       is [@layout:comb] record [
   farms                   : big_map(fid_type, farm_type);
   (* Referrers *)
   referrers               : big_map(address, address);
+  (* Users data *)
+  users_info              : big_map(fid_type * address, user_info_type);
+  (* Votes per candidate (baker) *)
+  votes                   : big_map(fid_type * key_hash, nat);
+  (* User and choosen candidate *)
+  candidates              : big_map(fid_type * address, key_hash);
   (* QS GOV token *)
   qsgov                   : token_type;
   (* QS GOV token liquidity pool on Quipuswap DEX *)

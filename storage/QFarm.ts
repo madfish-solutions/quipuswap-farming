@@ -8,6 +8,9 @@ export const qFarmStorage: QFarmStorage = {
   storage: {
     farms: MichelsonMap.fromLiteral({}),
     referrers: MichelsonMap.fromLiteral({}),
+    users_info: MichelsonMap.fromLiteral({}),
+    votes: MichelsonMap.fromLiteral({}),
+    candidates: MichelsonMap.fromLiteral({}),
     temp: {
       min_qs_gov_output: 0,
       token: {

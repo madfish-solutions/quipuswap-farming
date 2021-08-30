@@ -11,11 +11,12 @@ function get_farm(
 
 (* Util to get user info related to specific farm *)
 function get_user_info(
-  const farm            : farm_type;
-  const user            : address)
+  const fid             : fid_type;
+  const user            : address;
+  const s               : storage_type)
                         : user_info_type is
     (* Get user info *)
-    case farm.users_info[user] of
+    case s.users_info[(fid, user)] of
       Some(info) -> info
     | None       -> record [
       last_staked = (0 : timestamp);
@@ -222,10 +223,11 @@ function get_baker_registry_validate_entrypoint(
 
 (* Util to get votes count for the specified candidate *)
 function get_votes(
-  const farm            : farm_type;
-  const candidate       : key_hash)
+  const fid             : fid_type;
+  const candidate       : key_hash;
+  const s               : storage_type)
                         : nat is
-  case farm.votes[candidate] of
+  case s.votes[(fid, candidate)] of
     None      -> 0n
   | Some(amt) -> amt
   end
@@ -260,41 +262,41 @@ function vote(
                         : (list(operation) * storage_type) is
   block {
     (* Check if user already voted for the preferred candidate *)
-    case farm.candidates[Tezos.sender] of
+    case s.candidates[(farm.fid, Tezos.sender)] of
       None            -> skip
     | Some(candidate) -> {
       (* Get prev votes count for the user's candidate *)
-      const prev_votes : nat = get_votes(farm, candidate);
+      const prev_votes : nat = get_votes(farm.fid, candidate, s);
 
       (* Subtract user's votes from the candidate *)
       if prev_votes >= user.used_votes
-      then farm.votes[candidate] := abs(prev_votes - user.used_votes)
+      then s.votes[(farm.fid, candidate)] := abs(prev_votes - user.used_votes)
       else skip;
     }
     end;
 
     (* Get votes amount for all used below candidates *)
-    const votes1 : nat = get_votes(farm, farm.current_delegated);
-    const votes2 : nat = get_votes(farm, farm.current_candidate);
-    const votes3 : nat = get_votes(farm, depo.candidate);
+    const votes1 : nat = get_votes(farm.fid, farm.current_delegated, s);
+    const votes2 : nat = get_votes(farm.fid, farm.current_candidate, s);
+    const votes3 : nat = get_votes(farm.fid, depo.candidate, s);
 
     (* Update user's new candidate votes amount *)
-    farm.votes[depo.candidate] := votes3 + user.staked;
+    s.votes[(farm.fid, depo.candidate)] := votes3 + user.staked;
 
     (* Update farm's total votes amount *)
     farm.total_votes := farm.total_votes + depo.amt;
 
     (* Update user's candidate *)
-    farm.candidates[Tezos.sender] := depo.candidate;
+    s.candidates[(farm.fid, Tezos.sender)] := depo.candidate;
 
     (* Update user's used votes amount (equal to all staked tokens amount) *)
     user.used_votes := user.staked;
 
     (* Save updated user to the farm *)
-    farm.users_info[Tezos.sender] := user;
+    s.users_info[(farm.fid, Tezos.sender)] := user;
 
     (* Check if farm already voted for the baker *)
-    case farm.votes[farm.current_delegated] of
+    case s.votes[(farm.fid, farm.current_delegated)] of
       None    -> {
         (* Update the baker who was voted for by the majority *)
         farm.current_delegated := depo.candidate;
@@ -316,7 +318,7 @@ function vote(
         }
         else {
           (* Update current candidate *)
-          case farm.votes[farm.current_candidate] of
+          case s.votes[(farm.fid, farm.current_candidate)] of
             None    -> farm.current_candidate := depo.candidate
           | Some(_) -> {
             if votes2 < votes3
@@ -327,7 +329,7 @@ function vote(
         };
       }
       else {
-        case farm.votes[farm.current_candidate] of
+        case s.votes[(farm.fid, farm.current_candidate)] of
           None    -> skip
         | Some(_) -> {
           if votes2 > votes1
@@ -377,15 +379,15 @@ function revote(
     var users_candidate : key_hash := zero_key_hash;
 
     (* Get user's candidate *)
-    case farm.candidates[Tezos.sender] of
+    case s.candidates[(farm.fid, Tezos.sender)] of
       None            -> skip
     | Some(candidate) -> {
       (* Get prev votes count for the user's candidate *)
-      const prev_votes : nat = get_votes(farm, candidate);
+      const prev_votes : nat = get_votes(farm.fid, candidate, s);
 
       (* Subtract user's votes from the candidate *)
       if prev_votes >= value
-      then farm.votes[candidate] := abs(prev_votes - value)
+      then s.votes[(farm.fid, candidate)] := abs(prev_votes - value)
       else skip;
 
       users_candidate := candidate;
@@ -399,15 +401,15 @@ function revote(
     user.used_votes := abs(user.used_votes - value);
 
     (* Save updated user to the farm *)
-    farm.users_info[Tezos.sender] := user;
+    s.users_info[(farm.fid, Tezos.sender)] := user;
 
     (* Get votes amount for all used below candidates *)
-    const votes1 : nat = get_votes(farm, farm.current_delegated);
-    const votes2 : nat = get_votes(farm, farm.current_candidate);
-    const votes3 : nat = get_votes(farm, users_candidate);
+    const votes1 : nat = get_votes(farm.fid, farm.current_delegated, s);
+    const votes2 : nat = get_votes(farm.fid, farm.current_candidate, s);
+    const votes3 : nat = get_votes(farm.fid, users_candidate, s);
 
     (* Check if farm already voted for the baker *)
-    case farm.votes[farm.current_delegated] of
+    case s.votes[(farm.fid, farm.current_delegated)] of
       None    -> {
         (* Update the baker who was voted for by the majority *)
         farm.current_delegated := users_candidate;
@@ -429,7 +431,7 @@ function revote(
         }
         else {
           (* Update current candidate *)
-          case farm.votes[farm.current_candidate] of
+          case s.votes[(farm.fid, farm.current_candidate)] of
             None    -> farm.current_candidate := users_candidate
           | Some(_) -> {
             if votes2 < votes3
@@ -440,7 +442,7 @@ function revote(
         };
       }
       else {
-        case farm.votes[farm.current_candidate] of
+        case s.votes[(farm.fid, farm.current_candidate)] of
           None    -> skip
         | Some(_) -> {
           if votes2 > votes1

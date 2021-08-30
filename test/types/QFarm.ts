@@ -27,6 +27,9 @@ export type QFarmStorage = {
   storage: {
     farms: MichelsonMap<MichelsonMapKey, unknown>;
     referrers: MichelsonMap<MichelsonMapKey, unknown>;
+    users_info: MichelsonMap<MichelsonMapKey, unknown>;
+    votes: MichelsonMap<MichelsonMapKey, unknown>;
+    candidates: MichelsonMap<MichelsonMapKey, unknown>;
     temp: {
       min_qs_gov_output: number;
       token: Token;

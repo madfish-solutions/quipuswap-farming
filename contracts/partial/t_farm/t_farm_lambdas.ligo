@@ -135,7 +135,7 @@ function add_new_farm(
           votes             = (Map.empty : map(key_hash, nat));
           candidates        = (Map.empty : map(address, key_hash));
           fees              = params.fees;
-          upd               = Tezos.now;
+          upd               = params.start_time;
           stake_params      = params.stake_params;
           reward_token      = params.reward_token;
           timelock          = params.timelock;
@@ -260,7 +260,7 @@ function deposit(
         var res : (list(operation) * user_info_type) := (operations, user);
 
         (* Check timelock (if timelock is finished - claim rewards) *)
-        if abs(Tezos.now - user.last_staked) >= farm.timelock.duration
+        if abs(Tezos.now - user.last_staked) >= farm.timelock
         then {
           res := claim_rewards(
             user,
@@ -405,7 +405,7 @@ function withdraw(
           Check timelock (if timelock is finished - claim,
           else - trasfer to admin)
         *)
-        if abs(Tezos.now - user.last_staked) >= farm.timelock.duration
+        if abs(Tezos.now - user.last_staked) >= farm.timelock
         then {
           res := claim_rewards(
             user,
@@ -556,7 +556,7 @@ function harvest(
         var res : (list(operation) * user_info_type) := (operations, user);
 
         (* Check timelock (if timelock is finished - claim rewards) *)
-        if abs(Tezos.now - user.last_staked) >= farm.timelock.duration
+        if abs(Tezos.now - user.last_staked) >= farm.timelock
         then {
           res := claim_rewards(
             user,

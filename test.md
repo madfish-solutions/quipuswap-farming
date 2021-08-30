@@ -38,6 +38,10 @@
 
 9. `add_new_farm`:
 
+   - ✅ should fail if not admin is trying to add new farm;
+   - should fail if farm start time less then now;
+   - ✅ should add new farm by admin and set all farm's fields correctly.
+
 10. `pause_farms`:
 
 11. `deposit`:

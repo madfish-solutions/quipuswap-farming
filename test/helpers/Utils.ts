@@ -28,4 +28,20 @@ export class Utils {
       signer: await InMemorySigner.fromSecretKey(newProviderSK),
     });
   }
+
+  static destructObj(obj) {
+    let arr = [];
+
+    Object.keys(obj).map(function (k) {
+      if (typeof obj[k] === "object" && !(obj[k] instanceof Date)) {
+        arr = arr.concat(Utils.destructObj(obj[k]));
+      } else {
+        arr.push(obj[k]);
+      }
+    });
+
+    return arr;
+  }
 }
+
+export const zeroAddress: string = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";

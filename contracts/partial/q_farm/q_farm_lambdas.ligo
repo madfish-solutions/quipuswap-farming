@@ -215,7 +215,7 @@ function add_new_farm(
           votes             = (Map.empty : map(key_hash, nat));
           candidates        = (Map.empty : map(address, key_hash));
           fees              = params.fees;
-          upd               = Tezos.now;
+          upd               = params.start_time;
           stake_params      = params.stake_params;
           reward_token      = s.qsgov;
           timelock          = params.timelock;
@@ -304,7 +304,7 @@ function deposit(
           ((None : option(operation)), user);
 
         (* Check timelock (if timelock is finished - claim rewards) *)
-        if abs(Tezos.now - user.last_staked) >= farm.timelock.duration
+        if abs(Tezos.now - user.last_staked) >= farm.timelock
         then res := claim_rewards(user, farm, params.rewards_receiver, s)
         else skip;
 
@@ -442,7 +442,7 @@ function withdraw(
           ((None : option(operation)), user);
 
         (* Check timelock (if timelock is finished - claim, else - burn) *)
-        if abs(Tezos.now - user.last_staked) >= farm.timelock.duration
+        if abs(Tezos.now - user.last_staked) >= farm.timelock
         then res := claim_rewards(user, farm, params.rewards_receiver, s)
         else { (* Burn reward and stake withdrawal fee from farm's name *)
           res := burn_rewards(user, False, s); (* Burn QS GOV tokens *)
@@ -588,7 +588,7 @@ function harvest(
           ((None : option(operation)), user);
 
         (* Check timelock (if timelock is finished - claim rewards) *)
-        if abs(Tezos.now - user.last_staked) >= farm.timelock.duration
+        if abs(Tezos.now - user.last_staked) >= farm.timelock 
         then res := claim_rewards(user, farm, params.rewards_receiver, s)
         else failwith("QFarm/timelock-is-not-finished");
 

@@ -31,11 +31,6 @@ type stake_params_type  is [@layout:comb] record [
   qs_pool                 : address;
 ]
 
-type timelock_type      is [@layout:comb] record [
-  (* In seconds, 0 for farms without timelock *)
-  duration                : nat;
-]
-
 type farm_type          is [@layout:comb] record [
   (* Users data *)
   users_info              : map(address, user_info_type);
@@ -51,8 +46,8 @@ type farm_type          is [@layout:comb] record [
   stake_params            : stake_params_type;
   (* Token in which rewards are paid *)
   reward_token            : token_type;
-  (* Timelock info *)
-  timelock                : timelock_type;
+  (* Timelock in seconds, 0 for farms without timelock *)
+  timelock                : nat;
   (* The account XTZ are currently delegated for *)
   current_delegated       : key_hash;
   (* The best candidate to become next delegated *)
@@ -120,14 +115,10 @@ type add_new_farm_type  is [@layout:comb] record [
   stake_params            : stake_params_type;
   (* Token in which rewards are paid *)
   reward_token            : token_type;
-  (* Flag: LP token staked or not *)
-  is_lp_farm              : bool;
-  (* Flag: staked tok standard is FA2 or not *)
-  is_fa2_token            : bool;
   (* Flag: paused or not at the beginning *)
   paused                  : bool;
-  (* Timelock info *)
-  timelock                : timelock_type;
+  (* Timelock in seconds, 0 for farms without timelock *)
+  timelock                : nat;
   (* Farm start timestamp *)
   start_time              : timestamp;
   (* Farm end timestamp *)

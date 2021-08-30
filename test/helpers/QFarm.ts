@@ -17,7 +17,8 @@ import { getLigo } from "../../scripts/helpers";
 
 import qFarmFunctions from "../../storage/json/QFarmFunctions.json";
 
-import { QFarmStorage } from "../types/QFarm";
+import { QFarmStorage, NewFarmParams, StakeParams, Fees } from "../types/QFarm";
+import { Utils, zeroAddress } from "./Utils";
 
 export class QFarm {
   contract: Contract;
@@ -65,19 +66,22 @@ export class QFarm {
     };
 
     for (const key in maps) {
-      this.storage[key] = await maps[key].reduce(async (prev, current) => {
-        try {
-          return {
-            ...(await prev),
-            [current]: await storage[key].get(current),
-          };
-        } catch (ex) {
-          return {
-            ...(await prev),
-            [current]: 0,
-          };
-        }
-      }, Promise.resolve({}));
+      this.storage.storage[key] = await maps[key].reduce(
+        async (prev, current) => {
+          try {
+            return {
+              ...(await prev),
+              [current]: await storage.storage[key].get(current),
+            };
+          } catch (ex) {
+            return {
+              ...(await prev),
+              [current]: 0,
+            };
+          }
+        },
+        Promise.resolve({})
+      );
     }
   }
 
@@ -169,5 +173,52 @@ export class QFarm {
     await confirmOperation(this.tezos, operation.hash);
 
     return operation;
+  }
+
+  async addNewFarm(
+    newFarmParams: NewFarmParams
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .add_new_farm(...Utils.destructObj(newFarmParams))
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+}
+
+export class QFarmUtils {
+  static async getMockNewFarmParams(utils: Utils): Promise<NewFarmParams> {
+    const fees: Fees = {
+      harvest_fee: 0,
+      withdrawal_fee: 0,
+    };
+    const stakeParams: StakeParams = {
+      staked_token: {
+        token: zeroAddress,
+        id: 0,
+        is_fa2: false,
+      },
+      is_lp_staked_token: false,
+      token: {
+        token: zeroAddress,
+        id: 0,
+        is_fa2: false,
+      },
+      qs_pool: zeroAddress,
+    };
+    const newFarmParams: NewFarmParams = {
+      fees: fees,
+      stake_params: stakeParams,
+      paused: false,
+      timelock: 0,
+      alloc_point: 0,
+      start_time: Date.parse(
+        (await utils.tezos.rpc.getBlockHeader()).timestamp
+      ).toString(),
+    };
+
+    return newFarmParams;
   }
 }

@@ -1,8 +1,11 @@
 import { Utils } from "./helpers/Utils";
-import { QFarm } from "./helpers/QFarm";
+import { QFarm, QFarmUtils } from "./helpers/QFarm";
 import { Burner } from "./helpers/Burner";
 import { ProxyMinter } from "./helpers/ProxyMinter";
 import { BakerRegistry } from "./helpers/BakerRegistry";
+import { zeroAddress } from "./helpers/Utils";
+
+import { NewFarmParams } from "./types/QFarm";
 
 import { rejects, ok, strictEqual } from "assert";
 
@@ -12,8 +15,6 @@ import { qFarmStorage } from "../storage/QFarm";
 import { burnerStorage } from "../storage/Burner";
 import { proxyMinterStorage } from "../storage/ProxyMinter";
 import { bakerRegistryStorage } from "../storage/BakerRegistry";
-
-const zeroAddress: string = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";
 
 describe("QFarm tests", async () => {
   var utils: Utils;
@@ -62,7 +63,7 @@ describe("QFarm tests", async () => {
   it("should fail if not admin is trying to setup new pending admin", async () => {
     await utils.setProvider(bob.sk);
     await rejects(qFarm.setAdmin(bob.pkh), (err: Error) => {
-      ok(err.message == "Not-admin");
+      ok(err.message === "Not-admin");
 
       return true;
     });
@@ -79,7 +80,7 @@ describe("QFarm tests", async () => {
 
   it("should fail if not pending admin is trying to confirm new admin", async () => {
     await rejects(qFarm.confirmAdmin(), (err: Error) => {
-      ok(err.message == "Not-pending-admin");
+      ok(err.message === "Not-pending-admin");
 
       return true;
     });
@@ -99,7 +100,7 @@ describe("QFarm tests", async () => {
 
     await utils.setProvider(alice.sk);
     await rejects(qFarm.setRewardPerSecond(newRPS), (err: Error) => {
-      ok(err.message == "Not-admin");
+      ok(err.message === "Not-admin");
 
       return true;
     });
@@ -120,7 +121,7 @@ describe("QFarm tests", async () => {
 
     await utils.setProvider(alice.sk);
     await rejects(qFarm.setBurner(burnerAddress), (err: Error) => {
-      ok(err.message == "Not-admin");
+      ok(err.message === "Not-admin");
 
       return true;
     });
@@ -141,7 +142,7 @@ describe("QFarm tests", async () => {
 
     await utils.setProvider(alice.sk);
     await rejects(qFarm.setProxyMinter(proxyMinterAddress), (err: Error) => {
-      ok(err.message == "Not-admin");
+      ok(err.message === "Not-admin");
 
       return true;
     });
@@ -164,7 +165,7 @@ describe("QFarm tests", async () => {
     await rejects(
       qFarm.setBakerRegistry(bakerRegistryAddress),
       (err: Error) => {
-        ok(err.message == "Not-admin");
+        ok(err.message === "Not-admin");
 
         return true;
       }
@@ -179,5 +180,106 @@ describe("QFarm tests", async () => {
     await qFarm.updateStorage();
 
     strictEqual(qFarm.storage.storage.baker_registry, bakerRegistryAddress);
+  });
+
+  it("should fail if not admin is trying to add new farm", async () => {
+    const newFarmParams: NewFarmParams = await QFarmUtils.getMockNewFarmParams(
+      utils
+    );
+
+    await utils.setProvider(alice.sk);
+    await rejects(qFarm.addNewFarm(newFarmParams), (err: Error) => {
+      ok(err.message === "Not-admin");
+
+      return true;
+    });
+  });
+
+  it("should add new farm by admin and set all farm's fields correctly", async () => {
+    let newFarmParams: NewFarmParams = await QFarmUtils.getMockNewFarmParams(
+      utils
+    );
+
+    newFarmParams.fees.harvest_fee = 10;
+    newFarmParams.fees.withdrawal_fee = 15;
+    newFarmParams.timelock = 20;
+    newFarmParams.alloc_point = 50;
+
+    await utils.setProvider(bob.sk);
+    await qFarm.addNewFarm(newFarmParams);
+    await qFarm.updateStorage({ farms: [0] });
+
+    strictEqual(
+      +qFarm.storage.storage.total_alloc_point,
+      newFarmParams.alloc_point
+    );
+    strictEqual(+qFarm.storage.storage.farms_count, 1);
+
+    strictEqual(
+      +qFarm.storage.storage.farms[0].fees.harvest_fee,
+      newFarmParams.fees.harvest_fee
+    );
+    strictEqual(
+      +qFarm.storage.storage.farms[0].fees.withdrawal_fee,
+      newFarmParams.fees.withdrawal_fee
+    );
+    strictEqual(
+      Date.parse(qFarm.storage.storage.farms[0].upd),
+      +newFarmParams.start_time * 1000
+    );
+    strictEqual(
+      qFarm.storage.storage.farms[0].stake_params.staked_token.token,
+      newFarmParams.stake_params.staked_token.token
+    );
+    strictEqual(
+      +qFarm.storage.storage.farms[0].stake_params.staked_token.id,
+      newFarmParams.stake_params.staked_token.id
+    );
+    strictEqual(
+      qFarm.storage.storage.farms[0].stake_params.staked_token.is_fa2,
+      newFarmParams.stake_params.staked_token.is_fa2
+    );
+    strictEqual(
+      qFarm.storage.storage.farms[0].stake_params.is_lp_staked_token,
+      newFarmParams.stake_params.is_lp_staked_token
+    );
+    strictEqual(
+      qFarm.storage.storage.farms[0].stake_params.token.token,
+      newFarmParams.stake_params.token.token
+    );
+    strictEqual(
+      +qFarm.storage.storage.farms[0].stake_params.token.id,
+      newFarmParams.stake_params.token.id
+    );
+    strictEqual(
+      qFarm.storage.storage.farms[0].stake_params.token.is_fa2,
+      newFarmParams.stake_params.token.is_fa2
+    );
+    strictEqual(
+      qFarm.storage.storage.farms[0].stake_params.qs_pool,
+      newFarmParams.stake_params.qs_pool
+    );
+    strictEqual(qFarm.storage.storage.farms[0].reward_token.token, zeroAddress);
+    strictEqual(+qFarm.storage.storage.farms[0].reward_token.id, 0);
+    strictEqual(qFarm.storage.storage.farms[0].reward_token.is_fa2, true);
+    strictEqual(
+      +qFarm.storage.storage.farms[0].timelock,
+      newFarmParams.timelock
+    );
+    strictEqual(qFarm.storage.storage.farms[0].current_delegated, zeroAddress);
+    strictEqual(qFarm.storage.storage.farms[0].current_candidate, zeroAddress);
+    strictEqual(qFarm.storage.storage.farms[0].paused, newFarmParams.paused);
+    strictEqual(
+      +qFarm.storage.storage.farms[0].alloc_point,
+      newFarmParams.alloc_point
+    );
+    strictEqual(+qFarm.storage.storage.farms[0].rps, 0);
+    strictEqual(+qFarm.storage.storage.farms[0].staked, 0);
+    strictEqual(
+      Date.parse(qFarm.storage.storage.farms[0].start_time),
+      +newFarmParams.start_time * 1000
+    );
+    strictEqual(+qFarm.storage.storage.farms[0].fid, 0);
+    strictEqual(+qFarm.storage.storage.farms[0].total_votes, 0);
   });
 });

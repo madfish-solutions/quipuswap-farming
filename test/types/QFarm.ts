@@ -2,6 +2,27 @@ import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 
 import { Token } from "./Common";
 
+export type Fees = {
+  harvest_fee: number;
+  withdrawal_fee: number;
+};
+
+export type StakeParams = {
+  staked_token: Token;
+  is_lp_staked_token: boolean;
+  token: Token;
+  qs_pool: string;
+};
+
+export type NewFarmParams = {
+  fees: Fees;
+  stake_params: StakeParams;
+  paused: boolean;
+  timelock: number;
+  alloc_point: number;
+  start_time: string;
+};
+
 export type QFarmStorage = {
   storage: {
     farms: MichelsonMap<MichelsonMapKey, unknown>;

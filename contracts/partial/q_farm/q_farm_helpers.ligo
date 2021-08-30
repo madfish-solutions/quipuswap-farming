@@ -60,6 +60,21 @@ function update_farm_rewards(
     };
   } with s
 
+(* Util to update all farms rewards *)
+function update_all_farms_rewards(
+  var s                 : storage_type)
+                        : storage_type is
+  block {
+    for i := 0 to s.farms_count - 1n
+      block {
+        (* Retrieve farm from the storage *)
+        var farm : farm_type := get_farm(abs(i), s);
+
+        (* Update rewards for the farm *)
+        s := update_farm_rewards(farm, s);
+      }
+  } with s
+
 (* Util to get proxy minter's %mint_qsgov_tokens entrypoint *)
 function get_proxy_minter_mint_entrypoint(
   const proxy_minter    : address)

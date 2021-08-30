@@ -52,13 +52,10 @@ function set_alloc_points(
           const params    : set_alloc_type)
                           : storage_type is
           block {
+            s := update_all_farms_rewards(s); (* Update all farms rewards *)
+
             (* Retrieve farm from the storage *)
             var farm : farm_type := get_farm(params.fid, s);
-
-            (* Check if need to update farm's rewards *)
-            if params.with_update
-            then s := update_farm_rewards(farm, s) (* Update farm's rewards *)
-            else skip;
 
             (* Ensure total allocation point is correct *)
             if s.total_alloc_point < farm.alloc_point
@@ -78,7 +75,9 @@ function set_alloc_points(
           } with s;
 
         (* Update allocation points *)
-        s := List.fold(set_alloc_point, params, s);
+        if s.farms_count = 0n
+        then skip
+        else s := List.fold(set_alloc_point, params, s);
       }
     | _                                 -> skip
     end

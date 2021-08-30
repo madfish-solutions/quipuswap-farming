@@ -115,8 +115,6 @@ type set_alloc_type     is [@layout:comb] record [
   fid                     : fid_type;
   (* New allocation for the farm *)
   alloc_point             : nat;
-  (* Flag: update rewards on the farm or not *)
-  with_update             : bool;
 ]
 
 type set_allocs_type    is list(set_alloc_type)

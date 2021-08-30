@@ -58,7 +58,7 @@ function set_alloc_points(
             var farm : farm_type := get_farm(params.fid, s);
 
             (* Ensure total allocation point is correct *)
-            if s.total_alloc_point < farm.alloc_point
+            if s.total_alloc_point <= farm.alloc_point
             then failwith("QFarm/wrong-allocation-points-number")
             else skip;
 

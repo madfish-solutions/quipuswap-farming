@@ -5,7 +5,7 @@ import { ProxyMinter } from "./helpers/ProxyMinter";
 import { BakerRegistry } from "./helpers/BakerRegistry";
 import { zeroAddress } from "./helpers/Utils";
 
-import { NewFarmParams } from "./types/QFarm";
+import { SetFeeParams, NewFarmParams } from "./types/QFarm";
 
 import { rejects, ok, strictEqual } from "assert";
 
@@ -86,7 +86,7 @@ describe("QFarm tests", async () => {
     });
   });
 
-  it("should confirm new admin", async () => {
+  it("should confirm new admin by pending admin", async () => {
     await utils.setProvider(bob.sk);
     await qFarm.confirmAdmin();
     await qFarm.updateStorage();
@@ -281,5 +281,74 @@ describe("QFarm tests", async () => {
     );
     strictEqual(+qFarm.storage.storage.farms[0].fid, 0);
     strictEqual(+qFarm.storage.storage.farms[0].total_votes, 0);
+  });
+
+  it("should fail if not admin is trying to set fees", async () => {
+    const fees: SetFeeParams[] = [
+      { fid: 0, fees: { harvest_fee: 15, withdrawal_fee: 10 } },
+    ];
+
+    await utils.setProvider(alice.sk);
+    await rejects(qFarm.setFees(fees), (err: Error) => {
+      ok(err.message === "Not-admin");
+
+      return true;
+    });
+  });
+
+  it("should fail if one farm from list of farms not found", async () => {
+    const fees: SetFeeParams[] = [
+      { fid: 0, fees: { harvest_fee: 15, withdrawal_fee: 10 } },
+      { fid: 666, fees: { harvest_fee: 15, withdrawal_fee: 10 } },
+    ];
+
+    await utils.setProvider(bob.sk);
+    await rejects(qFarm.setFees(fees), (err: Error) => {
+      ok(err.message === "QFarm/farm-not-set");
+
+      return true;
+    });
+  });
+
+  it("should set/update fees for one farm", async () => {
+    const fees: SetFeeParams[] = [
+      { fid: 0, fees: { harvest_fee: 1, withdrawal_fee: 5 } },
+    ];
+
+    await qFarm.setFees(fees);
+    await qFarm.updateStorage({ farms: [0] });
+
+    strictEqual(
+      +qFarm.storage.storage.farms[0].fees.harvest_fee,
+      fees[0].fees.harvest_fee
+    );
+    strictEqual(
+      +qFarm.storage.storage.farms[0].fees.withdrawal_fee,
+      fees[0].fees.withdrawal_fee
+    );
+  });
+
+  it("should set/update fees for group of farms", async () => {
+    const fees: SetFeeParams[] = [
+      { fid: 0, fees: { harvest_fee: 1, withdrawal_fee: 5 } },
+      { fid: 1, fees: { harvest_fee: 5, withdrawal_fee: 25 } },
+      { fid: 2, fees: { harvest_fee: 3, withdrawal_fee: 3 } },
+    ];
+
+    await qFarm.addNewFarm(await QFarmUtils.getMockNewFarmParams(utils));
+    await qFarm.addNewFarm(await QFarmUtils.getMockNewFarmParams(utils));
+    await qFarm.setFees(fees);
+    await qFarm.updateStorage({ farms: [0, 1, 2] });
+
+    for (let i = 0; i < fees.length; ++i) {
+      strictEqual(
+        +qFarm.storage.storage.farms[i].fees.harvest_fee,
+        fees[i].fees.harvest_fee
+      );
+      strictEqual(
+        +qFarm.storage.storage.farms[i].fees.withdrawal_fee,
+        fees[i].fees.withdrawal_fee
+      );
+    }
   });
 });

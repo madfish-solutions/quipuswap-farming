@@ -16,6 +16,11 @@
 
 4. `set_fees`:
 
+   - ✅ should fail if not admin is trying to set fees;
+   - ✅ should fail if one farm from list of farms not found;
+   - ✅ should set/update fees for one farm;
+   - ✅ should set/update fees for group of farms.
+
 5. `set_reward_per_second`:
 
    - ✅ should fail if not admin is trying to set reward per second;

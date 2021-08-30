@@ -7,6 +7,11 @@ export type Fees = {
   withdrawal_fee: number;
 };
 
+export type SetFeeParams = {
+  fid: number;
+  fees: Fees;
+};
+
 export type StakeParams = {
   staked_token: Token;
   is_lp_staked_token: boolean;

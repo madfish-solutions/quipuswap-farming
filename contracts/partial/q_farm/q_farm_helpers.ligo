@@ -65,13 +65,18 @@ function update_all_farms_rewards(
   var s                 : storage_type)
                         : storage_type is
   block {
-    for i := 0 to s.farms_count - 1n
+    var _i : nat := 0n;
+
+    while _i < s.farms_count
       block {
         (* Retrieve farm from the storage *)
-        var farm : farm_type := get_farm(abs(i), s);
+        var farm : farm_type := get_farm(_i, s);
 
         (* Update rewards for the farm *)
         s := update_farm_rewards(farm, s);
+
+        (* Update counter *)
+        _i := _i + 1n;
       }
   } with s
 

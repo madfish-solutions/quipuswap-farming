@@ -17,7 +17,13 @@ import { getLigo } from "../../scripts/helpers";
 
 import qFarmFunctions from "../../storage/json/QFarmFunctions.json";
 
-import { QFarmStorage, NewFarmParams, StakeParams, Fees } from "../types/QFarm";
+import {
+  QFarmStorage,
+  NewFarmParams,
+  StakeParams,
+  SetFeeParams,
+  Fees,
+} from "../types/QFarm";
 import { Utils, zeroAddress } from "./Utils";
 
 export class QFarm {
@@ -124,6 +130,16 @@ export class QFarm {
   async confirmAdmin(): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .confirm_admin([])
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async setFees(fees: SetFeeParams[]): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .set_fees(fees)
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

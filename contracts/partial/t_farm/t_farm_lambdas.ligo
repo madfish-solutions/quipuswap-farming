@@ -211,6 +211,9 @@ function pause_farms(
             (* Retrieve farm from the storage *)
             var farm : farm_type := get_farm(params.fid, s);
 
+            (* Update rewards for the farm *)
+            s := update_farm_rewards(farm, s);
+
             (* Pause or unpause the farm *)
             farm.paused := params.pause;
 

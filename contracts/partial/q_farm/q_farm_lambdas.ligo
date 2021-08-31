@@ -288,8 +288,10 @@ function deposit(
         user.staked := user.staked + params.amt;
         user.prev_earned := user.staked * farm.rps;
 
-        (* Reset user's timelock *)
-        user.last_staked := Tezos.now;
+        (* Check amount to stake *)
+        if params.amt > 0n
+        then user.last_staked := Tezos.now; (* Reset user's timelock *)
+        else skip;
 
         (* Save user's info in the farm and update farm's staked amount *)
         s.users_info[(params.fid, Tezos.sender)] := user;
@@ -298,55 +300,63 @@ function deposit(
         (* Save farm to the storage *)
         s.farms[params.fid] := farm;
 
-        (* Check the staked token standard *)
-        if farm.stake_params.staked_token.is_fa2
+        (* Check amount to stake *)
+        if params.amt > 0n
         then {
-          (* Prepare FA2 token transfer params *)
-          const dst : transfer_dst_type = record [
-            to_      = Tezos.self_address;
-            token_id = farm.stake_params.staked_token.id;
-            amount   = params.amt;
-          ];
-          const fa2_transfer_param : fa2_send_type = record [
-            from_ = Tezos.sender;
-            txs   = list [dst];
-          ];
+          (* Check the staked token standard *)
+          if farm.stake_params.staked_token.is_fa2
+          then {
+            (* Prepare FA2 token transfer params *)
+            const dst : transfer_dst_type = record [
+              to_      = Tezos.self_address;
+              token_id = farm.stake_params.staked_token.id;
+              amount   = params.amt;
+            ];
+            const fa2_transfer_param : fa2_send_type = record [
+              from_ = Tezos.sender;
+              txs   = list [dst];
+            ];
 
-          (* Prepare FA2 transfer operation for staked token *)
-          operations := Tezos.transaction(
-            FA2_transfer_type(list [fa2_transfer_param]),
-            0mutez,
-            get_fa2_token_transfer_entrypoint(
-              farm.stake_params.staked_token.token
-            )
-          ) # operations;
-        }
-        else {
-          (* Prepare FA1.2 transfer operation for staked token *)
-          operations := Tezos.transaction(
-            FA12_transfer_type(Tezos.sender, (Tezos.self_address, params.amt)),
-            0mutez,
-            get_fa12_token_transfer_entrypoint(
-              farm.stake_params.staked_token.token
-            )
-          ) # operations;
-        };
+            (* Prepare FA2 transfer operation for staked token *)
+            operations := Tezos.transaction(
+              FA2_transfer_type(list [fa2_transfer_param]),
+              0mutez,
+              get_fa2_token_transfer_entrypoint(
+                farm.stake_params.staked_token.token
+              )
+            ) # operations;
+          }
+          else {
+            (* Prepare FA1.2 transfer operation for staked token *)
+            operations := Tezos.transaction(
+              FA12_transfer_type(
+                Tezos.sender,
+                (Tezos.self_address, params.amt)
+              ),
+              0mutez,
+              get_fa12_token_transfer_entrypoint(
+                farm.stake_params.staked_token.token
+              )
+            ) # operations;
+          };
 
-        (* Check staked token type (LP or not) *)
-        if farm.stake_params.is_lp_staked_token
-        then {
-          (* Vote for the preferred baker *)
-          const vote_res : (list(operation) * storage_type) = vote(
-            operations,
-            user,
-            farm,
-            s,
-            params
-          );
+          (* Check staked token type (LP or not) *)
+          if farm.stake_params.is_lp_staked_token
+          then {
+            (* Vote for the preferred baker *)
+            const vote_res : (list(operation) * storage_type) = vote(
+              operations,
+              user,
+              farm,
+              s,
+              params
+            );
 
-          (* Update the farm and list of operations to be performed *)
-          operations := vote_res.0;
-          s := vote_res.1;
+            (* Update the farm and list of operations to be performed *)
+            operations := vote_res.0;
+            s := vote_res.1;
+          }
+          else skip;
         }
         else skip;
 

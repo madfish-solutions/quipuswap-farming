@@ -268,7 +268,6 @@ describe("QFarm tests", async () => {
     );
     strictEqual(qFarm.storage.storage.farms[0].current_delegated, zeroAddress);
     strictEqual(qFarm.storage.storage.farms[0].current_candidate, zeroAddress);
-    strictEqual(qFarm.storage.storage.farms[0].paused, newFarmParams.paused);
     strictEqual(
       +qFarm.storage.storage.farms[0].alloc_point,
       newFarmParams.alloc_point

@@ -47,23 +47,21 @@
    - should fail if farm start time less then now;
    - ✅ should add new farm by admin and set all farm's fields correctly.
 
-10. `pause_farms`:
+10. `deposit`:
 
-11. `deposit`:
+11. `withdraw`:
 
-12. `withdraw`:
+12. `harvest`:
 
-13. `harvest`:
+13. `burn_xtz_rewards`:
 
-14. `burn_xtz_rewards`:
+14. `burn_farm_rewards`:
 
-15. `burn_farm_rewards`:
+15. `fa12_tok_bal_callback`:
 
-16. `fa12_tok_bal_callback`:
+16. `fa2_tok_bal_callback`:
 
-17. `fa2_tok_bal_callback`:
-
-18. `buyback`:
+17. `buyback`:
 
 ## Burner
 

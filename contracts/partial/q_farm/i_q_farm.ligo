@@ -46,8 +46,6 @@ type farm_type          is [@layout:comb] record [
   current_delegated       : key_hash;
   (* The best candidate to become next delegated *)
   current_candidate       : key_hash;
-  (* Falg: farm paused or not *)
-  paused                  : bool;
   (* Farm allocation point *)
   alloc_point             : nat;
   (* Reward per share *)
@@ -141,8 +139,6 @@ type add_new_farm_type  is [@layout:comb] record [
   fees                    : fees_type;
   (* Staking params *)
   stake_params            : stake_params_type;
-  (* Flag: paused or not at the beginning *)
-  paused                  : bool;
   (* Timelock in seconds, 0 for farms without timelock *)
   timelock                : nat;
   (* Farm allocation point *)
@@ -150,15 +146,6 @@ type add_new_farm_type  is [@layout:comb] record [
   (* Farm start timestamp *)
   start_time              : timestamp;
 ]
-
-type pause_farm_type    is [@layout:comb] record [
-  (* Farm ID *)
-  fid                     : fid_type;
-  (* Flag: pause or unpause *)
-  pause                   : bool;
-]
-
-type pause_farms_type   is list(pause_farm_type)
 
 type deposit_type       is [@layout:comb] record [
   (* Farm ID *)
@@ -218,7 +205,6 @@ type action_type        is
 | Set_proxy_minter        of set_proxy_type
 | Set_baker_registry      of set_registry_type
 | Add_new_farm            of add_new_farm_type
-| Pause_farms             of pause_farms_type
 | Deposit                 of deposit_type
 | Withdraw                of withdraw_type
 | Harvest                 of harvest_type

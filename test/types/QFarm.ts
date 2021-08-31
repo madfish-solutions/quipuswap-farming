@@ -22,7 +22,6 @@ export type StakeParams = {
 export type NewFarmParams = {
   fees: Fees;
   stake_params: StakeParams;
-  paused: boolean;
   timelock: number;
   alloc_point: number;
   start_time: string;

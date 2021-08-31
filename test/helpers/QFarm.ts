@@ -227,7 +227,6 @@ export class QFarmUtils {
     const newFarmParams: NewFarmParams = {
       fees: fees,
       stake_params: stakeParams,
-      paused: false,
       timelock: 0,
       alloc_point: 0,
       start_time: Date.parse(

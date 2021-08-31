@@ -37,38 +37,34 @@
   },
   {
     "index": 9,
-    "name": "pause_farms"
-  },
-  {
-    "index": 10,
     "name": "deposit"
   },
   {
-    "index": 11,
+    "index": 10,
     "name": "withdraw"
   },
   {
-    "index": 12,
+    "index": 11,
     "name": "harvest"
   },
   {
-    "index": 13,
+    "index": 12,
     "name": "burn_xtz_rewards"
   },
   {
-    "index": 14,
+    "index": 13,
     "name": "burn_farm_rewards"
   },
   {
-    "index": 15,
+    "index": 14,
     "name": "buyback"
   },
   {
-    "index": 16,
+    "index": 15,
     "name": "fa12_tok_bal_callback"
   },
   {
-    "index": 17,
+    "index": 16,
     "name": "fa2_tok_bal_callback"
   }
 ]

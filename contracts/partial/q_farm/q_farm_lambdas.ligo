@@ -217,7 +217,6 @@ function add_new_farm(
           timelock          = params.timelock;
           current_delegated = zero_key_hash;
           current_candidate = zero_key_hash;
-          paused            = params.paused;
           alloc_point       = params.alloc_point;
           rps               = 0n;
           staked            = 0n;
@@ -228,40 +227,6 @@ function add_new_farm(
 
         (* Update farms count *)
         s.farms_count := s.farms_count + 1n;
-      }
-    | _                                 -> skip
-    end
-  } with (no_operations, s)
-
-(* Pause or unpause farms *)
-function pause_farms(
-  const action          : action_type;
-  var s                 : storage_type)
-                        : return_type is
-  block {
-    case action of
-      Pause_farms(params)               -> {
-        (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
-
-        (* Pause or unpause the specified farm *)
-        function pause_farm(
-          var s           : storage_type;
-          const params    : pause_farm_type)
-                          : storage_type is
-          block {
-            (* Retrieve farm from the storage *)
-            var farm : farm_type := get_farm(params.fid, s);
-
-            (* Pause or unpause the farm *)
-            farm.paused := params.pause;
-
-            (* Save farm to the storage *)
-            s.farms[params.fid] := farm;
-          } with s;
-
-        (* Pause or unpause farms from params list *)
-        s := List.fold(pause_farm, params, s);
       }
     | _                                 -> skip
     end
@@ -281,7 +246,7 @@ function deposit(
         (* Retrieve farm from the storage *)
         var farm : farm_type := get_farm(params.fid, s);
 
-        if farm.paused
+        if farm.alloc_point = 0n
         then failwith("QFarm/farm-is-paused")
         else skip;
 

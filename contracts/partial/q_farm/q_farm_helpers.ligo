@@ -37,6 +37,17 @@ function update_farm_rewards(
     if Tezos.now <= _farm.start_time
     then skip
     else {
+      (* Check if allocation points already allocated *)
+      if not _farm.allocated
+      then {
+        (* Update total allocation point *)
+        s.total_alloc_point := s.total_alloc_point + _farm.alloc_point;
+
+        (* Update farm's allocation flag *)
+        _farm.allocated := True;
+      }
+      else skip;
+
       (* Check if some tokens is already staked *)
       if _farm.staked =/= 0n
       then {

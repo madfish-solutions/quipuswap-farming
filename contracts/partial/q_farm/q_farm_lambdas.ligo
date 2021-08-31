@@ -57,6 +57,10 @@ function set_alloc_points(
             (* Retrieve farm from the storage *)
             var farm : farm_type := get_farm(params.fid, s);
 
+            if Tezos.now <= farm.start_time
+            then failwith("QFarm/not-started-yet")
+            else skip;
+
             (* Ensure total allocation point is correct *)
             if s.total_alloc_point <= farm.alloc_point
             then failwith("QFarm/wrong-allocation-points-number")
@@ -205,9 +209,6 @@ function add_new_farm(
         then failwith("QFarm/wrong-start-time")
         else skip;
 
-        (* Update total allocation point *)
-        s.total_alloc_point := s.total_alloc_point + params.alloc_point;
-
         (* Add new farm info to the storage *)
         s.farms[s.farms_count] := record [
           fees              = params.fees;
@@ -218,6 +219,7 @@ function add_new_farm(
           current_delegated = zero_key_hash;
           current_candidate = zero_key_hash;
           alloc_point       = params.alloc_point;
+          allocated         = False;
           rps               = 0n;
           staked            = 0n;
           start_time        = params.start_time;

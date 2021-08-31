@@ -48,6 +48,8 @@ type farm_type          is [@layout:comb] record [
   current_candidate       : key_hash;
   (* Farm allocation point *)
   alloc_point             : nat;
+  (* Flag: points already allocated or nor *)
+  allocated               : bool;
   (* Reward per share *)
   rps                     : nat;
   (* Total count of staked tokens in the farm *)

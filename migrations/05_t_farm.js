@@ -43,6 +43,7 @@ module.exports = async (tezos) => {
     ProxyMinter["networks"][env.network]["proxy_minter"];
   tFarmStorage.storage.baker_registry =
     BakerRegistry["networks"][env.network]["baker_registry"];
+  tFarmStorage.storage.block_time = env.block_time;
 
   const tFarmAddress = await migrate(tezos, "t_farm", tFarmStorage);
 

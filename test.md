@@ -14,6 +14,13 @@
 
 3. `set_alloc_points`:
 
+   - ✅ should fail if not admin is trying to set allocation points;
+   - ✅ should fail if one farm from list of farms not found;
+   - should fail if farm not started yet;
+   - should fail if wrong allocation points number;
+   - should set/update allocation point for one farm;
+   - should set/update allocation points for group of farms.
+
 4. `set_fees`:
 
    - ✅ should fail if not admin is trying to set fees;
@@ -44,7 +51,7 @@
 9. `add_new_farm`:
 
    - ✅ should fail if not admin is trying to add new farm;
-   - should fail if farm start time less then now;
+   - ✅ should fail if farm start time less then current block;
    - ✅ should add new farm by admin and set all farm's fields correctly.
 
 10. `deposit`:

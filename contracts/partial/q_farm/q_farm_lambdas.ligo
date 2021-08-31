@@ -52,12 +52,13 @@ function set_alloc_points(
           const params    : set_alloc_type)
                           : storage_type is
           block {
-            s := update_all_farms_rewards(s); (* Update all farms rewards *)
+            (* Update all farms rewards *)
+            s := update_all_farms_rewards(s);
 
             (* Retrieve farm from the storage *)
             var farm : farm_type := get_farm(params.fid, s);
 
-            if Tezos.now <= farm.start_time
+            if Tezos.level < farm.start_time
             then failwith("QFarm/not-started-yet")
             else skip;
 
@@ -79,9 +80,7 @@ function set_alloc_points(
           } with s;
 
         (* Update allocation points *)
-        if s.farms_count = 0n
-        then skip
-        else s := List.fold(set_alloc_point, params, s);
+        s := List.fold(set_alloc_point, params, s);
       }
     | _                                 -> skip
     end
@@ -204,15 +203,15 @@ function add_new_farm(
         (* Check of admin permissions *)
         only_admin(Tezos.sender, s.admin);
 
-        (* Ensure start timestamp is correct *)
-        if params.start_time < Tezos.now
+        (* Ensure start block is correct *)
+        if params.start_time < Tezos.level
         then failwith("QFarm/wrong-start-time")
         else skip;
 
         (* Add new farm info to the storage *)
         s.farms[s.farms_count] := record [
           fees              = params.fees;
-          upd               = params.start_time;
+          upd               = Tezos.now;
           stake_params      = params.stake_params;
           reward_token      = s.qsgov;
           timelock          = params.timelock;

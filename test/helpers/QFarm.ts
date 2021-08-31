@@ -2,7 +2,9 @@ import {
   TezosToolkit,
   TransactionOperation,
   OriginationOperation,
+  WalletOperation,
   Contract,
+  OpKind,
 } from "@taquito/taquito";
 
 import { execSync } from "child_process";
@@ -23,6 +25,7 @@ import {
   StakeParams,
   SetFeeParams,
   Fees,
+  SetAllocPointParams,
 } from "../types/QFarm";
 import { Utils, zeroAddress } from "./Utils";
 
@@ -93,28 +96,33 @@ export class QFarm {
 
   async setLambdas(): Promise<void> {
     const ligo: string = getLigo(true);
+    let params: any[] = [];
 
     for (const qFarmFunction of qFarmFunctions) {
       const stdout: Buffer = execSync(
         `${ligo} compile-parameter --michelson-format=json $PWD/contracts/main/q_farm.ligo main 'Setup_func(record index=${qFarmFunction.index}n; func=${qFarmFunction.name}; end)'`,
         { maxBuffer: 1024 * 500 }
       );
-      const operation: TransactionOperation =
-        await this.tezos.contract.transfer({
-          to: this.contract.address,
-          amount: 0,
-          parameter: {
-            entrypoint: "setup_func",
-            value: JSON.parse(stdout.toString()).args[0],
-          },
-        });
 
-      await confirmOperation(this.tezos, operation.hash);
+      params.push({
+        kind: OpKind.TRANSACTION,
+        to: this.contract.address,
+        amount: 0,
+        parameter: {
+          entrypoint: "setup_func",
+          value: JSON.parse(stdout.toString()).args[0],
+        },
+      });
 
       console.log(qFarmFunction.name);
     }
 
     console.log();
+
+    const batch = this.tezos.wallet.batch(params);
+    const operation: WalletOperation = await batch.send();
+
+    await confirmOperation(this.tezos, operation.opHash);
   }
 
   async setAdmin(newAdmin: string): Promise<TransactionOperation> {
@@ -130,6 +138,18 @@ export class QFarm {
   async confirmAdmin(): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .confirm_admin([])
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async setAllocPoints(
+    allocPoints: SetAllocPointParams[]
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .set_alloc_points(allocPoints)
       .send();
 
     await confirmOperation(this.tezos, operation.hash);
@@ -229,9 +249,7 @@ export class QFarmUtils {
       stake_params: stakeParams,
       timelock: 0,
       alloc_point: 0,
-      start_time: Date.parse(
-        (await utils.tezos.rpc.getBlockHeader()).timestamp
-      ).toString(),
+      start_time: (await utils.tezos.rpc.getBlockHeader()).level + 1,
     };
 
     return newFarmParams;

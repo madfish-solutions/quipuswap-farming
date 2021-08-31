@@ -105,6 +105,24 @@ function set_baker_registry(
     end
   } with (no_operations, s)
 
+(* Update block time (in seconds) *)
+function set_block_time(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    case action of
+      Set_block_time(block_time)        -> {
+        (* Check of admin permissions *)
+        only_admin(Tezos.sender, s.admin);
+
+        (* Update block time *)
+        s.block_time := block_time;
+      }
+    | _                                 -> skip
+    end
+  } with (no_operations, s)
+
 (* Register new farm *)
 function add_new_farm(
   const action          : action_type;
@@ -119,12 +137,12 @@ function add_new_farm(
         (* Check of admin permissions *)
         only_admin(Tezos.sender, s.admin);
 
-        (* Ensure start timestamp is correct *)
-        if params.start_time < Tezos.now
+        (* Ensure start block is correct *)
+        if params.start_time < Tezos.level
         then failwith("TFarm/wrong-start-block")
         else skip;
 
-        (* Ensure end timestamp is correct *)
+        (* Ensure end block is correct *)
         if params.end_time <= params.start_time
         then failwith("TFarm/wrong-end-block")
         else skip;
@@ -132,7 +150,7 @@ function add_new_farm(
         (* Add new farm info to the storage *)
         s.farms[s.farms_count] := record [
           fees              = params.fees;
-          upd               = params.start_time;
+          upd               = Tezos.now;
           stake_params      = params.stake_params;
           reward_token      = params.reward_token;
           timelock          = params.timelock;
@@ -153,7 +171,7 @@ function add_new_farm(
 
         (* Calculate reward tokens amount to be transferred to contract *)
         const rew_amt : nat = abs(params.end_time - params.start_time) *
-          params.reward_per_second;
+          s.block_time * params.reward_per_second;
 
         (* Check reward token standard *)
         if params.reward_token.is_fa2

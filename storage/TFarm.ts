@@ -21,6 +21,7 @@ export const tFarmStorage: TFarmStorage = {
     proxy_minter: null,
     baker_registry: null,
     farms_count: 0,
+    block_time: 0,
   },
   t_farm_lambdas: MichelsonMap.fromLiteral({}),
 };

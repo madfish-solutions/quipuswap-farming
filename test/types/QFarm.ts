@@ -12,6 +12,11 @@ export type SetFeeParams = {
   fees: Fees;
 };
 
+export type SetAllocPointParams = {
+  fid: number;
+  alloc_point: number;
+};
+
 export type StakeParams = {
   staked_token: Token;
   is_lp_staked_token: boolean;
@@ -24,7 +29,7 @@ export type NewFarmParams = {
   stake_params: StakeParams;
   timelock: number;
   alloc_point: number;
-  start_time: string;
+  start_time: number;
 };
 
 export type QFarmStorage = {

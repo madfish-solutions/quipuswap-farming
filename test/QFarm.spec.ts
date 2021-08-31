@@ -5,7 +5,11 @@ import { ProxyMinter } from "./helpers/ProxyMinter";
 import { BakerRegistry } from "./helpers/BakerRegistry";
 import { zeroAddress } from "./helpers/Utils";
 
-import { SetFeeParams, NewFarmParams } from "./types/QFarm";
+import {
+  SetFeeParams,
+  NewFarmParams,
+  SetAllocPointParams,
+} from "./types/QFarm";
 
 import { rejects, ok, strictEqual } from "assert";
 
@@ -93,6 +97,28 @@ describe("QFarm tests", async () => {
 
     strictEqual(qFarm.storage.storage.admin, bob.pkh);
     strictEqual(qFarm.storage.storage.pending_admin, zeroAddress);
+  });
+
+  it("should fail if not admin is trying to set allocation points", async () => {
+    const allocPoints: SetAllocPointParams[] = [{ fid: 0, alloc_point: 15 }];
+
+    await utils.setProvider(alice.sk);
+    await rejects(qFarm.setAllocPoints(allocPoints), (err: Error) => {
+      ok(err.message === "Not-admin");
+
+      return true;
+    });
+  });
+
+  it("should fail if one farm from list of farms not found", async () => {
+    const allocPoints: SetAllocPointParams[] = [{ fid: 0, alloc_point: 15 }];
+
+    await utils.setProvider(bob.sk);
+    await rejects(qFarm.setAllocPoints(allocPoints), (err: Error) => {
+      ok(err.message === "QFarm/farm-not-set");
+
+      return true;
+    });
   });
 
   it("should fail if not admin is trying to set reward per second", async () => {
@@ -195,6 +221,21 @@ describe("QFarm tests", async () => {
     });
   });
 
+  it("should fail if farm start time less then current block", async () => {
+    const newFarmParams: NewFarmParams = await QFarmUtils.getMockNewFarmParams(
+      utils
+    );
+
+    newFarmParams.start_time = 0;
+
+    await utils.setProvider(bob.sk);
+    await rejects(qFarm.addNewFarm(newFarmParams), (err: Error) => {
+      ok(err.message === "QFarm/wrong-start-time");
+
+      return true;
+    });
+  });
+
   it("should add new farm by admin and set all farm's fields correctly", async () => {
     let newFarmParams: NewFarmParams = await QFarmUtils.getMockNewFarmParams(
       utils
@@ -209,10 +250,7 @@ describe("QFarm tests", async () => {
     await qFarm.addNewFarm(newFarmParams);
     await qFarm.updateStorage({ farms: [0] });
 
-    strictEqual(
-      +qFarm.storage.storage.total_alloc_point,
-      newFarmParams.alloc_point
-    );
+    strictEqual(+qFarm.storage.storage.total_alloc_point, 0);
     strictEqual(+qFarm.storage.storage.farms_count, 1);
 
     strictEqual(
@@ -225,7 +263,7 @@ describe("QFarm tests", async () => {
     );
     strictEqual(
       Date.parse(qFarm.storage.storage.farms[0].upd),
-      +newFarmParams.start_time * 1000
+      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) - 1000
     );
     strictEqual(
       qFarm.storage.storage.farms[0].stake_params.staked_token.token,
@@ -275,8 +313,8 @@ describe("QFarm tests", async () => {
     strictEqual(+qFarm.storage.storage.farms[0].rps, 0);
     strictEqual(+qFarm.storage.storage.farms[0].staked, 0);
     strictEqual(
-      Date.parse(qFarm.storage.storage.farms[0].start_time),
-      +newFarmParams.start_time * 1000
+      +qFarm.storage.storage.farms[0].start_time,
+      newFarmParams.start_time
     );
     strictEqual(+qFarm.storage.storage.farms[0].fid, 0);
     strictEqual(+qFarm.storage.storage.farms[0].total_votes, 0);

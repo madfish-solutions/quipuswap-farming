@@ -26,6 +26,7 @@ import {
   SetFeeParams,
   Fees,
   SetAllocPointParams,
+  DepositParams,
 } from "../types/QFarm";
 import { Utils, zeroAddress } from "./Utils";
 
@@ -76,7 +77,7 @@ export class QFarm {
 
     for (const key in maps) {
       this.storage.storage[key] = await maps[key].reduce(
-        async (prev, current) => {
+        async (prev: any, current: any) => {
           try {
             return {
               ...(await prev),
@@ -216,6 +217,18 @@ export class QFarm {
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .add_new_farm(...Utils.destructObj(newFarmParams))
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async deposit(depositParams: DepositParams): Promise<TransactionOperation> {
+    console.log(...Utils.destructObj(depositParams));
+
+    const operation: TransactionOperation = await this.contract.methods
+      .deposit(...Utils.destructObj(depositParams))
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

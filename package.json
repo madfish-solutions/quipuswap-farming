@@ -10,6 +10,8 @@
     "compile": "yarn clean && ts-node scripts/cli.js compile -f json --c q_farm t_farm burner proxy_minter baker_registry",
     "migrate": "yarn compile && ts-node scripts/cli.js migrate",
     "migrate-granadanet": "yarn compile && ts-node scripts/cli.js migrate -n granadanet",
+    "test:compile-fa12": "ts-node scripts/cli.js compile -f json -p contracts/test/main -v 0.9.0 -o test/build --c fa12",
+    "test:compile": "yarn test:compile-fa12",
     "test": "ts-mocha --paths test/*.spec.ts"
   },
   "repository": {

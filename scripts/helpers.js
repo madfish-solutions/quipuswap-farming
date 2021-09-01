@@ -9,11 +9,11 @@ const { confirmOperation } = require("./confirmation");
 
 const env = require("../env");
 
-const getLigo = (isDockerizedLigo) => {
+const getLigo = (isDockerizedLigo, ligoVersion = env.ligoVersion) => {
   let path = "ligo";
 
   if (isDockerizedLigo) {
-    path = `docker run -v $PWD:$PWD --rm -i ligolang/ligo:${env.ligoVersion}`;
+    path = `docker run -v $PWD:$PWD --rm -i ligolang/ligo:${ligoVersion}`;
 
     try {
       execSync(`${path}  --help`);
@@ -26,7 +26,7 @@ const getLigo = (isDockerizedLigo) => {
     try {
       execSync(`${path}  --help`);
     } catch (err) {
-      path = `docker run -v $PWD:$PWD --rm -i ligolang/ligo:${env.ligoVersion}`;
+      path = `docker run -v $PWD:$PWD --rm -i ligolang/ligo:${ligoVersion}`;
 
       execSync(`${path}  --help`);
     }
@@ -49,15 +49,21 @@ const getMigrationsList = () => {
     .map((file) => file.slice(0, file.length - 3));
 };
 
-const compile = async (contract, format, outputDir = env.buildDir) => {
-  const ligo = getLigo(true);
+const compile = async (
+  contract,
+  format,
+  contractsDir = env.contractsDir,
+  outputDir = env.buildDir,
+  ligoVersion = env.ligoVersion
+) => {
+  const ligo = getLigo(true, ligoVersion);
   const contracts = !contract ? getContractsList() : [contract];
 
   contracts.forEach((contract) => {
     const michelson = execSync(
       `${ligo} compile-contract ${
         format === "json" ? "--michelson-format=json" : ""
-      } $PWD/${env.contractsDir}/${contract}.ligo main`,
+      } $PWD/${contractsDir}/${contract}.ligo main`,
       { maxBuffer: 1024 * 500 }
     ).toString();
 

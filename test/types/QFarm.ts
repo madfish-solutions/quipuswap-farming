@@ -32,6 +32,14 @@ export type NewFarmParams = {
   start_time: string;
 };
 
+export type DepositParams = {
+  fid: number;
+  amt: number;
+  referrer?: string;
+  rewards_receiver: string;
+  candidate: string;
+};
+
 export type QFarmStorage = {
   storage: {
     farms: MichelsonMap<MichelsonMapKey, unknown>;

@@ -17,15 +17,31 @@ const argv = yargs
         alias: "f",
         type: "string",
       },
+      contracts_dir: {
+        description: "contracts directory",
+        alias: "p",
+        type: "string",
+      },
       output_dir: {
         description: "output directory",
         alias: "o",
         type: "string",
       },
+      ligo_version: {
+        description: "ligo version",
+        alias: "v",
+        type: "string",
+      },
     },
     async (argv) => {
       for (i in argv.contracts) {
-        compile(argv.contracts[i], argv.format, argv.output_dir);
+        compile(
+          argv.contracts[i],
+          argv.format,
+          argv.contracts_dir,
+          argv.output_dir,
+          argv.ligo_version
+        );
       }
     }
   )

@@ -23,13 +23,13 @@ export class Utils {
     });
   }
 
-  async setProvider(newProviderSK): Promise<void> {
+  async setProvider(newProviderSK: string): Promise<void> {
     this.tezos.setProvider({
       signer: await InMemorySigner.fromSecretKey(newProviderSK),
     });
   }
 
-  static destructObj(obj) {
+  static destructObj(obj: any) {
     let arr = [];
 
     Object.keys(obj).map(function (k) {

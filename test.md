@@ -16,8 +16,7 @@
 
    - ✅ should fail if not admin is trying to set allocation points;
    - ✅ should fail if one farm from list of farms not found;
-   - should fail if farm not started yet;
-   - should fail if wrong allocation points number;
+   - ✅ should fail if farm not started yet;
    - should set/update allocation point for one farm;
    - should set/update allocation points for group of farms.
 

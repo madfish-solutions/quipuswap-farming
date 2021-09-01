@@ -62,11 +62,6 @@ function set_alloc_points(
             then failwith("QFarm/not-started-yet")
             else skip;
 
-            (* Ensure total allocation point is correct *)
-            if s.total_alloc_point <= farm.alloc_point
-            then failwith("QFarm/wrong-allocation-points-number")
-            else skip;
-
             (* Update total allocation point *)
             s.total_alloc_point := abs(
               s.total_alloc_point - farm.alloc_point

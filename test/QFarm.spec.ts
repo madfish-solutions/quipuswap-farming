@@ -1,3 +1,4 @@
+import { FA12 } from "./helpers/FA12";
 import { Utils } from "./helpers/Utils";
 import { QFarm, QFarmUtils } from "./helpers/QFarm";
 import { Burner } from "./helpers/Burner";
@@ -9,18 +10,21 @@ import {
   SetFeeParams,
   NewFarmParams,
   SetAllocPointParams,
+  DepositParams,
 } from "./types/QFarm";
 
 import { rejects, ok, strictEqual } from "assert";
 
 import { alice, bob } from "../scripts/sandbox/accounts";
 
+import { fa12torage } from "../storage/test/FA12";
 import { qFarmStorage } from "../storage/QFarm";
 import { burnerStorage } from "../storage/Burner";
 import { proxyMinterStorage } from "../storage/ProxyMinter";
 import { bakerRegistryStorage } from "../storage/BakerRegistry";
 
 describe("QFarm tests", async () => {
+  var fa12: FA12;
   var utils: Utils;
   var qFarm: QFarm;
   var burner: Burner;
@@ -53,6 +57,7 @@ describe("QFarm tests", async () => {
     proxyMinterStorage.admin = alice.pkh;
     proxyMinterStorage.pending_admin = zeroAddress;
 
+    fa12 = await FA12.originate(utils.tezos, fa12torage);
     qFarm = await QFarm.originate(utils.tezos, qFarmStorage);
     burner = await Burner.originate(utils.tezos, burnerStorage);
     proxyMinter = await ProxyMinter.originate(utils.tezos, proxyMinterStorage);
@@ -228,6 +233,7 @@ describe("QFarm tests", async () => {
 
     newFarmParams.fees.harvest_fee = 10;
     newFarmParams.fees.withdrawal_fee = 15;
+    newFarmParams.stake_params.staked_token.token = fa12.contract.address;
     newFarmParams.timelock = 20;
     newFarmParams.alloc_point = 50;
 
@@ -373,5 +379,21 @@ describe("QFarm tests", async () => {
         fees[i].fees.withdrawal_fee
       );
     }
+  });
+
+  it("should fail if farm not started yet", async () => {
+    const allocPoints: SetAllocPointParams[] = [{ fid: 3, alloc_point: 15 }];
+    let newFarmParams: NewFarmParams = await QFarmUtils.getMockNewFarmParams(
+      utils
+    );
+
+    newFarmParams.start_time = String(+newFarmParams.start_time + 60000);
+
+    await qFarm.addNewFarm(newFarmParams);
+    await rejects(qFarm.setAllocPoints(allocPoints), (err: Error) => {
+      ok(err.message === "QFarm/not-started-yet");
+
+      return true;
+    });
   });
 });

@@ -58,7 +58,7 @@ function set_alloc_points(
             (* Retrieve farm from the storage *)
             var farm : farm_type := get_farm(params.fid, s);
 
-            if Tezos.level < farm.start_time
+            if Tezos.now < farm.start_time
             then failwith("QFarm/not-started-yet")
             else skip;
 
@@ -203,15 +203,15 @@ function add_new_farm(
         (* Check of admin permissions *)
         only_admin(Tezos.sender, s.admin);
 
-        (* Ensure start block is correct *)
-        if params.start_time < Tezos.level
-        then failwith("QFarm/wrong-start-time")
-        else skip;
+        (* Configure correct start time *)
+        const start_time : timestamp = if params.start_time <= Tezos.now
+          then Tezos.now
+          else params.start_time;
 
         (* Add new farm info to the storage *)
         s.farms[s.farms_count] := record [
           fees              = params.fees;
-          upd               = Tezos.now;
+          upd               = start_time;
           stake_params      = params.stake_params;
           reward_token      = s.qsgov;
           timelock          = params.timelock;
@@ -221,7 +221,7 @@ function add_new_farm(
           allocated         = False;
           rps               = 0n;
           staked            = 0n;
-          start_time        = params.start_time;
+          start_time        = start_time;
           fid               = s.farms_count;
           total_votes       = 0n;
         ];

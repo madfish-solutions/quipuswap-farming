@@ -249,7 +249,9 @@ export class QFarmUtils {
       stake_params: stakeParams,
       timelock: 0,
       alloc_point: 0,
-      start_time: (await utils.tezos.rpc.getBlockHeader()).level + 1,
+      start_time: String(
+        Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000
+      ),
     };
 
     return newFarmParams;

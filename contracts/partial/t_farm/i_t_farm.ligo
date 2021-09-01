@@ -54,10 +54,10 @@ type farm_type          is [@layout:comb] record [
   rps                     : nat;
   (* Total count of staked tokens in the farm *)
   staked                  : nat;
-  (* Farm start block *)
-  start_time              : nat;
-  (* Farm end block *)
-  end_time                : nat;
+  (* Farm start timestamp *)
+  start_time              : timestamp;
+  (* Farm end timestamp *)
+  end_time                : timestamp;
   (* Farm ID *)
   fid                     : fid_type;
   (* Total votes participated in voting *)
@@ -89,8 +89,6 @@ type storage_type       is [@layout:comb] record [
   baker_registry          : address;
   (* Number of farms registered on contract *)
   farms_count             : nat;
-  (* Block time (in seconds) *)
-  block_time              : nat;
 ]
 
 type set_admin_type     is address (* New admin address *)
@@ -110,8 +108,6 @@ type set_burner_type    is address (* New burner contract address *)
 
 type set_registry_type  is address (* New baker registry contract address *)
 
-type set_blck_time_type is nat (* Block time in seconds *)
-
 type add_new_farm_type  is [@layout:comb] record [
   (* Fees data *)
   fees                    : fees_type;
@@ -123,10 +119,10 @@ type add_new_farm_type  is [@layout:comb] record [
   paused                  : bool;
   (* Timelock in seconds, 0 for farms without timelock *)
   timelock                : nat;
-  (* Farm start block *)
-  start_time              : nat;
-  (* Farm end block *)
-  end_time                : nat;
+  (* Farm start timestamp *)
+  start_time              : timestamp;
+  (* Farm end timestamp *)
+  end_time                : timestamp;
   (* Reward per second *)
   reward_per_second       : nat;
 ]
@@ -188,7 +184,6 @@ type action_type        is
 | Set_fees                of set_fees_type
 | Set_burner              of set_burner_type
 | Set_baker_registry      of set_registry_type
-| Set_block_time          of set_blck_time_type
 | Add_new_farm            of add_new_farm_type
 | Pause_farms             of pause_farms_type
 | Deposit                 of deposit_type
@@ -222,4 +217,4 @@ type full_action_type   is
   Use                     of action_type
 | Setup_func              of setup_func_type
 
-[@inline] const t_farm_methods_max_index : nat = 13n;
+[@inline] const t_farm_methods_max_index : nat = 12n;

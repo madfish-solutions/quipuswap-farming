@@ -8,9 +8,8 @@ module.exports = {
   buildDir: "build",
   migrationsDir: "migrations",
   contractsDir: "contracts/main",
-  ligoVersion: "0.20.0",
+  ligoVersion: "0.23.0",
   network: "development",
-  block_time: 15, // 15 for testnet, 30 for mainnet (in seconds)
   networks: {
     development: {
       rpc: "http://localhost:8732",

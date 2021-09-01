@@ -221,21 +221,6 @@ describe("QFarm tests", async () => {
     });
   });
 
-  it("should fail if farm start time less then current block", async () => {
-    const newFarmParams: NewFarmParams = await QFarmUtils.getMockNewFarmParams(
-      utils
-    );
-
-    newFarmParams.start_time = 0;
-
-    await utils.setProvider(bob.sk);
-    await rejects(qFarm.addNewFarm(newFarmParams), (err: Error) => {
-      ok(err.message === "QFarm/wrong-start-time");
-
-      return true;
-    });
-  });
-
   it("should add new farm by admin and set all farm's fields correctly", async () => {
     let newFarmParams: NewFarmParams = await QFarmUtils.getMockNewFarmParams(
       utils
@@ -260,10 +245,6 @@ describe("QFarm tests", async () => {
     strictEqual(
       +qFarm.storage.storage.farms[0].fees.withdrawal_fee,
       newFarmParams.fees.withdrawal_fee
-    );
-    strictEqual(
-      Date.parse(qFarm.storage.storage.farms[0].upd),
-      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) - 1000
     );
     strictEqual(
       qFarm.storage.storage.farms[0].stake_params.staked_token.token,
@@ -312,12 +293,17 @@ describe("QFarm tests", async () => {
     );
     strictEqual(+qFarm.storage.storage.farms[0].rps, 0);
     strictEqual(+qFarm.storage.storage.farms[0].staked, 0);
-    strictEqual(
-      +qFarm.storage.storage.farms[0].start_time,
-      newFarmParams.start_time
-    );
     strictEqual(+qFarm.storage.storage.farms[0].fid, 0);
     strictEqual(+qFarm.storage.storage.farms[0].total_votes, 0);
+
+    ok(
+      Date.parse(qFarm.storage.storage.farms[0].upd) >=
+        +newFarmParams.start_time * 1000
+    );
+    ok(
+      Date.parse(qFarm.storage.storage.farms[0].start_time) >=
+        +newFarmParams.start_time * 1000
+    );
   });
 
   it("should fail if not admin is trying to set fees", async () => {

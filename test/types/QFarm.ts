@@ -29,7 +29,7 @@ export type NewFarmParams = {
   stake_params: StakeParams;
   timelock: number;
   alloc_point: number;
-  start_time: number;
+  start_time: string;
 };
 
 export type QFarmStorage = {

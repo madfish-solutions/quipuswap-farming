@@ -105,24 +105,6 @@ function set_baker_registry(
     end
   } with (no_operations, s)
 
-(* Update block time (in seconds) *)
-function set_block_time(
-  const action          : action_type;
-  var s                 : storage_type)
-                        : return_type is
-  block {
-    case action of
-      Set_block_time(block_time)        -> {
-        (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
-
-        (* Update block time *)
-        s.block_time := block_time;
-      }
-    | _                                 -> skip
-    end
-  } with (no_operations, s)
-
 (* Register new farm *)
 function add_new_farm(
   const action          : action_type;
@@ -137,20 +119,20 @@ function add_new_farm(
         (* Check of admin permissions *)
         only_admin(Tezos.sender, s.admin);
 
-        (* Ensure start block is correct *)
-        if params.start_time < Tezos.level
-        then failwith("TFarm/wrong-start-block")
-        else skip;
+        (* Configure correct start time *)
+        const start_time : timestamp = if params.start_time <= Tezos.now
+          then Tezos.now
+          else params.start_time;
 
-        (* Ensure end block is correct *)
-        if params.end_time <= params.start_time
-        then failwith("TFarm/wrong-end-block")
+        (* Ensure end time is correct *)
+        if params.end_time <= start_time
+        then failwith("TFarm/wrong-end-time")
         else skip;
 
         (* Add new farm info to the storage *)
         s.farms[s.farms_count] := record [
           fees              = params.fees;
-          upd               = Tezos.now;
+          upd               = start_time;
           stake_params      = params.stake_params;
           reward_token      = params.reward_token;
           timelock          = params.timelock;
@@ -160,7 +142,7 @@ function add_new_farm(
           reward_per_second = params.reward_per_second;
           rps               = 0n;
           staked            = 0n;
-          start_time        = params.start_time;
+          start_time        = start_time;
           end_time          = params.end_time;
           fid               = s.farms_count;
           total_votes       = 0n;
@@ -171,7 +153,7 @@ function add_new_farm(
 
         (* Calculate reward tokens amount to be transferred to contract *)
         const rew_amt : nat = abs(params.end_time - params.start_time) *
-          s.block_time * params.reward_per_second;
+          params.reward_per_second;
 
         (* Check reward token standard *)
         if params.reward_token.is_fa2

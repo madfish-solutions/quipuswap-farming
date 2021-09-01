@@ -17,7 +17,6 @@ export type TFarmStorage = {
     proxy_minter: string;
     baker_registry: string;
     farms_count: number;
-    block_time: number;
   };
   t_farm_lambdas: MichelsonMap<MichelsonMapKey, unknown>;
 };

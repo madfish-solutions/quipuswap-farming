@@ -396,4 +396,40 @@ describe("QFarm tests", async () => {
       return true;
     });
   });
+
+  it("should set/update allocation point for one farm", async () => {
+    const allocPoints: SetAllocPointParams[] = [{ fid: 0, alloc_point: 15 }];
+
+    await qFarm.setAllocPoints(allocPoints);
+    await qFarm.updateStorage({ farms: [0] });
+
+    strictEqual(+qFarm.storage.storage.total_alloc_point, 15);
+
+    strictEqual(+qFarm.storage.storage.farms[0].alloc_point, 15);
+    strictEqual(qFarm.storage.storage.farms[0].allocated, true);
+  });
+
+  it("should set/update allocation points for group of farms", async () => {
+    const allocPoints: SetAllocPointParams[] = [
+      { fid: 0, alloc_point: 35 },
+      { fid: 1, alloc_point: 5 },
+      { fid: 2, alloc_point: 45 },
+    ];
+
+    await qFarm.setAllocPoints(allocPoints);
+    await qFarm.updateStorage({ farms: [0, 1, 2] });
+
+    strictEqual(
+      +qFarm.storage.storage.total_alloc_point,
+      allocPoints.reduce((acc, curr) => acc + curr.alloc_point, 0)
+    );
+
+    for (let i = 0; i < allocPoints.length; ++i) {
+      strictEqual(
+        +qFarm.storage.storage.farms[i].alloc_point,
+        allocPoints[i].alloc_point
+      );
+      strictEqual(qFarm.storage.storage.farms[i].allocated, true);
+    }
+  });
 });

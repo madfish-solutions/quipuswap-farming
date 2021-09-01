@@ -1,4 +1,5 @@
 import { FA12 } from "./helpers/FA12";
+import { FA2 } from "./helpers/FA2";
 import { Utils } from "./helpers/Utils";
 import { QFarm, QFarmUtils } from "./helpers/QFarm";
 import { Burner } from "./helpers/Burner";
@@ -10,7 +11,6 @@ import {
   SetFeeParams,
   NewFarmParams,
   SetAllocPointParams,
-  DepositParams,
 } from "./types/QFarm";
 
 import { rejects, ok, strictEqual } from "assert";
@@ -18,6 +18,7 @@ import { rejects, ok, strictEqual } from "assert";
 import { alice, bob } from "../scripts/sandbox/accounts";
 
 import { fa12torage } from "../storage/test/FA12";
+import { fa2torage } from "../storage/test/FA2";
 import { qFarmStorage } from "../storage/QFarm";
 import { burnerStorage } from "../storage/Burner";
 import { proxyMinterStorage } from "../storage/ProxyMinter";
@@ -25,6 +26,7 @@ import { bakerRegistryStorage } from "../storage/BakerRegistry";
 
 describe("QFarm tests", async () => {
   var fa12: FA12;
+  var fa2: FA2;
   var utils: Utils;
   var qFarm: QFarm;
   var burner: Burner;
@@ -36,35 +38,38 @@ describe("QFarm tests", async () => {
 
     await utils.init();
 
-    qFarmStorage.storage.qsgov.token = zeroAddress;
-    qFarmStorage.storage.qsgov.id = 0;
-    qFarmStorage.storage.qsgov.is_fa2 = true;
-    qFarmStorage.storage.qsgov_pool = zeroAddress;
-    qFarmStorage.storage.admin = alice.pkh;
-    qFarmStorage.storage.pending_admin = zeroAddress;
-    qFarmStorage.storage.burner = zeroAddress;
-    qFarmStorage.storage.proxy_minter = zeroAddress;
-    qFarmStorage.storage.baker_registry = zeroAddress;
+    fa12 = await FA12.originate(utils.tezos, fa12torage);
+    fa2 = await FA2.originate(utils.tezos, fa2torage);
 
     burnerStorage.qsgov_lp = zeroAddress;
-    burnerStorage.qsgov.token = zeroAddress;
+    burnerStorage.qsgov.token = fa2.contract.address;
     burnerStorage.qsgov.id = 0;
     burnerStorage.qsgov.is_fa2 = true;
 
-    proxyMinterStorage.qsgov.token = zeroAddress;
+    proxyMinterStorage.qsgov.token = fa2.contract.address;
     proxyMinterStorage.qsgov.id = 0;
     proxyMinterStorage.qsgov.is_fa2 = true;
     proxyMinterStorage.admin = alice.pkh;
     proxyMinterStorage.pending_admin = zeroAddress;
 
-    fa12 = await FA12.originate(utils.tezos, fa12torage);
-    qFarm = await QFarm.originate(utils.tezos, qFarmStorage);
     burner = await Burner.originate(utils.tezos, burnerStorage);
     proxyMinter = await ProxyMinter.originate(utils.tezos, proxyMinterStorage);
     bakerRegistry = await BakerRegistry.originate(
       utils.tezos,
       bakerRegistryStorage
     );
+
+    qFarmStorage.storage.qsgov.token = fa2.contract.address;
+    qFarmStorage.storage.qsgov.id = 0;
+    qFarmStorage.storage.qsgov.is_fa2 = true;
+    qFarmStorage.storage.qsgov_pool = zeroAddress;
+    qFarmStorage.storage.admin = alice.pkh;
+    qFarmStorage.storage.pending_admin = zeroAddress;
+    qFarmStorage.storage.burner = burner.contract.address;
+    qFarmStorage.storage.proxy_minter = proxyMinter.contract.address;
+    qFarmStorage.storage.baker_registry = bakerRegistry.contract.address;
+
+    qFarm = await QFarm.originate(utils.tezos, qFarmStorage);
 
     await qFarm.setLambdas();
   });
@@ -284,7 +289,10 @@ describe("QFarm tests", async () => {
       qFarm.storage.storage.farms[0].stake_params.qs_pool,
       newFarmParams.stake_params.qs_pool
     );
-    strictEqual(qFarm.storage.storage.farms[0].reward_token.token, zeroAddress);
+    strictEqual(
+      qFarm.storage.storage.farms[0].reward_token.token,
+      fa2.contract.address
+    );
     strictEqual(+qFarm.storage.storage.farms[0].reward_token.id, 0);
     strictEqual(qFarm.storage.storage.farms[0].reward_token.is_fa2, true);
     strictEqual(

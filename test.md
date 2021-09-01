@@ -54,6 +54,24 @@
 
 10. `deposit`:
 
+   - should fail if farm not found;
+   - should fail if farm is paused (allocation point equal to 0);
+   - should update rewards correctly;
+   - should update user's and farm's data correctly;
+   - should claim user's rewards in time of every deposit (in farms without timelock);
+   - should claim user's rewards if timelock is finished (in farms with timelock);
+   - should calculate harest fee correctly;
+   - should mint QS GOV tokens as reward to rewards receiver;
+   - should mint QS GOV tokens as harvest fee to referrer (in case when user have referrer);
+   - should mint QS GOV tokens as harvest fee to zero address (in case when user does not have referrer);
+   - should fail if user is trying to refer himself;
+   - should set/update referrer;
+   - should deposit single token;
+   - should deposit LP token;
+   - should deposit FA1.2 token;
+   - should deposit FA2 token;
+   - should vote for the baker if LP token is deposited.
+
 11. `withdraw`:
 
 12. `harvest`:
@@ -68,8 +86,56 @@
 
 17. `buyback`:
 
+## TFarm
+
+1. `set_admin`:
+
+2. `confirm_admin`:
+
+3. `set_fees`:
+
+4. `set_burner`:
+
+5. `set_baker_registry`:
+
+6. `add_new_farm`:
+
+7. `pause_farms`:
+
+8. `deposit`:
+
+9. `withdraw`:
+
+10. `harvest`:
+
+11. `burn_xtz_rewards`:
+
+12. `claim_farm_rewards`:
+
+13. `withdraw_farm_depo`:
+
 ## Burner
 
 1. `default`:
 
 2. `burn_callback`:
+
+## Baker registry
+
+1. `validate`:
+
+2. `register`:
+
+## Proxy minter
+
+1. `register_farm`:
+
+2. `mint_qsgov_tokens`:
+
+3. `withdraw_qsgov_tokens`:
+
+4. `withdraw_qsgov_tokens_callback`:
+
+5. `set_admin`:
+
+6. `confirm_admin`:

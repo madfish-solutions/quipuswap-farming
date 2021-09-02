@@ -793,7 +793,7 @@ function buyback(
         s.temp.min_qs_gov_output := params.min_qs_gov_output;
 
         (* Save Quipuswap liquidity pool address for token to XTZ exchange *)
-        s.temp.qs_pool := farm.stake_params.qs_pool;
+        s.temp.qs_pool.token := farm.stake_params.qs_pool.token;
 
         if not farm.stake_params.is_lp_staked_token
         then {

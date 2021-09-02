@@ -1,6 +1,6 @@
 import { Token } from "./Common";
 
 export type BurnerStorage = {
-  qsgov_lp: string;
+  qsgov_lp: Token;
   qsgov: Token;
 };

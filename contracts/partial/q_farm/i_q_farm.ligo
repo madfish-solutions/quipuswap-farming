@@ -28,7 +28,7 @@ type stake_params_type  is [@layout:comb] record [
   (* If LP token staked - non zero address + ID, else - zero address + 0 ID *)
   token                   : token_type;
   (* Quipuswap liquidity pool for staked or divested token *)
-  qs_pool                 : address;
+  qs_pool                 : token_type;
 ]
 
 type farm_type          is [@layout:comb] record [
@@ -68,7 +68,7 @@ type temp_type          is [@layout:comb] record [
   (* Token that will be swapped for XTZ *)
   token                   : token_type;
   (* Quipuswap liquidity pool for tokens exchange *)
-  qs_pool                 : address;
+  qs_pool                 : token_type;
 ]
 
 type storage_type       is [@layout:comb] record [
@@ -86,8 +86,8 @@ type storage_type       is [@layout:comb] record [
   temp                    : temp_type;
   (* QS GOV token *)
   qsgov                   : token_type;
-  (* QS GOV token liquidity pool on Quipuswap DEX *)
-  qsgov_pool              : address;
+  (* QS GOV token LP on Quipuswap DEX *)
+  qsgov_lp                : token_type;
   (* Contract's actual admin address *)
   admin                   : address;
   (* Contract's pending admin address *)

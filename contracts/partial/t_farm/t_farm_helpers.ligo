@@ -244,7 +244,7 @@ function get_vote_op(
       voter     = Tezos.self_address;
     ]),
     0mutez,
-    get_quipuswap_use_entrypoint(farm.stake_params.qs_pool)
+    get_quipuswap_use_entrypoint(farm.stake_params.qs_pool.token)
   )
 
 (*

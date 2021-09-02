@@ -255,7 +255,11 @@ export class QFarmUtils {
         id: 0,
         is_fa2: false,
       },
-      qs_pool: zeroAddress,
+      qs_pool: {
+        token: zeroAddress,
+        id: 0,
+        is_fa2: false,
+      },
     };
     const newFarmParams: NewFarmParams = {
       fees: fees,

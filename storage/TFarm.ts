@@ -14,7 +14,11 @@ export const tFarmStorage: TFarmStorage = {
       id: 0,
       is_fa2: false,
     },
-    qsgov_pool: null,
+    qsgov_lp: {
+      token: null,
+      id: 0,
+      is_fa2: false,
+    },
     admin: null,
     pending_admin: null,
     burner: null,

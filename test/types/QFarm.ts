@@ -21,7 +21,7 @@ export type StakeParams = {
   staked_token: Token;
   is_lp_staked_token: boolean;
   token: Token;
-  qs_pool: string;
+  qs_pool: Token;
 };
 
 export type NewFarmParams = {
@@ -50,10 +50,10 @@ export type QFarmStorage = {
     temp: {
       min_qs_gov_output: number;
       token: Token;
-      qs_pool: string;
+      qs_pool: Token;
     };
     qsgov: Token;
-    qsgov_pool: string;
+    qsgov_lp: Token;
     admin: string;
     pending_admin: string;
     burner: string;

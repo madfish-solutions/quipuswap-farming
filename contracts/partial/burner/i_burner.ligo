@@ -1,8 +1,8 @@
 type burn_type          is Burn             of (address * nat)
 
 type storage_type       is [@layout:comb] record [
-  (* QS GOV token LP address *)
-  qsgov_lp                : address;
+  (* QS GOV token LP on Quipuswap DEX *)
+  qsgov_lp                : token_type;
   (* QS GOV token *)
   qsgov                   : token_type;
 ]

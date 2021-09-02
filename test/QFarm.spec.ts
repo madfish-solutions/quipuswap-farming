@@ -54,7 +54,8 @@ describe("QFarm tests", async () => {
       qsFA2FactoryStorage
     );
 
-    burnerStorage.qsgov_lp = zeroAddress;
+    burnerStorage.qsgov_lp.token = zeroAddress;
+    burnerStorage.qsgov_lp.is_fa2 = true;
     burnerStorage.qsgov.token = fa2.contract.address;
     burnerStorage.qsgov.id = 0;
     burnerStorage.qsgov.is_fa2 = true;
@@ -75,7 +76,8 @@ describe("QFarm tests", async () => {
     qFarmStorage.storage.qsgov.token = fa2.contract.address;
     qFarmStorage.storage.qsgov.id = 0;
     qFarmStorage.storage.qsgov.is_fa2 = true;
-    qFarmStorage.storage.qsgov_pool = zeroAddress;
+    qFarmStorage.storage.qsgov_lp.token = zeroAddress;
+    qFarmStorage.storage.qsgov_lp.is_fa2 = true;
     qFarmStorage.storage.admin = alice.pkh;
     qFarmStorage.storage.pending_admin = zeroAddress;
     qFarmStorage.storage.burner = burner.contract.address;
@@ -299,8 +301,16 @@ describe("QFarm tests", async () => {
       newFarmParams.stake_params.token.is_fa2
     );
     strictEqual(
-      qFarm.storage.storage.farms[0].stake_params.qs_pool,
-      newFarmParams.stake_params.qs_pool
+      qFarm.storage.storage.farms[0].stake_params.qs_pool.token,
+      newFarmParams.stake_params.qs_pool.token
+    );
+    strictEqual(
+      +qFarm.storage.storage.farms[0].stake_params.qs_pool.id,
+      newFarmParams.stake_params.qs_pool.id
+    );
+    strictEqual(
+      qFarm.storage.storage.farms[0].stake_params.qs_pool.is_fa2,
+      newFarmParams.stake_params.qs_pool.is_fa2
     );
     strictEqual(
       qFarm.storage.storage.farms[0].reward_token.token,

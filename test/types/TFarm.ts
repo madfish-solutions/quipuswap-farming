@@ -10,7 +10,7 @@ export type TFarmStorage = {
     votes: MichelsonMap<MichelsonMapKey, unknown>;
     candidates: MichelsonMap<MichelsonMapKey, unknown>;
     qsgov: Token;
-    qsgov_pool: string;
+    qsgov_lp: Token;
     admin: string;
     pending_admin: string;
     burner: string;

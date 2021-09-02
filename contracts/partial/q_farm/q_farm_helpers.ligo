@@ -301,7 +301,7 @@ function swap(
           receiver = Tezos.self_address;
         ]),
         0mutez,
-        get_quipuswap_use_entrypoint(s.qsgov_pool)
+        get_quipuswap_use_entrypoint(s.qsgov_lp.token)
       );
       (* Get balance of output QS GOV tokens to burn them *)
       Tezos.transaction(
@@ -319,7 +319,7 @@ function swap(
         FA2_approve_type(list [
           Remove_operator(record [
             owner    = Tezos.self_address;
-            operator = s.temp.qs_pool;
+            operator = s.temp.qs_pool.token;
             token_id = s.temp.token.id;
           ])
         ]),
@@ -337,7 +337,7 @@ function swap(
         receiver = Tezos.self_address;
       ]),
       0mutez,
-      get_quipuswap_use_entrypoint(s.temp.qs_pool)
+      get_quipuswap_use_entrypoint(s.temp.qs_pool.token)
     ) # operations;
 
     (* Check token standard *)
@@ -348,7 +348,7 @@ function swap(
         FA2_approve_type(list [
           Add_operator(record [
             owner    = Tezos.self_address;
-            operator = s.temp.qs_pool;
+            operator = s.temp.qs_pool.token;
             token_id = s.temp.token.id;
           ])
         ]),
@@ -359,7 +359,7 @@ function swap(
     else {
       (* Approve operation *)
       operations := Tezos.transaction(
-        FA12_approve_type(s.temp.qs_pool, bal),
+        FA12_approve_type(s.temp.qs_pool.token, bal),
         0mutez,
         get_fa12_token_approve_entrypoint(s.temp.token.token)
       ) # operations;
@@ -373,7 +373,7 @@ function reset_temp(
   block {
     s.temp.min_qs_gov_output := 0n;
 
-    s.temp.qs_pool := zero_address;
+    s.temp.qs_pool.token := zero_address;
 
     s.temp.token.token := zero_address;
     s.temp.token.id := 0n;
@@ -418,7 +418,7 @@ function get_vote_op(
       voter     = Tezos.self_address;
     ]),
     0mutez,
-    get_quipuswap_use_entrypoint(farm.stake_params.qs_pool)
+    get_quipuswap_use_entrypoint(farm.stake_params.qs_pool.token)
   )
 
 (*

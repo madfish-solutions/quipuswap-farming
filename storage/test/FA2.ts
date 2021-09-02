@@ -6,7 +6,7 @@ import { alice, bob } from "../../scripts/sandbox/accounts";
 
 const totalSupply: number = 100_000_000_000;
 
-export const fa2torage: FA2Storage = {
+export const fa2Storage: FA2Storage = {
   account_info: MichelsonMap.fromLiteral({
     [alice.pkh]: {
       balances: MichelsonMap.fromLiteral({

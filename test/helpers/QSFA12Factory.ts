@@ -1,19 +1,14 @@
-import {
-  TezosToolkit,
-  OriginationOperation,
-  Contract,
-  TransactionOperation,
-} from "@taquito/taquito";
+import { TezosToolkit, OriginationOperation, Contract } from "@taquito/taquito";
 
 import fs from "fs";
 
 import { confirmOperation } from "../../scripts/confirmation";
 
-import { FA12Storage } from "../types/FA12";
+import { QSFA12FactoryStorage } from "../types/QSFA12Factory";
 
-export class FA12 {
+export class QSFA12Factory {
   contract: Contract;
-  storage: FA12Storage;
+  storage: QSFA12FactoryStorage;
   tezos: TezosToolkit;
 
   constructor(contract: Contract, tezos: TezosToolkit) {
@@ -21,16 +16,22 @@ export class FA12 {
     this.tezos = tezos;
   }
 
-  static async init(fa12Address: string, tezos: TezosToolkit): Promise<FA12> {
-    return new FA12(await tezos.contract.at(fa12Address), tezos);
+  static async init(
+    qsFA12FactoryAddress: string,
+    tezos: TezosToolkit
+  ): Promise<QSFA12Factory> {
+    return new QSFA12Factory(
+      await tezos.contract.at(qsFA12FactoryAddress),
+      tezos
+    );
   }
 
   static async originate(
     tezos: TezosToolkit,
-    storage: FA12Storage
-  ): Promise<FA12> {
+    storage: QSFA12FactoryStorage
+  ): Promise<QSFA12Factory> {
     const artifacts: any = JSON.parse(
-      fs.readFileSync(`test/contracts/fa12.json`).toString()
+      fs.readFileSync(`test/contracts/qs_fa12_factory.json`).toString()
     );
     const operation: OriginationOperation = await tezos.contract
       .originate({
@@ -45,11 +46,14 @@ export class FA12 {
 
     await confirmOperation(tezos, operation.hash);
 
-    return new FA12(await tezos.contract.at(operation.contractAddress), tezos);
+    return new QSFA12Factory(
+      await tezos.contract.at(operation.contractAddress),
+      tezos
+    );
   }
 
   async updateStorage(maps = {}): Promise<void> {
-    const storage: FA12Storage = await this.contract.storage();
+    const storage: QSFA12FactoryStorage = await this.contract.storage();
 
     this.storage = storage;
 
@@ -71,15 +75,5 @@ export class FA12 {
         Promise.resolve({})
       );
     }
-  }
-
-  async approve(spender: string, value: number): Promise<TransactionOperation> {
-    const operation: TransactionOperation = await this.contract.methods
-      .approve(spender, value)
-      .send();
-
-    await confirmOperation(this.tezos, operation.hash);
-
-    return operation;
   }
 }

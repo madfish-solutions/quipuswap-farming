@@ -1,11 +1,12 @@
 import { FA12 } from "./helpers/FA12";
 import { FA2 } from "./helpers/FA2";
-import { Utils } from "./helpers/Utils";
+import { Utils, zeroAddress } from "./helpers/Utils";
 import { QFarm, QFarmUtils } from "./helpers/QFarm";
 import { Burner } from "./helpers/Burner";
 import { ProxyMinter } from "./helpers/ProxyMinter";
 import { BakerRegistry } from "./helpers/BakerRegistry";
-import { zeroAddress } from "./helpers/Utils";
+import { QSFA12Factory } from "./helpers/QSFA12Factory";
+import { QSFA2Factory } from "./helpers/QSFA2Factory";
 
 import {
   SetFeeParams,
@@ -17,12 +18,14 @@ import { rejects, ok, strictEqual } from "assert";
 
 import { alice, bob } from "../scripts/sandbox/accounts";
 
-import { fa12torage } from "../storage/test/FA12";
-import { fa2torage } from "../storage/test/FA2";
+import { fa12Storage } from "../storage/test/FA12";
+import { fa2Storage } from "../storage/test/FA2";
 import { qFarmStorage } from "../storage/QFarm";
 import { burnerStorage } from "../storage/Burner";
 import { proxyMinterStorage } from "../storage/ProxyMinter";
 import { bakerRegistryStorage } from "../storage/BakerRegistry";
+import { qsFA12FactoryStorage } from "../storage/test/QSFA12Factory";
+import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
 
 describe("QFarm tests", async () => {
   var fa12: FA12;
@@ -32,14 +35,24 @@ describe("QFarm tests", async () => {
   var burner: Burner;
   var proxyMinter: ProxyMinter;
   var bakerRegistry: BakerRegistry;
+  var qsFA12Factory: QSFA12Factory;
+  var qsFA2Factory: QSFA2Factory;
 
   before("setup", async () => {
     utils = new Utils();
 
     await utils.init(alice.sk);
 
-    fa12 = await FA12.originate(utils.tezos, fa12torage);
-    fa2 = await FA2.originate(utils.tezos, fa2torage);
+    fa12 = await FA12.originate(utils.tezos, fa12Storage);
+    fa2 = await FA2.originate(utils.tezos, fa2Storage);
+    qsFA12Factory = await QSFA12Factory.originate(
+      utils.tezos,
+      qsFA12FactoryStorage
+    );
+    qsFA2Factory = await QSFA2Factory.originate(
+      utils.tezos,
+      qsFA2FactoryStorage
+    );
 
     burnerStorage.qsgov_lp = zeroAddress;
     burnerStorage.qsgov.token = fa2.contract.address;

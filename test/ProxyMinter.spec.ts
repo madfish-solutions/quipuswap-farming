@@ -7,7 +7,7 @@ import { rejects, ok, strictEqual } from "assert";
 
 import { alice, bob, carol, dev } from "../scripts/sandbox/accounts";
 
-import { fa2torage } from "../storage/test/FA2";
+import { fa2Storage } from "../storage/test/FA2";
 import { proxyMinterStorage } from "../storage/ProxyMinter";
 
 import { MintParams } from "./types/ProxyMinter";
@@ -28,7 +28,7 @@ describe("ProxyMinter tests", async () => {
 
     await utils.init(alice.sk);
 
-    qsGov = await FA2.originate(utils.tezos, fa2torage);
+    qsGov = await FA2.originate(utils.tezos, fa2Storage);
 
     proxyMinterStorage.admin = alice.pkh;
     proxyMinterStorage.pending_admin = zeroAddress;

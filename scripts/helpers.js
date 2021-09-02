@@ -80,7 +80,7 @@ const compile = async (
             networks: {},
             compiler: {
               name: "ligo",
-              version: env.ligoVersion,
+              version: ligoVersion,
             },
             networkType: "tezos",
           },

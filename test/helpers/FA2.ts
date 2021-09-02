@@ -30,7 +30,7 @@ export class FA2 {
     storage: FA2Storage
   ): Promise<FA2> {
     const artifacts: any = JSON.parse(
-      fs.readFileSync(`test/build/fa2.json`).toString()
+      fs.readFileSync(`test/contracts/fa2.json`).toString()
     );
     const operation: OriginationOperation = await tezos.contract
       .originate({

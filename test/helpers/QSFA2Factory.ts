@@ -1,4 +1,9 @@
-import { TezosToolkit, OriginationOperation, Contract } from "@taquito/taquito";
+import {
+  TezosToolkit,
+  OriginationOperation,
+  Contract,
+  TransactionOperation,
+} from "@taquito/taquito";
 
 import fs from "fs";
 
@@ -75,5 +80,20 @@ export class QSFA2Factory {
         Promise.resolve({})
       );
     }
+  }
+
+  async launchExchange(
+    token: string,
+    id: number,
+    amount: number,
+    mutezAmount: number
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .launchExchange(token, id, amount)
+      .send({ amount: mutezAmount, mutez: true });
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
   }
 }

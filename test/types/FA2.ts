@@ -1,5 +1,15 @@
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 
+export type OperatorParam = {
+  owner: string;
+  operator: string;
+  token_id: number;
+};
+
+export type UpdateOperatorParam =
+  | { add_operator: OperatorParam }
+  | { remove_operator: OperatorParam };
+
 export type Minter = {
   minter: string;
   share: number;

@@ -9,7 +9,12 @@ import fs from "fs";
 
 import { confirmOperation } from "../../scripts/confirmation";
 
-import { FA2Storage, Minter, MintGovTokenParams } from "../types/FA2";
+import {
+  FA2Storage,
+  Minter,
+  MintGovTokenParams,
+  UpdateOperatorParam,
+} from "../types/FA2";
 
 export class FA2 {
   contract: Contract;
@@ -71,6 +76,18 @@ export class FA2 {
         Promise.resolve({})
       );
     }
+  }
+
+  async updateOperators(
+    updateOperatorsParams: UpdateOperatorParam[]
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .update_operators(updateOperatorsParams)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
   }
 
   async setMinters(minters: Minter[]): Promise<TransactionOperation> {

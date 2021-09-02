@@ -13,6 +13,7 @@ import {
   NewFarmParams,
   SetAllocPointParams,
 } from "./types/QFarm";
+import { UpdateOperatorParam } from "./types/FA2";
 
 import { rejects, ok, strictEqual } from "assert";
 
@@ -54,7 +55,25 @@ describe("QFarm tests", async () => {
       qsFA2FactoryStorage
     );
 
-    burnerStorage.qsgov_lp.token = zeroAddress;
+    const updateOperatorParam: UpdateOperatorParam = {
+      add_operator: {
+        owner: alice.pkh,
+        operator: qsFA2Factory.contract.address,
+        token_id: 0,
+      },
+    };
+
+    await fa2.updateOperators([updateOperatorParam]);
+    await qsFA2Factory.launchExchange(fa2.contract.address, 0, 10000, 10000);
+    await qsFA2Factory.updateStorage({
+      token_to_exchange: [[fa2.contract.address, 0]],
+    });
+
+    const qsgov_lp = await qsFA2Factory.storage.token_to_exchange[
+      `${fa2.contract.address},${0}`
+    ];
+
+    burnerStorage.qsgov_lp.token = qsgov_lp;
     burnerStorage.qsgov_lp.is_fa2 = true;
     burnerStorage.qsgov.token = fa2.contract.address;
     burnerStorage.qsgov.id = 0;
@@ -76,7 +95,7 @@ describe("QFarm tests", async () => {
     qFarmStorage.storage.qsgov.token = fa2.contract.address;
     qFarmStorage.storage.qsgov.id = 0;
     qFarmStorage.storage.qsgov.is_fa2 = true;
-    qFarmStorage.storage.qsgov_lp.token = zeroAddress;
+    qFarmStorage.storage.qsgov_lp.token = qsgov_lp;
     qFarmStorage.storage.qsgov_lp.is_fa2 = true;
     qFarmStorage.storage.admin = alice.pkh;
     qFarmStorage.storage.pending_admin = zeroAddress;

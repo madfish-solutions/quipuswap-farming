@@ -1,4 +1,9 @@
-import { TezosToolkit, OriginationOperation, Contract } from "@taquito/taquito";
+import {
+  TezosToolkit,
+  OriginationOperation,
+  Contract,
+  TransactionOperation,
+} from "@taquito/taquito";
 
 import fs from "fs";
 
@@ -54,9 +59,41 @@ export class BakerRegistry {
     );
   }
 
-  async updateStorage(): Promise<void> {
+  async updateStorage(keys: string[]): Promise<void> {
     const storage: BakerRegistryStorage = await this.contract.storage();
 
-    this.storage = storage;
+    this.storage = await keys.reduce(async (prev: any, current: any) => {
+      try {
+        return {
+          ...(await prev),
+          [current]: await storage.get(current),
+        };
+      } catch (ex) {
+        return {
+          ...(await prev),
+          [current]: 0,
+        };
+      }
+    }, Promise.resolve({}));
+  }
+
+  async validate(baker: string): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .validate(baker)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async register(baker: string): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .register(baker)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
   }
 }

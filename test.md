@@ -124,7 +124,14 @@
 
 1. `validate`:
 
+   - ✅ should do nothing if baker is registered;
+   - ✅ should register new baker if baker is not already registered;
+   - ✅ should fail if the baker is not already registered and the address to register is not a baker.
+
 2. `register`:
+
+   - ✅ should register new baker;
+   - ✅ should fail if the address to register is not a baker.
 
 ## Proxy minter
 

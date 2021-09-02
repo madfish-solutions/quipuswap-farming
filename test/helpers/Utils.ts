@@ -3,15 +3,13 @@ import { InMemorySigner } from "@taquito/signer";
 
 import env from "../../env";
 
-import { alice } from "../../scripts/sandbox/accounts";
-
 const defaultNetwork = "development";
 const network = env.network || defaultNetwork;
 
 export class Utils {
   tezos: TezosToolkit;
 
-  async init(): Promise<void> {
+  async init(providerSK: string): Promise<void> {
     const networkConfig = env.networks[network];
 
     this.tezos = new TezosToolkit(networkConfig.rpc);
@@ -19,7 +17,7 @@ export class Utils {
       config: {
         confirmationPollingTimeoutSecond: env.confirmationPollingTimeoutSecond,
       },
-      signer: await InMemorySigner.fromSecretKey(alice.sk),
+      signer: await InMemorySigner.fromSecretKey(providerSK),
     });
   }
 

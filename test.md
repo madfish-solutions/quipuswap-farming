@@ -137,12 +137,31 @@
 
 1. `register_farm`:
 
+   - ✅ should fail if not admin is trying to register or unregister a farm;
+   - ✅ should register a farm;
+   - ✅ should unregister a farm.
+
 2. `mint_qsgov_tokens`:
+
+   - ✅ should fail if transaction sender is not a registered farm;
+   - ✅ should mint QS GOV tokens for one address;
+   - ✅ should mint QS GOV tokens for group of addresses.
 
 3. `withdraw_qsgov_tokens`:
 
+   - ✅ should fail if not admin is trying to withdraw QS GOV tokens;
+   - ✅ should transfer all QS GOV tokens from proxy minter contract to admin address.
+
 4. `withdraw_qsgov_tokens_callback`:
+
+   - ✅ should fail if not proxy minter contract is trying to call callback.
 
 5. `set_admin`:
 
+   - ✅ should fail if not admin is trying to setup new pending admin;
+   - ✅ should setup new pending admin by admin.
+
 6. `confirm_admin`:
+
+   - ✅ should fail if not pending admin is trying to confirm new admin;
+   - ✅ should confirm new admin by pending admin.

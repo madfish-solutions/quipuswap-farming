@@ -1,5 +1,10 @@
 import { Token } from "./Common";
 
+export type MintParams = {
+  receiver: string;
+  amount: number;
+};
+
 export type ProxyMinterStorage = {
   farms: string[];
   qsgov: Token;

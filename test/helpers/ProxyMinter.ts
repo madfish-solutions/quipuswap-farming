@@ -1,4 +1,9 @@
-import { TezosToolkit, OriginationOperation, Contract } from "@taquito/taquito";
+import {
+  TezosToolkit,
+  OriginationOperation,
+  Contract,
+  TransactionOperation,
+} from "@taquito/taquito";
 
 import fs from "fs";
 
@@ -6,7 +11,8 @@ import env from "../../env";
 
 import { confirmOperation } from "../../scripts/confirmation";
 
-import { ProxyMinterStorage } from "../types/ProxyMinter";
+import { ProxyMinterStorage, MintParams } from "../types/ProxyMinter";
+import { BalanceResponse } from "../types/FA2";
 
 export class ProxyMinter {
   contract: Contract;
@@ -55,5 +61,72 @@ export class ProxyMinter {
     const storage: ProxyMinterStorage = await this.contract.storage();
 
     this.storage = storage;
+  }
+
+  async registerFarm(
+    farm: string,
+    register: boolean
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .register_farm(farm, register)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async mintQsgovTokens(
+    recipients: MintParams[]
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .mint_qsgov_tokens(recipients)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async withdrawQsgovTokens(): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .withdraw_qsgov_tokens([])
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async withdrawCallback(
+    balanceResponse: BalanceResponse[]
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .withdraw_callback(balanceResponse)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async setAdmin(newAdmin: string): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .set_admin(newAdmin)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async confirmAdmin(): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .confirm_admin([])
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
   }
 }

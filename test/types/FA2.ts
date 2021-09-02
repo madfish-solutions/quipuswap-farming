@@ -1,5 +1,25 @@
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 
+export type Minter = {
+  minter: string;
+  share: number;
+};
+
+export type MintGovTokenParams = {
+  receiver: string;
+  amount: number;
+};
+
+export type BalanceRequest = {
+  owner: string;
+  token_id: number;
+};
+
+export type BalanceResponse = {
+  request: BalanceRequest;
+  balance: number;
+};
+
 export type FA2Storage = {
   account_info: MichelsonMap<MichelsonMapKey, unknown>;
   token_info: MichelsonMap<MichelsonMapKey, unknown>;

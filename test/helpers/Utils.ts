@@ -1,6 +1,10 @@
 import { TezosToolkit } from "@taquito/taquito";
 import { InMemorySigner } from "@taquito/signer";
 
+import { confirmOperation } from "../../scripts/confirmation";
+
+import { carol } from "../../scripts/sandbox/accounts";
+
 import env from "../../env";
 
 const defaultNetwork = "development";
@@ -19,6 +23,14 @@ export class Utils {
       },
       signer: await InMemorySigner.fromSecretKey(providerSK),
     });
+
+    const operation = await this.tezos.contract.transfer({
+      to: carol.pkh,
+      amount: 50000000,
+      mutez: true,
+    });
+
+    await confirmOperation(this.tezos, operation.hash);
   }
 
   async setProvider(newProviderSK: string): Promise<void> {

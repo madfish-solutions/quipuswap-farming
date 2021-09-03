@@ -1,4 +1,9 @@
-import { TezosToolkit, OriginationOperation, Contract } from "@taquito/taquito";
+import {
+  TezosToolkit,
+  OriginationOperation,
+  Contract,
+  TransactionOperation,
+} from "@taquito/taquito";
 
 import fs from "fs";
 
@@ -7,6 +12,7 @@ import env from "../../env";
 import { confirmOperation } from "../../scripts/confirmation";
 
 import { BurnerStorage } from "../types/Burner";
+import { BalanceResponse } from "test/types/FA2";
 
 export class Burner {
   contract: Contract;
@@ -51,9 +57,25 @@ export class Burner {
     );
   }
 
-  async updateStorage(): Promise<void> {
-    const storage: BurnerStorage = await this.contract.storage();
+  async burn(): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .default([])
+      .send();
 
-    this.storage = storage;
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async burnCallback(
+    balanceResponse: BalanceResponse[]
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .burn_callback(balanceResponse)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
   }
 }

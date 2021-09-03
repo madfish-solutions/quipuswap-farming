@@ -1,7 +1,6 @@
 import { FA2 } from "./helpers/FA2";
-import { Utils } from "./helpers/Utils";
+import { Utils, zeroAddress } from "./helpers/Utils";
 import { ProxyMinter } from "./helpers/ProxyMinter";
-import { zeroAddress } from "./helpers/Utils";
 
 import { rejects, ok, strictEqual } from "assert";
 

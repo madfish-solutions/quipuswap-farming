@@ -1,0 +1,134 @@
+[
+    {
+        prim: 'Pair',
+        args: [
+          [
+            [Object], [Object],
+            [Object], [Object],
+            [Object], [Object],
+            [Object], [Object],
+            [Object], [Object],
+            [Object], [Object],
+            [Object], [Object],
+            [Object]
+          ],
+          { int: '0' }
+        ]
+      },
+      
+      
+      
+      
+      
+      {
+        prim: 'Pair',
+        args: [
+          [
+            [Object], [Object], [Object],
+            [Object], [Object], [Object],
+            [Object], [Object], [Object],
+            [Object], [Object], [Object],
+            [Object], [Object], [Object],
+            [Object], [Object], [Object]
+          ],
+          { int: '1' }
+        ]
+      }
+      
+      
+      
+      
+      
+      {
+        prim: 'Pair',
+        args: [
+          [
+            [Object], [Object],
+            [Object], [Object],
+            [Object], [Object],
+            [Object], [Object],
+            [Object], [Object],
+            [Object], [Object],
+            [Object], [Object],
+            [Object]
+          ],
+          { int: '2' }
+        ]
+      }
+      
+      
+      
+      
+      
+      {
+        prim: 'Pair',
+        args: [ [ [Object], [Object], [Array] ], { int: '3' } ]
+      }
+      
+      
+      
+      
+      
+      {
+        prim: 'Pair',
+        args: [ [ [Object], [Object], [Array] ], { int: '4' } ]
+      }
+      
+      
+      
+      
+      
+      {
+        prim: 'Pair',
+        args: [ [ [Object], [Object], [Array] ], { int: '5' } ]
+      }
+      
+      
+      
+      
+      
+      {
+        prim: 'Pair',
+        args: [
+          [
+            [Object], [Object], [Object],
+            [Object], [Object], [Object],
+            [Object], [Object], [Object],
+            [Object], [Object], [Object],
+            [Object], [Object], [Object],
+            [Object], [Object], [Object],
+            [Object], [Object]
+          ],
+          { int: '6' }
+        ]
+      }
+      
+      
+      
+      
+      
+      {
+        prim: 'Pair',
+        args: [
+          [
+            [Object], [Object], [Object],
+            [Object], [Object], [Object],
+            [Object], [Object], [Object],
+            [Object], [Object], [Object],
+            [Object], [Object], [Object],
+            [Object], [Object], [Object],
+            [Object], [Object]
+          ],
+          { int: '7' }
+        ]
+      }
+      
+      
+      
+      
+      
+      {
+        prim: 'Pair',
+        args: [ [ [Object], [Object], [Array] ], { int: '8' } ]
+      }
+]

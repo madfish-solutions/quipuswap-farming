@@ -118,7 +118,11 @@
 
 1. `default`:
 
+   - should swap all XTZ from contract for QS GOV tokens and burn them.
+
 2. `burn_callback`:
+
+   - ✅ should fail if not QS GOV token contract is trying to call callback.
 
 ## Baker registry
 
@@ -154,7 +158,7 @@
 
 4. `withdraw_qsgov_tokens_callback`:
 
-   - ✅ should fail if not proxy minter contract is trying to call callback.
+   - ✅ should fail if not QS GOV token contract is trying to call callback.
 
 5. `set_admin`:
 

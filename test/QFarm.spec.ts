@@ -74,6 +74,7 @@ describe("QFarm tests", async () => {
     ];
 
     burnerStorage.qsgov_lp.token = qsgov_lp;
+    burnerStorage.qsgov_lp.id = 0;
     burnerStorage.qsgov_lp.is_fa2 = true;
     burnerStorage.qsgov.token = fa2.contract.address;
     burnerStorage.qsgov.id = 0;

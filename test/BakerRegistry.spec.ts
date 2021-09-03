@@ -1,6 +1,5 @@
-import { Utils } from "./helpers/Utils";
+import { Utils, zeroAddress } from "./helpers/Utils";
 import { BakerRegistry } from "./helpers/BakerRegistry";
-import { zeroAddress } from "./helpers/Utils";
 
 import { rejects, ok, strictEqual } from "assert";
 

@@ -1,15 +1,23 @@
 import {
   TezosToolkit,
   OriginationOperation,
-  Contract,
   TransactionOperation,
+  WalletOperationBatch,
+  WalletOperation,
+  Contract,
+  OpKind,
 } from "@taquito/taquito";
 
 import fs from "fs";
 
+import { getLigo } from "scripts/helpers";
+
 import { confirmOperation } from "../../scripts/confirmation";
 
 import { QSFA2FactoryStorage } from "../types/QSFA2Factory";
+
+import qs_fa2_factory_dex_lambdas from "../contracts/qs_fa2_factory_dex_lambdas.json";
+import qs_fa2_factory_token_lambdas from "../contracts/qs_fa2_factory_token_lambdas.json";
 
 export class QSFA2Factory {
   contract: Contract;
@@ -80,6 +88,40 @@ export class QSFA2Factory {
         Promise.resolve({})
       );
     }
+  }
+
+  async setDexAndTokenLambdas(): Promise<void> {
+    const ligo: string = getLigo(true);
+    let params: any[] = [];
+
+    for (const qs_fa2_factory_dex_lambda of qs_fa2_factory_dex_lambdas) {
+      params.push({
+        kind: OpKind.TRANSACTION,
+        to: this.contract.address,
+        amount: 0,
+        parameter: {
+          entrypoint: "setDexFunction",
+          value: qs_fa2_factory_dex_lambda,
+        },
+      });
+    }
+
+    for (const qs_fa2_factory_token_lambda of qs_fa2_factory_token_lambdas) {
+      params.push({
+        kind: OpKind.TRANSACTION,
+        to: this.contract.address,
+        amount: 0,
+        parameter: {
+          entrypoint: "setTokenFunction",
+          value: qs_fa2_factory_token_lambda,
+        },
+      });
+    }
+
+    const batch: WalletOperationBatch = this.tezos.wallet.batch(params);
+    const operation: WalletOperation = await batch.send();
+
+    await confirmOperation(this.tezos, operation.opHash);
   }
 
   async launchExchange(

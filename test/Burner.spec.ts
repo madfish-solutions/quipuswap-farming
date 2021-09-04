@@ -34,6 +34,8 @@ describe.only("Burner tests", async () => {
       qsFA2FactoryStorage
     );
 
+    await qsFA2Factory.setDexAndTokenLambdas();
+
     const updateOperatorParam: UpdateOperatorParam = {
       add_operator: {
         owner: alice.pkh,
@@ -63,7 +65,7 @@ describe.only("Burner tests", async () => {
   });
 
   it("should swap all XTZ from contract for QS GOV tokens and burn them", async () => {
-    await burner.burn();
+    await burner.burn(100);
   });
 
   it("should fail if not QS GOV token contract is trying to call callback", async () => {

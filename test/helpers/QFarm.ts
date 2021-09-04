@@ -2,6 +2,7 @@ import {
   TezosToolkit,
   TransactionOperation,
   OriginationOperation,
+  WalletOperationBatch,
   WalletOperation,
   Contract,
   OpKind,
@@ -120,7 +121,7 @@ export class QFarm {
 
     console.log();
 
-    const batch = this.tezos.wallet.batch(params);
+    const batch: WalletOperationBatch = this.tezos.wallet.batch(params);
     const operation: WalletOperation = await batch.send();
 
     await confirmOperation(this.tezos, operation.opHash);

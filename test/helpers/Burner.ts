@@ -57,10 +57,10 @@ export class Burner {
     );
   }
 
-  async burn(): Promise<TransactionOperation> {
+  async burn(mutezAmount: number): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .default([])
-      .send();
+      .send({ amount: mutezAmount, mutez: true });
 
     await confirmOperation(this.tezos, operation.hash);
 

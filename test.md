@@ -118,7 +118,9 @@
 
 1. `default`:
 
-   - should swap all XTZ from contract for QS GOV tokens and burn them.
+   - ✅ should swap all XTZ from contract for QS GOV tokens and burn them;
+   - ✅ should fail if zero XTZ amount have been sent;
+   - ✅ should fail if small liquidity amount in the pool.
 
 2. `burn_callback`:
 

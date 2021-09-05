@@ -77,11 +77,11 @@ type storage_type       is [@layout:comb] record [
   (* Referrers *)
   referrers               : big_map(address, address);
   (* Users data *)
-  users_info              : big_map(fid_type * address, user_info_type);
+  users_info              : big_map((fid_type * address), user_info_type);
   (* Votes per candidate (baker) *)
-  votes                   : big_map(fid_type * key_hash, nat);
+  votes                   : big_map((fid_type * key_hash), nat);
   (* User and choosen candidate *)
-  candidates              : big_map(fid_type * address, key_hash);
+  candidates              : big_map((fid_type * address), key_hash);
   (* Temp data that stores data between inter contract calls and callbacks *)
   temp                    : temp_type;
   (* QS GOV token *)

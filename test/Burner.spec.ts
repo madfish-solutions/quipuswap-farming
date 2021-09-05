@@ -5,7 +5,7 @@ import { QSFA2Factory } from "./helpers/QSFA2Factory";
 
 import { rejects, ok, strictEqual } from "assert";
 
-import { alice, bob } from "../scripts/sandbox/accounts";
+import { alice } from "../scripts/sandbox/accounts";
 
 import { burnerStorage } from "../storage/Burner";
 import { fa2Storage } from "storage/test/FA2";
@@ -17,7 +17,7 @@ import {
   UpdateOperatorParam,
 } from "./types/FA2";
 
-describe.only("Burner tests", async () => {
+describe("Burner tests", async () => {
   var qsGov: FA2;
   var utils: Utils;
   var burner: Burner;
@@ -65,7 +65,47 @@ describe.only("Burner tests", async () => {
   });
 
   it("should swap all XTZ from contract for QS GOV tokens and burn them", async () => {
+    await qsGov.updateStorage({
+      account_info: [burner.contract.address, zeroAddress],
+    });
+
+    strictEqual(+(await qsGov.storage.account_info[zeroAddress]), NaN);
+    strictEqual(
+      +(await qsGov.storage.account_info[burner.contract.address]),
+      NaN
+    );
+
     await burner.burn(100);
+    await qsGov.updateStorage({
+      account_info: [burner.contract.address, zeroAddress],
+    });
+
+    strictEqual(
+      +(await qsGov.storage.account_info[zeroAddress].balances.get("0")),
+      98
+    );
+    strictEqual(
+      +(await qsGov.storage.account_info[burner.contract.address].balances.get(
+        "0"
+      )),
+      0
+    );
+  });
+
+  it("should fail if zero XTZ amount have been sent", async () => {
+    await rejects(burner.burn(0), (err: Error) => {
+      ok(err.message === "Dex/zero-amount-in");
+
+      return true;
+    });
+  });
+
+  it("should fail if small liquidity amount in the pool", async () => {
+    await rejects(burner.burn(1000000), (err: Error) => {
+      ok(err.message === "Dex/high-out");
+
+      return true;
+    });
   });
 
   it("should fail if not QS GOV token contract is trying to call callback", async () => {

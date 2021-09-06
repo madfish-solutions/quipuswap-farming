@@ -55,6 +55,9 @@ describe("QFarm tests", async () => {
       qsFA2FactoryStorage
     );
 
+    await qsFA12Factory.setDexAndTokenLambdas();
+    await qsFA2Factory.setDexAndTokenLambdas();
+
     const updateOperatorParam: UpdateOperatorParam = {
       add_operator: {
         owner: alice.pkh,

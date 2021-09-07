@@ -423,7 +423,7 @@ describe("QFarm tests", async () => {
 
   it("should set/update fees for group of farms", async () => {
     const fees: SetFeeParams[] = [
-      { fid: 0, fees: { harvest_fee: 1, withdrawal_fee: 5 } },
+      { fid: 0, fees: { harvest_fee: 16, withdrawal_fee: 21 } },
       { fid: 1, fees: { harvest_fee: 5, withdrawal_fee: 25 } },
       { fid: 2, fees: { harvest_fee: 3, withdrawal_fee: 3 } },
     ];

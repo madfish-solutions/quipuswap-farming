@@ -9,6 +9,7 @@ import { QSFA2Factory } from "./helpers/QSFA2Factory";
 
 import { UpdateOperatorParam } from "./types/FA2";
 import { NewFarmParams } from "./types/TFarm";
+import { SetFeeParams } from "./types/Common";
 
 import { ok, rejects, strictEqual } from "assert";
 
@@ -22,7 +23,7 @@ import { bakerRegistryStorage } from "../storage/BakerRegistry";
 import { qsFA12FactoryStorage } from "../storage/test/QSFA12Factory";
 import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
 
-describe("TFarm tests", async () => {
+describe.only("TFarm tests", async () => {
   var fa12: FA12;
   var qsGov: FA2;
   var utils: Utils;
@@ -408,5 +409,72 @@ describe("TFarm tests", async () => {
       )),
       rewardsAmount
     );
+  });
+
+  it("should fail if not admin is trying to set fees", async () => {
+    const fees: SetFeeParams[] = [
+      { fid: 0, fees: { harvest_fee: 15, withdrawal_fee: 10 } },
+    ];
+
+    await utils.setProvider(alice.sk);
+    await rejects(tFarm.setFees(fees), (err: Error) => {
+      ok(err.message === "Not-admin");
+
+      return true;
+    });
+  });
+
+  it("should fail if one farm from list of farms not found", async () => {
+    const fees: SetFeeParams[] = [
+      { fid: 0, fees: { harvest_fee: 15, withdrawal_fee: 10 } },
+      { fid: 666, fees: { harvest_fee: 15, withdrawal_fee: 10 } },
+    ];
+
+    await utils.setProvider(bob.sk);
+    await rejects(tFarm.setFees(fees), (err: Error) => {
+      ok(err.message === "TFarm/farm-not-set");
+
+      return true;
+    });
+  });
+
+  it("should set/update fees for one farm", async () => {
+    const fees: SetFeeParams[] = [
+      { fid: 0, fees: { harvest_fee: 1, withdrawal_fee: 5 } },
+    ];
+
+    await tFarm.setFees(fees);
+    await tFarm.updateStorage({ farms: [0] });
+
+    strictEqual(
+      +tFarm.storage.storage.farms[0].fees.harvest_fee,
+      fees[0].fees.harvest_fee
+    );
+    strictEqual(
+      +tFarm.storage.storage.farms[0].fees.withdrawal_fee,
+      fees[0].fees.withdrawal_fee
+    );
+  });
+
+  it("should set/update fees for group of farms", async () => {
+    const fees: SetFeeParams[] = [
+      { fid: 0, fees: { harvest_fee: 16, withdrawal_fee: 21 } },
+      { fid: 1, fees: { harvest_fee: 5, withdrawal_fee: 25 } },
+      { fid: 2, fees: { harvest_fee: 3, withdrawal_fee: 3 } },
+    ];
+
+    await tFarm.setFees(fees);
+    await tFarm.updateStorage({ farms: [0, 1, 2] });
+
+    for (let i = 0; i < fees.length; ++i) {
+      strictEqual(
+        +tFarm.storage.storage.farms[i].fees.harvest_fee,
+        fees[i].fees.harvest_fee
+      );
+      strictEqual(
+        +tFarm.storage.storage.farms[i].fees.withdrawal_fee,
+        fees[i].fees.withdrawal_fee
+      );
+    }
   });
 });

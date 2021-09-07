@@ -29,7 +29,7 @@ import { bakerRegistryStorage } from "../storage/BakerRegistry";
 import { qsFA12FactoryStorage } from "../storage/test/QSFA12Factory";
 import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
 
-describe.only("QFarm tests", async () => {
+describe("QFarm tests", async () => {
   var fa12: FA12;
   var qsGov: FA2;
   var utils: Utils;
@@ -568,6 +568,9 @@ describe.only("QFarm tests", async () => {
     await qFarm.deposit(depositParams);
     await qFarm.updateStorage({ referrers: [alice.pkh] });
 
-    strictEqual(qFarm.storage.storage.referrers[alice.pkh], bob.pkh);
+    strictEqual(
+      qFarm.storage.storage.referrers[alice.pkh],
+      depositParams.referrer
+    );
   });
 });

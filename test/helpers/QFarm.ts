@@ -225,8 +225,6 @@ export class QFarm {
   }
 
   async deposit(depositParams: DepositParams): Promise<TransactionOperation> {
-    console.log(...Utils.destructObj(depositParams));
-
     const operation: TransactionOperation = await this.contract.methods
       .deposit(...Utils.destructObj(depositParams))
       .send();

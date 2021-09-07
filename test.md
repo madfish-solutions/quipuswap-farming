@@ -54,8 +54,8 @@
 
 10. `deposit`:
 
-   - should fail if farm not found;
-   - should fail if farm is paused (allocation point equal to 0);
+   - ✅ should fail if farm not found;
+   - ✅ should fail if farm is paused (allocation point equal to 0);
    - should update rewards correctly;
    - should update user's and farm's data correctly;
    - should claim user's rewards in time of every deposit (in farms without timelock);
@@ -64,8 +64,8 @@
    - should mint QS GOV tokens as reward to rewards receiver;
    - should mint QS GOV tokens as harvest fee to referrer (in case when user have referrer);
    - should mint QS GOV tokens as harvest fee to zero address (in case when user does not have referrer);
-   - should fail if user is trying to refer himself;
-   - should set/update referrer;
+   - ✅ should fail if user is trying to refer himself;
+   - ✅ should set/update referrer;
    - should deposit single token;
    - should deposit LP token;
    - should deposit FA1.2 token;

@@ -9,7 +9,11 @@ import { QSFA12Factory } from "./helpers/QSFA12Factory";
 import { QSFA2Factory } from "./helpers/QSFA2Factory";
 
 import { SetFeeParams } from "./types/Common";
-import { NewFarmParams, SetAllocPointParams } from "./types/QFarm";
+import {
+  DepositParams,
+  NewFarmParams,
+  SetAllocPointParams,
+} from "./types/QFarm";
 import { UpdateOperatorParam } from "./types/FA2";
 
 import { rejects, ok, strictEqual } from "assert";
@@ -25,7 +29,7 @@ import { bakerRegistryStorage } from "../storage/BakerRegistry";
 import { qsFA12FactoryStorage } from "../storage/test/QSFA12Factory";
 import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
 
-describe("QFarm tests", async () => {
+describe.only("QFarm tests", async () => {
   var fa12: FA12;
   var qsGov: FA2;
   var utils: Utils;
@@ -495,5 +499,75 @@ describe("QFarm tests", async () => {
       );
       strictEqual(qFarm.storage.storage.farms[i].allocated, true);
     }
+  });
+
+  it("should fail if farm not found", async () => {
+    const depositParams: DepositParams = {
+      fid: 666,
+      amt: 0,
+      referrer: zeroAddress,
+      rewards_receiver: zeroAddress,
+      candidate: zeroAddress,
+    };
+
+    await rejects(qFarm.deposit(depositParams), (err: Error) => {
+      ok(err.message === "QFarm/farm-not-set");
+
+      return true;
+    });
+  });
+
+  it("should fail if farm is paused (allocation point equal to 0)", async () => {
+    const depositParams: DepositParams = {
+      fid: 4,
+      amt: 0,
+      referrer: zeroAddress,
+      rewards_receiver: zeroAddress,
+      candidate: zeroAddress,
+    };
+
+    await qFarm.addNewFarm(await QFarmUtils.getMockNewFarmParams(utils));
+    await rejects(qFarm.deposit(depositParams), (err: Error) => {
+      ok(err.message === "QFarm/farm-is-paused");
+
+      return true;
+    });
+  });
+
+  it("should fail if user is trying to refer himself", async () => {
+    const depositParams: DepositParams = {
+      fid: 0,
+      amt: 0,
+      referrer: alice.pkh,
+      rewards_receiver: zeroAddress,
+      candidate: zeroAddress,
+    };
+
+    await utils.setProvider(alice.sk);
+    await rejects(qFarm.deposit(depositParams), (err: Error) => {
+      ok(err.message === "QFarm/can-not-refer-yourself");
+
+      return true;
+    });
+  });
+
+  it("should set/update referrer", async () => {
+    const depositParams: DepositParams = {
+      fid: 0,
+      amt: 100,
+      referrer: bob.pkh,
+      rewards_receiver: zeroAddress,
+      candidate: zeroAddress,
+    };
+
+    await qFarm.updateStorage({ referrers: [alice.pkh] });
+
+    strictEqual(qFarm.storage.storage.referrers[alice.pkh], undefined);
+
+    await fa12.approve(qFarm.contract.address, depositParams.amt);
+    await qFarm.deposit(depositParams);
+    await qFarm.updateStorage({ referrers: [alice.pkh] });
+
+    strictEqual(qFarm.storage.storage.referrers[alice.pkh], bob.pkh);
   });
 });

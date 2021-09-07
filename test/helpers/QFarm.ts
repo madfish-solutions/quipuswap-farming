@@ -21,11 +21,10 @@ import { getLigo } from "../../scripts/helpers";
 
 import qFarmFunctions from "../../storage/json/QFarmFunctions.json";
 
-import { Fees, SetFeeParams } from "../types/Common";
+import { Fees, StakeParams, SetFeeParams } from "../types/Common";
 import {
   QFarmStorage,
   NewFarmParams,
-  StakeParams,
   SetAllocPointParams,
   DepositParams,
 } from "../types/QFarm";

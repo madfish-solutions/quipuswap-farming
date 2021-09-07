@@ -117,11 +117,11 @@
 
 6. `add_new_farm`:
 
-   - should fail if not admin is trying to add new farm;
-   - should fail if end time is less or equal to start time;
-   - should add new farm by admin and set all farm's fields correctly;
-   - should transfer FA1.2 tokens to the contract as the rewards for users;
-   - should transfer FA2 tokens to the contract as the rewards for users.
+   - ✅ should fail if not admin is trying to add new farm;
+   - ✅ should fail if end time is less or equal to start time;
+   - ✅ should add new farm by admin and set all farm's fields correctly;
+   - ✅ should transfer correct amount of FA1.2 tokens to the contract as the rewards for users;
+   - ✅ should transfer correct amount of FA2 tokens to the contract as the rewards for users.
 
 7. `pause_farms`:
 

@@ -1,6 +1,17 @@
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 
-import { Token } from "./Common";
+import { Fees, StakeParams, Token } from "./Common";
+
+export type NewFarmParams = {
+  fees: Fees;
+  stake_params: StakeParams;
+  reward_token: Token;
+  paused: boolean;
+  timelock: number;
+  start_time: string;
+  end_time: string;
+  reward_per_second: number;
+};
 
 export type TFarmStorage = {
   storage: {

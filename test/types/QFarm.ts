@@ -1,17 +1,10 @@
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 
-import { Fees, Token } from "./Common";
+import { Fees, StakeParams, Token } from "./Common";
 
 export type SetAllocPointParams = {
   fid: number;
   alloc_point: number;
-};
-
-export type StakeParams = {
-  staked_token: Token;
-  is_lp_staked_token: boolean;
-  token: Token;
-  qs_pool: Token;
 };
 
 export type NewFarmParams = {

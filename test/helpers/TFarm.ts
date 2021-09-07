@@ -21,8 +21,10 @@ import { getLigo } from "../../scripts/helpers";
 
 import tFarmFunctions from "../../storage/json/TFarmFunctions.json";
 
-import { SetFeeParams } from "../types/Common";
-import { TFarmStorage } from "../types/TFarm";
+import { Fees, SetFeeParams, StakeParams } from "../types/Common";
+import { NewFarmParams, TFarmStorage } from "../types/TFarm";
+
+import { Utils, zeroAddress } from "./Utils";
 
 export class TFarm {
   contract: Contract;
@@ -170,5 +172,63 @@ export class TFarm {
     await confirmOperation(this.tezos, operation.hash);
 
     return operation;
+  }
+
+  async addNewFarm(
+    newFarmParams: NewFarmParams
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .add_new_farm(...Utils.destructObj(newFarmParams))
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+}
+
+export class TFarmUtils {
+  static async getMockNewFarmParams(utils: Utils): Promise<NewFarmParams> {
+    const time: string = String(
+      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000
+    );
+    const fees: Fees = {
+      harvest_fee: 0,
+      withdrawal_fee: 0,
+    };
+    const stakeParams: StakeParams = {
+      staked_token: {
+        token: zeroAddress,
+        id: 0,
+        is_fa2: false,
+      },
+      is_lp_staked_token: false,
+      token: {
+        token: zeroAddress,
+        id: 0,
+        is_fa2: false,
+      },
+      qs_pool: {
+        token: zeroAddress,
+        id: 0,
+        is_fa2: false,
+      },
+    };
+    const newFarmParams: NewFarmParams = {
+      fees: fees,
+      stake_params: stakeParams,
+      reward_token: {
+        token: zeroAddress,
+        id: 0,
+        is_fa2: false,
+      },
+      paused: false,
+      timelock: 0,
+      start_time: time,
+      end_time: time,
+      reward_per_second: 0,
+    };
+
+    return newFarmParams;
   }
 }

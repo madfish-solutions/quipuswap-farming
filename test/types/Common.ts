@@ -13,3 +13,10 @@ export type SetFeeParams = {
   fid: number;
   fees: Fees;
 };
+
+export type StakeParams = {
+  staked_token: Token;
+  is_lp_staked_token: boolean;
+  token: Token;
+  qs_pool: Token;
+};

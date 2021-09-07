@@ -27,7 +27,7 @@ import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
 
 describe("QFarm tests", async () => {
   var fa12: FA12;
-  var fa2: FA2;
+  var qsGov: FA2;
   var utils: Utils;
   var qFarm: QFarm;
   var burner: Burner;
@@ -42,7 +42,7 @@ describe("QFarm tests", async () => {
     await utils.init(alice.sk);
 
     fa12 = await FA12.originate(utils.tezos, fa12Storage);
-    fa2 = await FA2.originate(utils.tezos, fa2Storage);
+    qsGov = await FA2.originate(utils.tezos, fa2Storage);
     qsFA12Factory = await QSFA12Factory.originate(
       utils.tezos,
       qsFA12FactoryStorage
@@ -63,24 +63,24 @@ describe("QFarm tests", async () => {
       },
     };
 
-    await fa2.updateOperators([updateOperatorParam]);
-    await qsFA2Factory.launchExchange(fa2.contract.address, 0, 10000, 10000);
+    await qsGov.updateOperators([updateOperatorParam]);
+    await qsFA2Factory.launchExchange(qsGov.contract.address, 0, 10000, 10000);
     await qsFA2Factory.updateStorage({
-      token_to_exchange: [[fa2.contract.address, 0]],
+      token_to_exchange: [[qsGov.contract.address, 0]],
     });
 
     const qsgov_lp = await qsFA2Factory.storage.token_to_exchange[
-      `${fa2.contract.address},${0}`
+      `${qsGov.contract.address},${0}`
     ];
 
     burnerStorage.qsgov_lp.token = qsgov_lp;
     burnerStorage.qsgov_lp.id = 0;
     burnerStorage.qsgov_lp.is_fa2 = true;
-    burnerStorage.qsgov.token = fa2.contract.address;
+    burnerStorage.qsgov.token = qsGov.contract.address;
     burnerStorage.qsgov.id = 0;
     burnerStorage.qsgov.is_fa2 = true;
 
-    proxyMinterStorage.qsgov.token = fa2.contract.address;
+    proxyMinterStorage.qsgov.token = qsGov.contract.address;
     proxyMinterStorage.qsgov.id = 0;
     proxyMinterStorage.qsgov.is_fa2 = true;
     proxyMinterStorage.admin = alice.pkh;
@@ -93,7 +93,7 @@ describe("QFarm tests", async () => {
       bakerRegistryStorage
     );
 
-    qFarmStorage.storage.qsgov.token = fa2.contract.address;
+    qFarmStorage.storage.qsgov.token = qsGov.contract.address;
     qFarmStorage.storage.qsgov.id = 0;
     qFarmStorage.storage.qsgov.is_fa2 = true;
     qFarmStorage.storage.qsgov_lp.token = qsgov_lp;
@@ -347,7 +347,7 @@ describe("QFarm tests", async () => {
     );
     strictEqual(
       qFarm.storage.storage.farms[0].reward_token.token,
-      fa2.contract.address
+      qsGov.contract.address
     );
     strictEqual(+qFarm.storage.storage.farms[0].reward_token.id, 0);
     strictEqual(qFarm.storage.storage.farms[0].reward_token.is_fa2, true);

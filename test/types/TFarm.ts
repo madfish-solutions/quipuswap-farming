@@ -13,6 +13,11 @@ export type NewFarmParams = {
   reward_per_second: number;
 };
 
+export type PauseFarmParam = {
+  fid: number;
+  pause: boolean;
+};
+
 export type TFarmStorage = {
   storage: {
     farms: MichelsonMap<MichelsonMapKey, unknown>;

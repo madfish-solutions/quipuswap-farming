@@ -8,7 +8,7 @@ import { QSFA12Factory } from "./helpers/QSFA12Factory";
 import { QSFA2Factory } from "./helpers/QSFA2Factory";
 
 import { UpdateOperatorParam } from "./types/FA2";
-import { NewFarmParams } from "./types/TFarm";
+import { NewFarmParams, PauseFarmParam } from "./types/TFarm";
 import { SetFeeParams } from "./types/Common";
 
 import { ok, rejects, strictEqual } from "assert";
@@ -23,7 +23,7 @@ import { bakerRegistryStorage } from "../storage/BakerRegistry";
 import { qsFA12FactoryStorage } from "../storage/test/QSFA12Factory";
 import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
 
-describe.only("TFarm tests", async () => {
+describe("TFarm tests", async () => {
   var fa12: FA12;
   var qsGov: FA2;
   var utils: Utils;
@@ -474,6 +474,105 @@ describe.only("TFarm tests", async () => {
       strictEqual(
         +tFarm.storage.storage.farms[i].fees.withdrawal_fee,
         fees[i].fees.withdrawal_fee
+      );
+    }
+  });
+
+  it("should fail if not admin is trying to pause farm", async () => {
+    const pauseFarmParams: PauseFarmParam[] = [{ fid: 0, pause: true }];
+
+    await utils.setProvider(alice.sk);
+    await rejects(tFarm.pauseFarms(pauseFarmParams), (err: Error) => {
+      ok(err.message === "Not-admin");
+
+      return true;
+    });
+  });
+
+  it("should fail if one farm from list of farms not found", async () => {
+    const pauseFarmParams: PauseFarmParam[] = [{ fid: 666, pause: true }];
+
+    await utils.setProvider(bob.sk);
+    await rejects(tFarm.pauseFarms(pauseFarmParams), (err: Error) => {
+      ok(err.message === "TFarm/farm-not-set");
+
+      return true;
+    });
+  });
+
+  it("should pause one farm", async () => {
+    const pauseFarmParams: PauseFarmParam[] = [{ fid: 0, pause: true }];
+
+    await tFarm.pauseFarms(pauseFarmParams);
+    await tFarm.updateStorage({ farms: [0] });
+
+    strictEqual(
+      tFarm.storage.storage.farms[0].paused,
+      pauseFarmParams[0].pause
+    );
+  });
+
+  it("should unpause one farm", async () => {
+    const pauseFarmParams: PauseFarmParam[] = [{ fid: 0, pause: false }];
+
+    await tFarm.pauseFarms(pauseFarmParams);
+    await tFarm.updateStorage({ farms: [0] });
+
+    strictEqual(
+      tFarm.storage.storage.farms[0].paused,
+      pauseFarmParams[0].pause
+    );
+  });
+
+  it("should pause group of farms", async () => {
+    const pauseFarmParams: PauseFarmParam[] = [
+      { fid: 0, pause: true },
+      { fid: 1, pause: true },
+      { fid: 2, pause: true },
+    ];
+
+    await tFarm.pauseFarms(pauseFarmParams);
+    await tFarm.updateStorage({ farms: [0, 1, 2] });
+
+    for (let pauseFarmParam of pauseFarmParams) {
+      strictEqual(
+        tFarm.storage.storage.farms[pauseFarmParam.fid].paused,
+        pauseFarmParam.pause
+      );
+    }
+  });
+
+  it("should unpause group of farms", async () => {
+    const pauseFarmParams: PauseFarmParam[] = [
+      { fid: 0, pause: false },
+      { fid: 2, pause: false },
+    ];
+
+    await tFarm.pauseFarms(pauseFarmParams);
+    await tFarm.updateStorage({ farms: [0, 2] });
+
+    for (let pauseFarmParam of pauseFarmParams) {
+      strictEqual(
+        tFarm.storage.storage.farms[pauseFarmParam.fid].paused,
+        pauseFarmParam.pause
+      );
+    }
+  });
+
+  it("should pause/unpause group of farms", async () => {
+    const pauseFarmParams: PauseFarmParam[] = [
+      { fid: 0, pause: true },
+      { fid: 1, pause: false },
+      { fid: 2, pause: true },
+    ];
+
+    await tFarm.pauseFarms(pauseFarmParams);
+    await tFarm.updateStorage({ farms: [0, 1, 2] });
+
+    for (let pauseFarmParam of pauseFarmParams) {
+      strictEqual(
+        tFarm.storage.storage.farms[pauseFarmParam.fid].paused,
+        pauseFarmParam.pause
       );
     }
   });

@@ -22,7 +22,7 @@ import { getLigo } from "../../scripts/helpers";
 import tFarmFunctions from "../../storage/json/TFarmFunctions.json";
 
 import { Fees, SetFeeParams, StakeParams } from "../types/Common";
-import { NewFarmParams, TFarmStorage } from "../types/TFarm";
+import { NewFarmParams, PauseFarmParam, TFarmStorage } from "../types/TFarm";
 
 import { Utils, zeroAddress } from "./Utils";
 
@@ -179,6 +179,18 @@ export class TFarm {
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .add_new_farm(...Utils.destructObj(newFarmParams))
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async pauseFarms(
+    pauseFarmParams: PauseFarmParam[]
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .pause_farms(pauseFarmParams)
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

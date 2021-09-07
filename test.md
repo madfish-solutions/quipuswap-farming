@@ -125,6 +125,14 @@
 
 7. `pause_farms`:
 
+   - ✅ should fail if not admin is trying to pause farm;
+   - ✅ should fail if one farm from list of farms not found;
+   - ✅ should pause one farm;
+   - ✅ should unpause one farm;
+   - ✅ should pause group of farms;
+   - ✅ should unpause group of farms;
+   - ✅ should pause/unpause group of farms.
+
 8. `deposit`:
 
 9. `withdraw`:

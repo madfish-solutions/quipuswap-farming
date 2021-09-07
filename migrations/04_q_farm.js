@@ -35,7 +35,9 @@ module.exports = async (tezos) => {
   qFarmStorage.storage.qsgov.token = zeroAddress;
   qFarmStorage.storage.qsgov.id = 0;
   qFarmStorage.storage.qsgov.is_fa2 = true;
-  qFarmStorage.storage.qsgov_pool = zeroAddress;
+  qFarmStorage.storage.qsgov_lp.token = zeroAddress;
+  qFarmStorage.storage.qsgov_lp.id = 0;
+  qFarmStorage.storage.qsgov_lp.is_fa2 = true;
   qFarmStorage.storage.admin = deployer;
   qFarmStorage.storage.pending_admin = zeroAddress;
   qFarmStorage.storage.burner = Burner["networks"][env.network]["burner"];

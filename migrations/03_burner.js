@@ -23,7 +23,9 @@ module.exports = async (tezos) => {
 
   const zeroAddress = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";
 
-  burnerStorage.qsgov_lp = zeroAddress;
+  burnerStorage.qsgov_lp.token = zeroAddress;
+  burnerStorage.qsgov_lp.id = 0;
+  burnerStorage.qsgov_lp.is_fa2 = true;
   burnerStorage.qsgov.token = zeroAddress;
   burnerStorage.qsgov.id = 0;
   burnerStorage.qsgov.is_fa2 = true;

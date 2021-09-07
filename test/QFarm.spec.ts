@@ -8,11 +8,8 @@ import { BakerRegistry } from "./helpers/BakerRegistry";
 import { QSFA12Factory } from "./helpers/QSFA12Factory";
 import { QSFA2Factory } from "./helpers/QSFA2Factory";
 
-import {
-  SetFeeParams,
-  NewFarmParams,
-  SetAllocPointParams,
-} from "./types/QFarm";
+import { SetFeeParams } from "./types/Common";
+import { NewFarmParams, SetAllocPointParams } from "./types/QFarm";
 import { UpdateOperatorParam } from "./types/FA2";
 
 import { rejects, ok, strictEqual } from "assert";
@@ -103,9 +100,10 @@ describe("QFarm tests", async () => {
     qFarmStorage.storage.qsgov_lp.is_fa2 = true;
     qFarmStorage.storage.admin = alice.pkh;
     qFarmStorage.storage.pending_admin = zeroAddress;
-    qFarmStorage.storage.burner = burner.contract.address;
-    qFarmStorage.storage.proxy_minter = proxyMinter.contract.address;
-    qFarmStorage.storage.baker_registry = bakerRegistry.contract.address;
+    qFarmStorage.storage.burner = zeroAddress;
+    qFarmStorage.storage.proxy_minter = zeroAddress;
+    qFarmStorage.storage.baker_registry = zeroAddress;
+    qFarmStorage.storage.farms_count = 0;
 
     qFarm = await QFarm.originate(utils.tezos, qFarmStorage);
 
@@ -205,6 +203,10 @@ describe("QFarm tests", async () => {
     const burnerAddress: string = burner.contract.address;
 
     await utils.setProvider(bob.sk);
+    await qFarm.updateStorage();
+
+    strictEqual(qFarm.storage.storage.burner, zeroAddress);
+
     await qFarm.setBurner(burnerAddress);
     await qFarm.updateStorage();
 
@@ -226,6 +228,10 @@ describe("QFarm tests", async () => {
     const proxyMinterAddress: string = proxyMinter.contract.address;
 
     await utils.setProvider(bob.sk);
+    await qFarm.updateStorage();
+
+    strictEqual(qFarm.storage.storage.proxy_minter, zeroAddress);
+
     await qFarm.setProxyMinter(proxyMinterAddress);
     await qFarm.updateStorage();
 
@@ -250,6 +256,10 @@ describe("QFarm tests", async () => {
     const bakerRegistryAddress: string = bakerRegistry.contract.address;
 
     await utils.setProvider(bob.sk);
+    await qFarm.updateStorage();
+
+    strictEqual(qFarm.storage.storage.baker_registry, zeroAddress);
+
     await qFarm.setBakerRegistry(bakerRegistryAddress);
     await qFarm.updateStorage();
 

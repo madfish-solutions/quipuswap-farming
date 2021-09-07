@@ -1,10 +1,12 @@
 import {
   TezosToolkit,
+  TransactionOperation,
   OriginationOperation,
   WalletOperationBatch,
   WalletOperation,
   Contract,
   OpKind,
+  WalletParamsWithKind,
 } from "@taquito/taquito";
 
 import { execSync } from "child_process";
@@ -19,6 +21,7 @@ import { getLigo } from "../../scripts/helpers";
 
 import tFarmFunctions from "../../storage/json/TFarmFunctions.json";
 
+import { SetFeeParams } from "../types/Common";
 import { TFarmStorage } from "../types/TFarm";
 
 export class TFarm {
@@ -88,7 +91,7 @@ export class TFarm {
 
   async setLambdas(): Promise<void> {
     const ligo: string = getLigo(true);
-    let params: any[] = [];
+    let params: WalletParamsWithKind[] = [];
 
     for (const tFarmFunction of tFarmFunctions) {
       const stdout: Buffer = execSync(
@@ -115,5 +118,57 @@ export class TFarm {
     const operation: WalletOperation = await batch.send();
 
     await confirmOperation(this.tezos, operation.opHash);
+  }
+
+  async setAdmin(newAdmin: string): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .set_admin(newAdmin)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async confirmAdmin(): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .confirm_admin([])
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async setFees(fees: SetFeeParams[]): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .set_fees(fees)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async setBurner(newBurner: string): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .set_burner(newBurner)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async setBakerRegistry(
+    newBakerRegistry: string
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .set_baker_registry(newBakerRegistry)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
   }
 }

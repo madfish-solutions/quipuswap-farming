@@ -6,6 +6,7 @@ import {
   WalletOperation,
   Contract,
   OpKind,
+  WalletParamsWithKind,
 } from "@taquito/taquito";
 
 import { execSync } from "child_process";
@@ -20,12 +21,11 @@ import { getLigo } from "../../scripts/helpers";
 
 import qFarmFunctions from "../../storage/json/QFarmFunctions.json";
 
+import { Fees, SetFeeParams } from "../types/Common";
 import {
   QFarmStorage,
   NewFarmParams,
   StakeParams,
-  SetFeeParams,
-  Fees,
   SetAllocPointParams,
   DepositParams,
 } from "../types/QFarm";
@@ -98,7 +98,7 @@ export class QFarm {
 
   async setLambdas(): Promise<void> {
     const ligo: string = getLigo(true);
-    let params: any[] = [];
+    let params: WalletParamsWithKind[] = [];
 
     for (const qFarmFunction of qFarmFunctions) {
       const stdout: Buffer = execSync(

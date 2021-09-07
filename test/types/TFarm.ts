@@ -14,7 +14,6 @@ export type TFarmStorage = {
     admin: string;
     pending_admin: string;
     burner: string;
-    proxy_minter: string;
     baker_registry: string;
     farms_count: number;
   };

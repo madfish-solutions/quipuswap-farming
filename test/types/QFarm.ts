@@ -1,16 +1,6 @@
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 
-import { Token } from "./Common";
-
-export type Fees = {
-  harvest_fee: number;
-  withdrawal_fee: number;
-};
-
-export type SetFeeParams = {
-  fid: number;
-  fees: Fees;
-};
+import { Fees, Token } from "./Common";
 
 export type SetAllocPointParams = {
   fid: number;

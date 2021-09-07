@@ -3,20 +3,20 @@ import { FA2 } from "./helpers/FA2";
 import { Utils, zeroAddress } from "./helpers/Utils";
 import { TFarm } from "./helpers/TFarm";
 import { Burner } from "./helpers/Burner";
-import { ProxyMinter } from "./helpers/ProxyMinter";
 import { BakerRegistry } from "./helpers/BakerRegistry";
 import { QSFA12Factory } from "./helpers/QSFA12Factory";
 import { QSFA2Factory } from "./helpers/QSFA2Factory";
 
 import { UpdateOperatorParam } from "./types/FA2";
 
-import { alice } from "../scripts/sandbox/accounts";
+import { ok, rejects, strictEqual } from "assert";
+
+import { alice, bob } from "../scripts/sandbox/accounts";
 
 import { fa12Storage } from "../storage/test/FA12";
 import { fa2Storage } from "../storage/test/FA2";
 import { tFarmStorage } from "../storage/TFarm";
 import { burnerStorage } from "../storage/Burner";
-import { proxyMinterStorage } from "../storage/ProxyMinter";
 import { bakerRegistryStorage } from "../storage/BakerRegistry";
 import { qsFA12FactoryStorage } from "../storage/test/QSFA12Factory";
 import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
@@ -27,7 +27,6 @@ describe("TFarm tests", async () => {
   var utils: Utils;
   var tFarm: TFarm;
   var burner: Burner;
-  var proxyMinter: ProxyMinter;
   var bakerRegistry: BakerRegistry;
   var qsFA12Factory: QSFA12Factory;
   var qsFA2Factory: QSFA2Factory;
@@ -76,14 +75,7 @@ describe("TFarm tests", async () => {
     burnerStorage.qsgov.id = 0;
     burnerStorage.qsgov.is_fa2 = true;
 
-    proxyMinterStorage.qsgov.token = qsGov.contract.address;
-    proxyMinterStorage.qsgov.id = 0;
-    proxyMinterStorage.qsgov.is_fa2 = true;
-    proxyMinterStorage.admin = alice.pkh;
-    proxyMinterStorage.pending_admin = zeroAddress;
-
     burner = await Burner.originate(utils.tezos, burnerStorage);
-    proxyMinter = await ProxyMinter.originate(utils.tezos, proxyMinterStorage);
     bakerRegistry = await BakerRegistry.originate(
       utils.tezos,
       bakerRegistryStorage
@@ -97,15 +89,100 @@ describe("TFarm tests", async () => {
     tFarmStorage.storage.qsgov_lp.is_fa2 = true;
     tFarmStorage.storage.admin = alice.pkh;
     tFarmStorage.storage.pending_admin = zeroAddress;
-    tFarmStorage.storage.burner = burner.contract.address;
-    tFarmStorage.storage.proxy_minter = proxyMinter.contract.address;
-    tFarmStorage.storage.baker_registry = bakerRegistry.contract.address;
+    tFarmStorage.storage.burner = zeroAddress;
+    tFarmStorage.storage.baker_registry = zeroAddress;
     tFarmStorage.storage.farms_count = 0;
 
     tFarm = await TFarm.originate(utils.tezos, tFarmStorage);
 
-    console.log(tFarm.contract.address);
-
     await tFarm.setLambdas();
+  });
+
+  it("should fail if not admin is trying to setup new pending admin", async () => {
+    await utils.setProvider(bob.sk);
+    await rejects(tFarm.setAdmin(bob.pkh), (err: Error) => {
+      ok(err.message === "Not-admin");
+
+      return true;
+    });
+  });
+
+  it("should setup new pending admin by admin", async () => {
+    await utils.setProvider(alice.sk);
+    await tFarm.setAdmin(bob.pkh);
+    await tFarm.updateStorage();
+
+    strictEqual(tFarm.storage.storage.admin, alice.pkh);
+    strictEqual(tFarm.storage.storage.pending_admin, bob.pkh);
+  });
+
+  it("should fail if not pending admin is trying to confirm new admin", async () => {
+    await rejects(tFarm.confirmAdmin(), (err: Error) => {
+      ok(err.message === "Not-pending-admin");
+
+      return true;
+    });
+  });
+
+  it("should confirm new admin by pending admin", async () => {
+    await utils.setProvider(bob.sk);
+    await tFarm.confirmAdmin();
+    await tFarm.updateStorage();
+
+    strictEqual(tFarm.storage.storage.admin, bob.pkh);
+    strictEqual(tFarm.storage.storage.pending_admin, zeroAddress);
+  });
+
+  it("should fail if not admin is trying to set burner", async () => {
+    const burnerAddress: string = burner.contract.address;
+
+    await utils.setProvider(alice.sk);
+    await rejects(tFarm.setBurner(burnerAddress), (err: Error) => {
+      ok(err.message === "Not-admin");
+
+      return true;
+    });
+  });
+
+  it("should change burner by admin", async () => {
+    const burnerAddress: string = burner.contract.address;
+
+    await utils.setProvider(bob.sk);
+    await tFarm.updateStorage();
+
+    strictEqual(tFarm.storage.storage.burner, zeroAddress);
+
+    await tFarm.setBurner(burnerAddress);
+    await tFarm.updateStorage();
+
+    strictEqual(tFarm.storage.storage.burner, burnerAddress);
+  });
+
+  it("should fail if not admin is trying to set baker registry", async () => {
+    const bakerRegistryAddress: string = bakerRegistry.contract.address;
+
+    await utils.setProvider(alice.sk);
+    await rejects(
+      tFarm.setBakerRegistry(bakerRegistryAddress),
+      (err: Error) => {
+        ok(err.message === "Not-admin");
+
+        return true;
+      }
+    );
+  });
+
+  it("should change baker registry by admin", async () => {
+    const bakerRegistryAddress: string = bakerRegistry.contract.address;
+
+    await utils.setProvider(bob.sk);
+    await tFarm.updateStorage();
+
+    strictEqual(tFarm.storage.storage.baker_registry, zeroAddress);
+
+    await tFarm.setBakerRegistry(bakerRegistryAddress);
+    await tFarm.updateStorage();
+
+    strictEqual(tFarm.storage.storage.baker_registry, bakerRegistryAddress);
   });
 });

@@ -90,15 +90,38 @@
 
 1. `set_admin`:
 
+   - ✅ should fail if not admin is trying to setup new pending admin;
+   - ✅ should setup new pending admin by admin.
+
 2. `confirm_admin`:
+
+   - ✅ should fail if not pending admin is trying to confirm new admin;
+   - ✅ should confirm new admin by pending admin.
 
 3. `set_fees`:
 
+   - should fail if not admin is trying to set fees;
+   - should fail if one farm from list of farms not found;
+   - should set/update fees for one farm;
+   - should set/update fees for group of farms.
+
 4. `set_burner`:
+
+   - ✅ should fail if not admin is trying to set burner;
+   - ✅ should change burner by admin.
 
 5. `set_baker_registry`:
 
+   - ✅ should fail if not admin is trying to set baker registry;
+   - ✅ should change baker registry by admin.
+
 6. `add_new_farm`:
+
+   - should fail if not admin is trying to add new farm;
+   - should fail if end time is less or equal to start time;
+   - should add new farm by admin and set all farm's fields correctly;
+   - should transfer FA1.2 tokens to the contract as the rewards for users;
+   - should transfer FA2 tokens to the contract as the rewards for users.
 
 7. `pause_farms`:
 

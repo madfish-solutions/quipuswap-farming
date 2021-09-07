@@ -6,11 +6,10 @@ import {
   WalletOperation,
   Contract,
   OpKind,
+  WalletParamsWithKind,
 } from "@taquito/taquito";
 
 import fs from "fs";
-
-import { getLigo } from "scripts/helpers";
 
 import { confirmOperation } from "../../scripts/confirmation";
 
@@ -91,8 +90,7 @@ export class QSFA2Factory {
   }
 
   async setDexAndTokenLambdas(): Promise<void> {
-    const ligo: string = getLigo(true);
-    let params: any[] = [];
+    let params: WalletParamsWithKind[] = [];
 
     for (const qs_fa2_factory_dex_lambda of qs_fa2_factory_dex_lambdas) {
       params.push({
@@ -106,6 +104,13 @@ export class QSFA2Factory {
       });
     }
 
+    let batch: WalletOperationBatch = this.tezos.wallet.batch(params);
+    let operation: WalletOperation = await batch.send();
+
+    await confirmOperation(this.tezos, operation.opHash);
+
+    params = [];
+
     for (const qs_fa2_factory_token_lambda of qs_fa2_factory_token_lambdas) {
       params.push({
         kind: OpKind.TRANSACTION,
@@ -118,8 +123,8 @@ export class QSFA2Factory {
       });
     }
 
-    const batch: WalletOperationBatch = this.tezos.wallet.batch(params);
-    const operation: WalletOperation = await batch.send();
+    batch = this.tezos.wallet.batch(params);
+    operation = await batch.send();
 
     await confirmOperation(this.tezos, operation.opHash);
   }

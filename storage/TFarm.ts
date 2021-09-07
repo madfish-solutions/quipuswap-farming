@@ -22,7 +22,6 @@ export const tFarmStorage: TFarmStorage = {
     admin: null,
     pending_admin: null,
     burner: null,
-    proxy_minter: null,
     baker_registry: null,
     farms_count: 0,
   },

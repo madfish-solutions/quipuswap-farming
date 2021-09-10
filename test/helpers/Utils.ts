@@ -43,6 +43,10 @@ export class Utils {
     let arr = [];
 
     Object.keys(obj).map(function (k) {
+      if (k === "fA12" || k === "fA2") {
+        arr.push(k);
+      }
+
       if (
         typeof obj[k] === "object" &&
         (!(obj[k] instanceof Date) ||

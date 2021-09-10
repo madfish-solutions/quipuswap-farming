@@ -42,11 +42,6 @@ module.exports = async (tezos) => {
   qFarmStorage.storage.baker_registry =
     BakerRegistry["networks"][env.network]["baker_registry"];
 
-  // console.log(qFarmStorage);
-  // console.log(qFarmStorage.storage.temp);
-
-  // console.log(...Utils.destructObj(qFarmStorage));
-
   const qFarmAddress = await migrate(tezos, "q_farm", qFarmStorage);
 
   console.log(`QFarm: ${qFarmAddress}`);

@@ -31,6 +31,23 @@ export type UserInfoType = {
   used_votes: number;
 };
 
+export type Farm = {
+  fees: Fees;
+  upd: string;
+  stake_params: StakeParams;
+  reward_token: FA2Token;
+  timelock: number;
+  current_delegated: string;
+  current_candidate: string;
+  alloc_point: number;
+  allocated: boolean;
+  rps: number;
+  staked: number;
+  start_time: string;
+  fid: number;
+  total_votes: number;
+};
+
 export type QFarmStorage = {
   storage: {
     farms: MichelsonMap<MichelsonMapKey, unknown>;

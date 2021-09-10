@@ -2,7 +2,7 @@ import { MichelsonMap } from "@taquito/michelson-encoder";
 
 import { TFarmStorage } from "../test/types/TFarm";
 
-import { zeroAddress } from "test/helpers/Utils";
+import { zeroAddress } from "../test/helpers/Utils";
 
 export const tFarmStorage: TFarmStorage = {
   storage: {

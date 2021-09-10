@@ -210,29 +210,19 @@ export class TFarmUtils {
     };
     const stakeParams: StakeParams = {
       staked_token: {
-        token: zeroAddress,
-        id: 0,
-        is_fa2: false,
+        fA12: zeroAddress,
       },
       is_lp_staked_token: false,
       token: {
-        token: zeroAddress,
-        id: 0,
-        is_fa2: false,
+        fA12: zeroAddress,
       },
-      qs_pool: {
-        token: zeroAddress,
-        id: 0,
-        is_fa2: false,
-      },
+      qs_pool: zeroAddress,
     };
     const newFarmParams: NewFarmParams = {
       fees: fees,
       stake_params: stakeParams,
       reward_token: {
-        token: zeroAddress,
-        id: 0,
-        is_fa2: false,
+        fA12: zeroAddress,
       },
       paused: false,
       timelock: 0,

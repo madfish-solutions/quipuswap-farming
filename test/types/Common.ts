@@ -5,7 +5,7 @@ export type FA2Token = {
   id: number;
 };
 
-export type Token = { fa12: FA12Token } | { fa2: FA2Token };
+export type Token = { fA12: FA12Token } | { fA2: FA2Token };
 
 export type Fees = {
   harvest_fee: number;

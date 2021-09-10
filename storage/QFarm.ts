@@ -1,8 +1,8 @@
 import { MichelsonMap } from "@taquito/michelson-encoder";
 
-import { QFarmStorage } from "test/types/QFarm";
+import { QFarmStorage } from "../test/types/QFarm";
 
-import { zeroAddress } from "test/helpers/Utils";
+import { zeroAddress } from "../test/helpers/Utils";
 
 export const qFarmStorage: QFarmStorage = {
   storage: {
@@ -14,7 +14,7 @@ export const qFarmStorage: QFarmStorage = {
     temp: {
       min_qs_gov_output: 0,
       token: {
-        fa2: {
+        fA2: {
           token: zeroAddress,
           id: 0,
         },

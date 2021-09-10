@@ -68,7 +68,7 @@
    - ✅ should set/update referrer;
    - ✅ should not set/update referrer if referrer param not passed;
    - ✅ should deposit single FA1.2 token;
-   - should deposit LP FA1.2 token;
+   - ✅ should deposit LP FA1.2 token;
    - should deposit single FA2 token;
    - should deposit LP FA2 token;
    - should vote for the baker if LP token is deposited.

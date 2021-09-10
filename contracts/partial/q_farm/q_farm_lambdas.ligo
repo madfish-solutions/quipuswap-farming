@@ -7,7 +7,7 @@ function set_admin(
     case action of
       Set_admin(admin)                  -> {
         (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
+        only_admin(s.admin);
 
         (* Setup pending admin that must confirm his new admin role *)
         s.pending_admin := admin;
@@ -25,7 +25,7 @@ function confirm_admin(
     case action of
       Confirm_admin                     -> {
         (* Check of pending admin permissions *)
-        only_pending_admin(Tezos.sender, s.pending_admin);
+        only_pending_admin(s.pending_admin);
 
         (* Setup new admin and reset pending admin *)
         s.admin := s.pending_admin;
@@ -44,7 +44,7 @@ function set_alloc_points(
     case action of
       Set_alloc_points(params)          -> {
         (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
+        only_admin(s.admin);
 
         (* Update allocation point for the specified farm *)
         function set_alloc_point(
@@ -90,7 +90,7 @@ function set_fees(
     case action of
       Set_fees(params)                  -> {
         (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
+        only_admin(s.admin);
 
         (* Update fees for the specified farm *)
         function set_fee(
@@ -124,7 +124,7 @@ function set_reward_per_second(
     case action of
       Set_reward_per_second(rps)        -> {
         (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
+        only_admin(s.admin);
 
         (* Update reward per second *)
         s.qsgov_per_second := rps;
@@ -142,7 +142,7 @@ function set_burner(
     case action of
       Set_burner(burner)                -> {
         (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
+        only_admin(s.admin);
 
         (* Update burner *)
         s.burner := burner;
@@ -160,7 +160,7 @@ function set_proxy_minter(
     case action of
       Set_proxy_minter(proxy_minter)    -> {
         (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
+        only_admin(s.admin);
 
         (* Update proxy minter *)
         s.proxy_minter := proxy_minter;
@@ -178,7 +178,7 @@ function set_baker_registry(
     case action of
       Set_baker_registry(registry)      -> {
         (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
+        only_admin(s.admin);
 
         (* Update baker registry *)
         s.baker_registry := registry;
@@ -196,7 +196,7 @@ function add_new_farm(
     case action of
       Add_new_farm(params)              -> {
         (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
+        only_admin(s.admin);
 
         (* Configure correct start time *)
         const start_time : timestamp = if params.start_time <= Tezos.now
@@ -588,7 +588,7 @@ function burn_xtz_rewards(
     case action of
       Burn_xtz_rewards(fid)             -> {
         (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
+        only_admin(s.admin);
 
         (* Retrieve farm from the storage *)
         const farm : farm_type = get_farm(fid, s);
@@ -753,7 +753,7 @@ function buyback(
     case action of
       Buyback(params)                   -> {
         (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
+        only_admin(s.admin);
 
         (* Retrieve farm from the storage *)
         var farm : farm_type := get_farm(params.fid, s);

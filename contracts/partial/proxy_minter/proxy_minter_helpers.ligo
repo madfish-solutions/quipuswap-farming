@@ -8,7 +8,7 @@ function get_mint_qsgov_tokens_entrypoint(
   ) of
     Some(contr) -> contr
   | None        -> (
-    failwith("QSGOV/mint-gov-token-entrypoint-404")
+    failwith("ProxyMinter/gsgov-mint-gov-token-entrypoint-404")
                         : contract(mint_gov_toks_type)
   )
   end

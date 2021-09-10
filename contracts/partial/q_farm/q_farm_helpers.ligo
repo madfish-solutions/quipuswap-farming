@@ -96,12 +96,12 @@ function get_proxy_minter_mint_entrypoint(
   const proxy_minter    : address)
                         : contract(mint_gov_toks_type) is
   case (
-    Tezos.get_entrypoint_opt("%mint_qsgov_tokens", proxy_minter)
+    Tezos.get_entrypoint_opt("%mint_tokens", proxy_minter)
                         : option(contract(mint_gov_toks_type))
   ) of
     Some(contr) -> contr
   | None        -> (
-    failwith("ProxyMinter/mint-qsgov-tokens-entrypoint-404")
+    failwith("QFarm/proxy-minter-mint-tokens-entrypoint-404")
                         : contract(mint_gov_toks_type)
   )
   end
@@ -388,7 +388,7 @@ function get_baker_registry_validate_entrypoint(
   ) of
     Some(contr) -> contr
   | None        -> (
-    failwith("BakerRegistry/validate-entrypoint-404")
+    failwith("QFarm/baker-registry-validate-entrypoint-404")
                         : contract(key_hash)
   )
   end

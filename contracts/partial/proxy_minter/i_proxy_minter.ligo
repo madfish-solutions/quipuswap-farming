@@ -1,6 +1,6 @@
 type storage_type       is [@layout:comb] record [
-  (* Set of registered farms *)
-  farms                   : set(address);
+  (* Set of registered minters *)
+  minters                 : set(address);
   (* QS GOV token *)
   qsgov                   : fa2_type;
   (* Contract's actual admin address *)
@@ -9,26 +9,26 @@ type storage_type       is [@layout:comb] record [
   pending_admin           : address;
 ]
 
-type register_farm_type is [@layout:comb] record [
-  (* Farm address *)
-  farm                    : address;
+type add_minter_type    is [@layout:comb] record [
+  (* Minter address *)
+  minter                  : address;
   (* Flag: register or unregister *)
   register                : bool;
 ]
 
-type withdraw_type_1    is unit
+type withdraw_1_type    is unit
 
-type withdraw_type_2    is list(bal_response_type)
+type withdraw_2_type    is list(bal_response_type)
 
 type set_admin_type     is address (* New admin address *)
 
 type confirm_admin_type is unit
 
 type action_type        is
-  Register_farm           of register_farm_type
-| Mint_qsgov_tokens       of mint_gov_toks_type
-| Withdraw_qsgov_tokens   of withdraw_type_1
-| Withdraw_callback       of withdraw_type_2
+  Add_minter              of add_minter_type
+| Mint_tokens             of mint_gov_toks_type
+| Withdraw_tokens         of withdraw_1_type
+| Withdraw_callback       of withdraw_2_type
 | Set_admin               of set_admin_type
 | Confirm_admin           of confirm_admin_type
 

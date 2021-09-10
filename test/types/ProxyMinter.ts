@@ -6,7 +6,7 @@ export type MintParams = {
 };
 
 export type ProxyMinterStorage = {
-  farms: string[];
+  minters: string[];
   qsgov: FA2Token;
   admin: string;
   pending_admin: string;

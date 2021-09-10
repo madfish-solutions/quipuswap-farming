@@ -218,7 +218,7 @@ function get_baker_registry_validate_entrypoint(
   ) of
     Some(contr) -> contr
   | None        -> (
-    failwith("BakerRegistry/validate-entrypoint-404")
+    failwith("TFarm/baker-registry-validate-entrypoint-404")
                         : contract(key_hash)
   )
   end

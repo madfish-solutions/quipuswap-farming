@@ -1,25 +1,25 @@
-(* Register or unregister farming in proxy minter *)
-function register_farm(
-  const params          : register_farm_type;
+(* Add or remove a minter *)
+function add_minter(
+  const params          : add_minter_type;
   var s                 : storage_type)
                         : return_type is
   block {
     (* Check of admin permissions *)
-    only_admin(Tezos.sender, s.admin);
+    only_admin(s.admin);
 
-    (* Register or unregister a farm *)
-    s.farms := Set.update(params.farm, params.register, s.farms);
+    (* Add or remove a minter *)
+    s.minters := Set.update(params.minter, params.register, s.minters);
   } with (no_operations, s)
 
 (* Create transaction for GS GOV tokens minting and send it *)
-function mint_qsgov_tokens(
+function mint_tokens(
   const params          : mint_gov_toks_type;
   var s                 : storage_type)
                         : return_type is
   block {
-    (* Check if transaction sender is a registered farming *)
-    if not Set.mem(Tezos.sender, s.farms)
-    then failwith("ProxyMinter/sender-is-not-farm")
+    (* Check if transaction sender is a registered minter *)
+    if not Set.mem(Tezos.sender, s.minters)
+    then failwith("ProxyMinter/sender-is-not-a-minter")
     else skip;
   } with (list [
       (* Mint QS GOV tokens transaction *)
@@ -34,12 +34,12 @@ function mint_qsgov_tokens(
   Withdraw QS GOV tokens minted to this proxy minter in result of calling
   QS GOV token's mint entrypoint by other minters
 *)
-function withdraw_qsgov_tokens(
+function withdraw_tokens(
   var s                 : storage_type)
                         : return_type is
   block {
     (* Check of admin permissions *)
-    only_admin(Tezos.sender, s.admin);
+    only_admin(s.admin);
 
     (* Prepare params for %balance_of transaction *)
     const balance_of_params : balance_of_type = record [
@@ -60,9 +60,9 @@ function withdraw_qsgov_tokens(
     )
   ], s)
 
-(* Accept QS GOV token %balance_of callback and withdraw tokens *)
-function withdraw_qsgov_tokens_callback(
-  const responses       : withdraw_type_2;
+(* Accept QS GOV token %balance_of callback and withdraw QS GOV tokens *)
+function withdraw_callback(
+  const responses       : withdraw_2_type;
   var s                 : storage_type)
                         : return_type is
   block {
@@ -112,7 +112,7 @@ function set_admin(
                         : return_type is
   block {
     (* Check of admin permissions *)
-    only_admin(Tezos.sender, s.admin);
+    only_admin(s.admin);
 
     (* Setup pending admin that must confirm his new admin role *)
     s.pending_admin := new_admin;
@@ -124,7 +124,7 @@ function confirm_admin(
                         : return_type is
   block {
     (* Check of pending admin permissions *)
-    only_pending_admin(Tezos.sender, s.pending_admin);
+    only_pending_admin(s.pending_admin);
 
     (* Setup new admin and reset pending admin *)
     s.admin := s.pending_admin;

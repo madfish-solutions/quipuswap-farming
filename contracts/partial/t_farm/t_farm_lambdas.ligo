@@ -7,7 +7,7 @@ function set_admin(
     case action of
       Set_admin(admin)                  -> {
         (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
+        only_admin(s.admin);
 
         (* Setup pending admin that must confirm his new admin role *)
         s.pending_admin := admin;
@@ -25,7 +25,7 @@ function confirm_admin(
     case action of
       Confirm_admin                     -> {
         (* Check of pending admin permissions *)
-        only_pending_admin(Tezos.sender, s.pending_admin);
+        only_pending_admin(s.pending_admin);
 
         (* Setup new admin and reset pending admin *)
         s.admin := s.pending_admin;
@@ -44,7 +44,7 @@ function set_fees(
     case action of
       Set_fees(params)                  -> {
         (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
+        only_admin(s.admin);
 
         (* Update fees for the specified farm *)
         function set_fee(
@@ -78,7 +78,7 @@ function set_burner(
     case action of
       Set_burner(burner)                -> {
         (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
+        only_admin(s.admin);
 
         (* Update burner *)
         s.burner := burner;
@@ -96,7 +96,7 @@ function set_baker_registry(
     case action of
       Set_baker_registry(registry)      -> {
         (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
+        only_admin(s.admin);
 
         (* Update baker registry *)
         s.baker_registry := registry;
@@ -117,7 +117,7 @@ function add_new_farm(
     case action of
       Add_new_farm(params)              -> {
         (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
+        only_admin(s.admin);
 
         (* Configure correct start time *)
         const start_time : timestamp = if params.start_time <= Tezos.now
@@ -199,7 +199,7 @@ function pause_farms(
     case action of
       Pause_farms(params)               -> {
         (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
+        only_admin(s.admin);
 
         (* Pause or unpause the specified farm *)
         function pause_farm(
@@ -603,7 +603,7 @@ function burn_xtz_rewards(
     case action of
       Burn_xtz_rewards(fid)             -> {
         (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
+        only_admin(s.admin);
 
         (* Retrieve farm from the storage *)
         const farm : farm_type = get_farm(fid, s);
@@ -642,7 +642,7 @@ function claim_farm_rewards(
     case action of
       Claim_farm_rewards(fid)           -> {
         (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
+        only_admin(s.admin);
 
         (* Retrieve farm from the storage *)
         var farm : farm_type := get_farm(fid, s);
@@ -693,7 +693,7 @@ function withdraw_farm_depo(
     case action of
       Withdraw_farm_depo(params)        -> {
         (* Check of admin permissions *)
-        only_admin(Tezos.sender, s.admin);
+        only_admin(s.admin);
 
         (* Retrieve farm from the storage *)
         var farm : farm_type := get_farm(params.fid, s);

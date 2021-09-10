@@ -15,10 +15,10 @@ function main(
   const s               : storage_type)
                         : return_type is
   case action of
-    Register_farm(params)     -> register_farm(params, s)
-  | Mint_qsgov_tokens(params) -> mint_qsgov_tokens(params, s)
-  | Withdraw_qsgov_tokens     -> withdraw_qsgov_tokens(s)
-  | Withdraw_callback(params) -> withdraw_qsgov_tokens_callback(params, s)
+    Add_minter(params)        -> add_minter(params, s)
+  | Mint_tokens(params)       -> mint_tokens(params, s)
+  | Withdraw_tokens           -> withdraw_tokens(s)
+  | Withdraw_callback(params) -> withdraw_callback(params, s)
   | Set_admin(params)         -> set_admin(params, s)
   | Confirm_admin             -> confirm_admin(s)
   end

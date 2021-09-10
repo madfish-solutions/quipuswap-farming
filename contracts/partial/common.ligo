@@ -1,21 +1,19 @@
-(* Util to check if user has admin access *)
+(* Util to check if transaction sender has admin access *)
 function only_admin(
-  const user            : address;
   const admin           : address)
                         : unit is
   block {
-    if user =/= admin
+    if Tezos.sender =/= admin
     then failwith("Not-admin")
     else skip;
   } with unit
 
-(* Util to check if user has pending admin access *)
+(* Util to check if transaction sender has pending admin access *)
 function only_pending_admin(
-  const user            : address;
   const pending_admin   : address)
                         : unit is
   block {
-    if user =/= pending_admin
+    if Tezos.sender =/= pending_admin
     then failwith("Not-pending-admin")
     else skip;
   } with unit
@@ -30,7 +28,7 @@ function get_fa12_token_transfer_entrypoint(
   ) of
     Some(contr) -> contr
   | None        -> (
-    failwith("FA1.2/transfer-entrypoint-404")
+    failwith("QSystem/fa12-transfer-entrypoint-404")
                         : contract(fa12_transfer_type)
   )
   end
@@ -45,7 +43,7 @@ function get_fa2_token_transfer_entrypoint(
   ) of
     Some(contr) -> contr
   | None        -> (
-    failwith("FA2/transfer-entrypoint-404")
+    failwith("QSystem/fa2-transfer-entrypoint-404")
                         : contract(fa2_transfer_type)
   )
   end
@@ -60,7 +58,7 @@ function get_fa12_token_approve_entrypoint(
   ) of
     Some(contr) -> contr
   | None        -> (
-    failwith("FA1.2/approve-entrypoint-404")
+    failwith("QSystem/fa12-approve-entrypoint-404")
                         : contract(fa12_approve_type)
   )
   end
@@ -75,7 +73,7 @@ function get_fa2_token_approve_entrypoint(
   ) of
     Some(contr) -> contr
   | None        -> (
-    failwith("FA2/approve-entrypoint-404")
+    failwith("QSystem/fa2-approve-entrypoint-404")
                         : contract(fa2_approve_type)
   )
   end
@@ -90,7 +88,7 @@ function get_fa12_token_balance_of_entrypoint(
   ) of
     Some(contr) -> contr
   | None        -> (
-    failwith("FA1.2/balance-of-entrypoint-404")
+    failwith("QSystem/fa12-balance-of-entrypoint-404")
                         : contract(fa12_balance_type)
   )
   end
@@ -105,7 +103,7 @@ function get_fa2_token_balance_of_entrypoint(
   ) of
     Some(contr) -> contr
   | None        -> (
-    failwith("FA2/balance-of-entrypoint-404")
+    failwith("QSystem/fa2-balance-of-entrypoint-404")
                         : contract(balance_of_type)
   )
   end
@@ -118,7 +116,10 @@ function get_quipuswap_use_entrypoint(
     Tezos.get_entrypoint_opt("%use", pool) : option(contract(use_type))
   ) of
     Some(contr) -> contr
-  | None        -> (failwith("QS/use-entrypoint-404") : contract(use_type))
+  | None        -> (
+    failwith("QSystem/quipuswap-use-entrypoint-404")
+                        : contract(use_type)
+  )
   end
 
 (* Util to get burner's %burn_callback entrypoint *)
@@ -131,7 +132,7 @@ function get_burn_callback_entrypoint(
   ) of
     Some(contr) -> contr
   | None        -> (
-    failwith("Burner/burn-callback-entrypoint-404")
+    failwith("QSystem/burner-burn-callback-entrypoint-404")
                         : contract(list(bal_response_type))
   )
   end

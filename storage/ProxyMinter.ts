@@ -1,7 +1,7 @@
 import { ProxyMinterStorage } from "../test/types/ProxyMinter";
 
 export const proxyMinterStorage: ProxyMinterStorage = {
-  farms: [],
+  minters: [],
   qsgov: {
     token: null,
     id: 0,

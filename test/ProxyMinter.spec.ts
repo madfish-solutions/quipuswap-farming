@@ -72,37 +72,37 @@ describe("ProxyMinter tests", async () => {
     strictEqual(proxyMinter.storage.pending_admin, zeroAddress);
   });
 
-  it("should fail if not admin is trying to register or unregister a farm", async () => {
+  it("should fail if not admin is trying to add or remove a minter", async () => {
     await utils.setProvider(alice.sk);
-    await rejects(proxyMinter.registerFarm(zeroAddress, true), (err: Error) => {
+    await rejects(proxyMinter.addMinter(zeroAddress, true), (err: Error) => {
       ok(err.message === "Not-admin");
 
       return true;
     });
   });
 
-  it("should register a farm", async () => {
+  it("should add a minter", async () => {
     await utils.setProvider(bob.sk);
-    await proxyMinter.registerFarm(alice.pkh, true);
+    await proxyMinter.addMinter(alice.pkh, true);
     await proxyMinter.updateStorage();
 
-    strictEqual(proxyMinter.storage.farms.length, 1);
-    strictEqual(proxyMinter.storage.farms[0], alice.pkh);
+    strictEqual(proxyMinter.storage.minters.length, 1);
+    strictEqual(proxyMinter.storage.minters[0], alice.pkh);
   });
 
-  it("should unregister a farm", async () => {
-    await proxyMinter.registerFarm(alice.pkh, false);
+  it("should remove a minter", async () => {
+    await proxyMinter.addMinter(alice.pkh, false);
     await proxyMinter.updateStorage();
 
-    strictEqual(proxyMinter.storage.farms.length, 0);
+    strictEqual(proxyMinter.storage.minters.length, 0);
   });
 
-  it("should fail if transaction sender is not a registered farm", async () => {
+  it("should fail if transaction sender is not a registered minter", async () => {
     const mintParams: MintParams[] = [{ receiver: alice.pkh, amount: 10 }];
 
     await utils.setProvider(alice.sk);
-    await rejects(proxyMinter.mintQsgovTokens(mintParams), (err: Error) => {
-      ok(err.message === "ProxyMinter/sender-is-not-farm");
+    await rejects(proxyMinter.mintTokens(mintParams), (err: Error) => {
+      ok(err.message === "ProxyMinter/sender-is-not-a-minter");
 
       return true;
     });
@@ -117,8 +117,8 @@ describe("ProxyMinter tests", async () => {
 
     await qsGov.setMinters(minters);
     await utils.setProvider(bob.sk);
-    await proxyMinter.registerFarm(bob.pkh, true);
-    await proxyMinter.mintQsgovTokens(mintParams);
+    await proxyMinter.addMinter(bob.pkh, true);
+    await proxyMinter.mintTokens(mintParams);
     await qsGov.updateStorage({ account_info: [dev.pkh] });
 
     strictEqual(
@@ -135,7 +135,7 @@ describe("ProxyMinter tests", async () => {
       { receiver: zeroAddress, amount: amount * 2 },
     ];
 
-    await proxyMinter.mintQsgovTokens(mintParams);
+    await proxyMinter.mintTokens(mintParams);
     await qsGov.updateStorage({ account_info: [dev.pkh, zeroAddress] });
 
     strictEqual(
@@ -150,7 +150,7 @@ describe("ProxyMinter tests", async () => {
 
   it("should fail if not admin is trying to withdraw QS GOV tokens", async () => {
     await utils.setProvider(alice.sk);
-    await rejects(proxyMinter.withdrawQsgovTokens(), (err: Error) => {
+    await rejects(proxyMinter.withdrawTokens(), (err: Error) => {
       ok(err.message === "Not-admin");
 
       return true;
@@ -195,7 +195,7 @@ describe("ProxyMinter tests", async () => {
     );
 
     await utils.setProvider(bob.sk);
-    await proxyMinter.withdrawQsgovTokens();
+    await proxyMinter.withdrawTokens();
     await qsGov.updateStorage({
       account_info: [bob.pkh, dev.pkh, proxyMinter.contract.address],
     });

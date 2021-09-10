@@ -173,24 +173,24 @@
 
 ## Proxy minter
 
-1. `register_farm`:
+1. `add_minter`:
 
-   - ✅ should fail if not admin is trying to register or unregister a farm;
-   - ✅ should register a farm;
-   - ✅ should unregister a farm.
+   - ✅ should fail if not admin is trying to add or remove a minter;
+   - ✅ should add a minter;
+   - ✅ should remove a minter.
 
-2. `mint_qsgov_tokens`:
+2. `mint_tokens`:
 
-   - ✅ should fail if transaction sender is not a registered farm;
+   - ✅ should fail if transaction sender is not a registered minter;
    - ✅ should mint QS GOV tokens for one address;
    - ✅ should mint QS GOV tokens for group of addresses.
 
-3. `withdraw_qsgov_tokens`:
+3. `withdraw_tokens`:
 
    - ✅ should fail if not admin is trying to withdraw QS GOV tokens;
    - ✅ should transfer all QS GOV tokens from proxy minter contract to admin address.
 
-4. `withdraw_qsgov_tokens_callback`:
+4. `withdraw_callback`:
 
    - ✅ should fail if not QS GOV token contract is trying to call callback.
 

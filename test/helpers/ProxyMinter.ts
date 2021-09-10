@@ -63,12 +63,12 @@ export class ProxyMinter {
     this.storage = storage;
   }
 
-  async registerFarm(
-    farm: string,
+  async addMinter(
+    minter: string,
     register: boolean
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
-      .register_farm(farm, register)
+      .add_minter(minter, register)
       .send();
 
     await confirmOperation(this.tezos, operation.hash);
@@ -76,11 +76,9 @@ export class ProxyMinter {
     return operation;
   }
 
-  async mintQsgovTokens(
-    recipients: MintParams[]
-  ): Promise<TransactionOperation> {
+  async mintTokens(recipients: MintParams[]): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
-      .mint_qsgov_tokens(recipients)
+      .mint_tokens(recipients)
       .send();
 
     await confirmOperation(this.tezos, operation.hash);
@@ -88,9 +86,9 @@ export class ProxyMinter {
     return operation;
   }
 
-  async withdrawQsgovTokens(): Promise<TransactionOperation> {
+  async withdrawTokens(): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
-      .withdraw_qsgov_tokens([])
+      .withdraw_tokens([])
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

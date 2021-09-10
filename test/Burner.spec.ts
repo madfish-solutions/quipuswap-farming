@@ -54,12 +54,9 @@ describe("Burner tests", async () => {
       `${qsGov.contract.address},${0}`
     ];
 
-    burnerStorage.qsgov_lp.token = qsgov_lp;
-    burnerStorage.qsgov_lp.id = 0;
-    burnerStorage.qsgov_lp.is_fa2 = true;
+    burnerStorage.qsgov_lp = qsgov_lp;
     burnerStorage.qsgov.token = qsGov.contract.address;
     burnerStorage.qsgov.id = 0;
-    burnerStorage.qsgov.is_fa2 = true;
 
     burner = await Burner.originate(utils.tezos, burnerStorage);
   });

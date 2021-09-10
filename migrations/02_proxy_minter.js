@@ -7,6 +7,8 @@ const { alice, dev } = require("../scripts/sandbox/accounts");
 
 const { proxyMinterStorage } = require("../storage/ProxyMinter");
 
+const { zeroAddress } = require("../test/helpers/Utils");
+
 const env = require("../env");
 
 module.exports = async (tezos) => {
@@ -22,11 +24,8 @@ module.exports = async (tezos) => {
     signer: await InMemorySigner.fromSecretKey(secretKey),
   });
 
-  const zeroAddress = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";
-
   proxyMinterStorage.qsgov.token = zeroAddress;
   proxyMinterStorage.qsgov.id = 0;
-  proxyMinterStorage.qsgov.is_fa2 = true;
   proxyMinterStorage.admin = deployer;
   proxyMinterStorage.pending_admin = zeroAddress;
 

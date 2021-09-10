@@ -2,6 +2,8 @@ import { MichelsonMap } from "@taquito/michelson-encoder";
 
 import { TFarmStorage } from "../test/types/TFarm";
 
+import { zeroAddress } from "../test/helpers/Utils";
+
 export const tFarmStorage: TFarmStorage = {
   storage: {
     farms: MichelsonMap.fromLiteral({}),
@@ -12,15 +14,10 @@ export const tFarmStorage: TFarmStorage = {
     qsgov: {
       token: null,
       id: 0,
-      is_fa2: false,
     },
-    qsgov_lp: {
-      token: null,
-      id: 0,
-      is_fa2: false,
-    },
+    qsgov_lp: null,
     admin: null,
-    pending_admin: null,
+    pending_admin: zeroAddress,
     burner: null,
     baker_registry: null,
     farms_count: 0,

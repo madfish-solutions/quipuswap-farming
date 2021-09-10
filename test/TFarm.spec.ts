@@ -70,12 +70,9 @@ describe("TFarm tests", async () => {
       `${qsGov.contract.address},${0}`
     ];
 
-    burnerStorage.qsgov_lp.token = qsgov_lp;
-    burnerStorage.qsgov_lp.id = 0;
-    burnerStorage.qsgov_lp.is_fa2 = true;
+    burnerStorage.qsgov_lp = qsgov_lp;
     burnerStorage.qsgov.token = qsGov.contract.address;
     burnerStorage.qsgov.id = 0;
-    burnerStorage.qsgov.is_fa2 = true;
 
     burner = await Burner.originate(utils.tezos, burnerStorage);
     bakerRegistry = await BakerRegistry.originate(
@@ -85,10 +82,7 @@ describe("TFarm tests", async () => {
 
     tFarmStorage.storage.qsgov.token = qsGov.contract.address;
     tFarmStorage.storage.qsgov.id = 0;
-    tFarmStorage.storage.qsgov.is_fa2 = true;
-    tFarmStorage.storage.qsgov_lp.token = qsgov_lp;
-    tFarmStorage.storage.qsgov_lp.id = 0;
-    tFarmStorage.storage.qsgov_lp.is_fa2 = true;
+    tFarmStorage.storage.qsgov_lp = qsgov_lp;
     tFarmStorage.storage.admin = alice.pkh;
     tFarmStorage.storage.pending_admin = zeroAddress;
     tFarmStorage.storage.burner = zeroAddress;
@@ -222,9 +216,10 @@ describe("TFarm tests", async () => {
 
     newFarmParams.fees.harvest_fee = 10;
     newFarmParams.fees.withdrawal_fee = 15;
-    newFarmParams.stake_params.staked_token.token = qsGov.contract.address;
-    newFarmParams.stake_params.staked_token.is_fa2 = true;
-    newFarmParams.reward_token.token = fa12.contract.address;
+    newFarmParams.stake_params.staked_token = {
+      fA2: { token: qsGov.contract.address, id: 0 },
+    };
+    newFarmParams.reward_token = { fA12: fa12.contract.address };
     newFarmParams.timelock = 20;
     newFarmParams.end_time = String(
       Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
@@ -250,56 +245,28 @@ describe("TFarm tests", async () => {
       newFarmParams.fees.withdrawal_fee
     );
     strictEqual(
-      tFarm.storage.storage.farms[0].stake_params.staked_token.token,
-      newFarmParams.stake_params.staked_token.token
+      tFarm.storage.storage.farms[0].stake_params.staked_token.fA2.token,
+      newFarmParams.stake_params.staked_token.fA2.token
     );
     strictEqual(
-      +tFarm.storage.storage.farms[0].stake_params.staked_token.id,
-      newFarmParams.stake_params.staked_token.id
-    );
-    strictEqual(
-      tFarm.storage.storage.farms[0].stake_params.staked_token.is_fa2,
-      newFarmParams.stake_params.staked_token.is_fa2
+      +tFarm.storage.storage.farms[0].stake_params.staked_token.fA2.id,
+      newFarmParams.stake_params.staked_token.fA2.id
     );
     strictEqual(
       tFarm.storage.storage.farms[0].stake_params.is_lp_staked_token,
       newFarmParams.stake_params.is_lp_staked_token
     );
     strictEqual(
-      tFarm.storage.storage.farms[0].stake_params.token.token,
-      newFarmParams.stake_params.token.token
+      tFarm.storage.storage.farms[0].stake_params.token.fA12,
+      newFarmParams.stake_params.token.fA12
     );
     strictEqual(
-      +tFarm.storage.storage.farms[0].stake_params.token.id,
-      newFarmParams.stake_params.token.id
+      tFarm.storage.storage.farms[0].stake_params.qs_pool,
+      newFarmParams.stake_params.qs_pool
     );
     strictEqual(
-      tFarm.storage.storage.farms[0].stake_params.token.is_fa2,
-      newFarmParams.stake_params.token.is_fa2
-    );
-    strictEqual(
-      tFarm.storage.storage.farms[0].stake_params.qs_pool.token,
-      newFarmParams.stake_params.qs_pool.token
-    );
-    strictEqual(
-      +tFarm.storage.storage.farms[0].stake_params.qs_pool.id,
-      newFarmParams.stake_params.qs_pool.id
-    );
-    strictEqual(
-      tFarm.storage.storage.farms[0].stake_params.qs_pool.is_fa2,
-      newFarmParams.stake_params.qs_pool.is_fa2
-    );
-    strictEqual(
-      tFarm.storage.storage.farms[0].reward_token.token,
-      newFarmParams.reward_token.token
-    );
-    strictEqual(
-      +tFarm.storage.storage.farms[0].reward_token.id,
-      newFarmParams.reward_token.id
-    );
-    strictEqual(
-      tFarm.storage.storage.farms[0].reward_token.is_fa2,
-      newFarmParams.reward_token.is_fa2
+      tFarm.storage.storage.farms[0].reward_token.fA12,
+      newFarmParams.reward_token.fA12
     );
     strictEqual(
       +tFarm.storage.storage.farms[0].timelock,
@@ -337,7 +304,7 @@ describe("TFarm tests", async () => {
     );
     const lifetime: number = 120; // 2 minutes
 
-    newFarmParams.reward_token.token = fa12.contract.address;
+    newFarmParams.reward_token = { fA12: fa12.contract.address };
     newFarmParams.end_time = String(
       Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
         lifetime
@@ -369,8 +336,9 @@ describe("TFarm tests", async () => {
     );
     const lifetime: number = 300; // 5 minutes
 
-    newFarmParams.reward_token.token = qsGov.contract.address;
-    newFarmParams.reward_token.is_fa2 = true;
+    newFarmParams.reward_token = {
+      fA2: { token: qsGov.contract.address, id: 0 },
+    };
     newFarmParams.end_time = String(
       Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
         lifetime
@@ -381,13 +349,13 @@ describe("TFarm tests", async () => {
 
     const bobInitialBalance: number = +(await qsGov.storage.account_info[
       bob.pkh
-    ].balances.get(String(newFarmParams.reward_token.id)));
+    ].balances.get(String(newFarmParams.reward_token.fA2.id)));
     const rewardsAmount: number = lifetime * newFarmParams.reward_per_second;
     const updateOperatorParam: UpdateOperatorParam = {
       add_operator: {
         owner: bob.pkh,
         operator: tFarm.contract.address,
-        token_id: newFarmParams.reward_token.id,
+        token_id: newFarmParams.reward_token.fA2.id,
       },
     };
 
@@ -399,13 +367,13 @@ describe("TFarm tests", async () => {
 
     strictEqual(
       +(await qsGov.storage.account_info[bob.pkh].balances.get(
-        String(newFarmParams.reward_token.id)
+        String(newFarmParams.reward_token.fA2.id)
       )),
       bobInitialBalance - rewardsAmount
     );
     strictEqual(
       +(await qsGov.storage.account_info[tFarm.contract.address].balances.get(
-        String(newFarmParams.reward_token.id)
+        String(newFarmParams.reward_token.fA2.id)
       )),
       rewardsAmount
     );

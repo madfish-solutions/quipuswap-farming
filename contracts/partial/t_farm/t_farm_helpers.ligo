@@ -92,12 +92,35 @@ function claim_rewards(
       end;
 
       (* Check reward token standard *)
-      if farm.reward_token.is_fa2
-      then {
+      case farm.reward_token of
+        FA12(token_address) -> {
+        (* Ensure harvest fee is greater than 0 *)
+        if harvest_fee > 0n
+        then {
+          (* Prepare FA1.2 transfer operation for harvest fee tokens *)
+          operations := Tezos.transaction(
+            FA12_transfer_type(
+              Tezos.self_address,
+              (fee_receiver, harvest_fee)
+            ),
+            0mutez,
+            get_fa12_token_transfer_entrypoint(token_address)
+          ) # operations;
+        }
+        else skip;
+
+        (* Prepare FA1.2 transfer operation for earned tokens *)
+        operations := Tezos.transaction(
+          FA12_transfer_type(Tezos.self_address, (receiver, actual_earned)),
+          0mutez,
+          get_fa12_token_transfer_entrypoint(token_address)
+        ) # operations;
+      }
+      | FA2(token_info)     -> {
         (* Prepare FA2 token transfer params *)
         const dst1 : transfer_dst_type = record [
           to_      = receiver;
-          token_id = farm.reward_token.id;
+          token_id = token_info.id;
           amount   = actual_earned;
         ];
         var fa2_transfer_param : fa2_send_type := record [
@@ -111,7 +134,7 @@ function claim_rewards(
         then {
           const dst2 : transfer_dst_type = record [
             to_      = fee_receiver;
-            token_id = farm.reward_token.id;
+            token_id = token_info.id;
             amount   = harvest_fee;
           ];
 
@@ -127,32 +150,10 @@ function claim_rewards(
         operations := Tezos.transaction(
           FA2_transfer_type(list [fa2_transfer_param]),
           0mutez,
-          get_fa2_token_transfer_entrypoint(farm.reward_token.token)
+          get_fa2_token_transfer_entrypoint(token_info.token)
         ) # operations;
       }
-      else {
-        (* Ensure harvest fee is greater than 0 *)
-        if harvest_fee > 0n
-        then {
-          (* Prepare FA1.2 transfer operation for harvest fee tokens *)
-          operations := Tezos.transaction(
-            FA12_transfer_type(
-              Tezos.self_address,
-              (fee_receiver, harvest_fee)
-            ),
-            0mutez,
-            get_fa12_token_transfer_entrypoint(farm.reward_token.token)
-          ) # operations;
-        }
-        else skip;
-
-        (* Prepare FA1.2 transfer operation for earned tokens *)
-        operations := Tezos.transaction(
-          FA12_transfer_type(Tezos.self_address, (receiver, actual_earned)),
-          0mutez,
-          get_fa12_token_transfer_entrypoint(farm.reward_token.token)
-        ) # operations;
-      };
+      end;
     };
   } with (operations, user)
 
@@ -175,12 +176,20 @@ function transfer_rewards_to_admin(
       user.earned := abs(user.earned - earned * precision);
 
       (* Check reward token standard *)
-      if farm.reward_token.is_fa2
-      then {
+      case farm.reward_token of
+        FA12(token_address) -> {
+        (* Prepare FA1.2 transfer operation for earned tokens *)
+        operations := Tezos.transaction(
+          FA12_transfer_type(Tezos.self_address, (admin, earned)),
+          0mutez,
+          get_fa12_token_transfer_entrypoint(token_address)
+        ) # operations;
+      }
+      | FA2(token_info)     -> {
         (* Prepare FA2 token transfer params *)
         const dst : transfer_dst_type = record [
           to_      = admin;
-          token_id = farm.reward_token.id;
+          token_id = token_info.id;
           amount   = earned;
         ];
         var fa2_transfer_param : fa2_send_type := record [
@@ -192,17 +201,10 @@ function transfer_rewards_to_admin(
         operations := Tezos.transaction(
           FA2_transfer_type(list [fa2_transfer_param]),
           0mutez,
-          get_fa2_token_transfer_entrypoint(farm.reward_token.token)
+          get_fa2_token_transfer_entrypoint(token_info.token)
         ) # operations;
       }
-      else {
-        (* Prepare FA1.2 transfer operation for earned tokens *)
-        operations := Tezos.transaction(
-          FA12_transfer_type(Tezos.self_address, (admin, earned)),
-          0mutez,
-          get_fa12_token_transfer_entrypoint(farm.reward_token.token)
-        ) # operations;
-      };
+      end;
     };
   } with (operations, user)
 
@@ -244,7 +246,7 @@ function get_vote_op(
       voter     = Tezos.self_address;
     ]),
     0mutez,
-    get_quipuswap_use_entrypoint(farm.stake_params.qs_pool.token)
+    get_quipuswap_use_entrypoint(farm.stake_params.qs_pool)
   )
 
 (*

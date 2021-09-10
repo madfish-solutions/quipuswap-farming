@@ -23,7 +23,7 @@ function burn(
           receiver = Tezos.self_address;
         ]),
         Tezos.amount,
-        get_quipuswap_use_entrypoint(s.qsgov_lp.token)
+        get_quipuswap_use_entrypoint(s.qsgov_lp)
       );
       (* Get balance of output QS GOV tokens to burn them *)
       Tezos.transaction(

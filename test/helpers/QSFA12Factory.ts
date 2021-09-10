@@ -1,5 +1,6 @@
 import {
   TezosToolkit,
+  TransactionOperation,
   OriginationOperation,
   WalletOperationBatch,
   WalletOperation,
@@ -126,5 +127,19 @@ export class QSFA12Factory {
     operation = await batch.send();
 
     await confirmOperation(this.tezos, operation.opHash);
+  }
+
+  async launchExchange(
+    token: string,
+    amount: number,
+    mutezAmount: number
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .launchExchange(token, amount)
+      .send({ amount: mutezAmount, mutez: true });
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
   }
 }

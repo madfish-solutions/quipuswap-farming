@@ -2,9 +2,9 @@ type burn_type          is Burn             of (address * nat)
 
 type storage_type       is [@layout:comb] record [
   (* QS GOV token LP on Quipuswap DEX *)
-  qsgov_lp                : token_type;
+  qsgov_lp                : address;
   (* QS GOV token *)
-  qsgov                   : token_type;
+  qsgov                   : fa2_type;
 ]
 
 type burn_callback_type is list(bal_response_type)

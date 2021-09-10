@@ -14,6 +14,8 @@ const { alice, dev } = require("../scripts/sandbox/accounts");
 const { tFarmStorage } = require("../storage/TFarm");
 const tFarmFunctions = require("../storage/json/TFarmFunctions.json");
 
+const { zeroAddress } = require("../test/helpers/Utils");
+
 const env = require("../env");
 
 module.exports = async (tezos) => {
@@ -29,16 +31,10 @@ module.exports = async (tezos) => {
     signer: await InMemorySigner.fromSecretKey(secretKey),
   });
 
-  const zeroAddress = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";
-
   tFarmStorage.storage.qsgov.token = zeroAddress;
   tFarmStorage.storage.qsgov.id = 0;
-  tFarmStorage.storage.qsgov.is_fa2 = true;
-  tFarmStorage.storage.qsgov_lp.token = zeroAddress;
-  tFarmStorage.storage.qsgov_lp.id = 0;
-  tFarmStorage.storage.qsgov_lp.is_fa2 = true;
+  tFarmStorage.storage.qsgov_lp = zeroAddress;
   tFarmStorage.storage.admin = deployer;
-  tFarmStorage.storage.pending_admin = zeroAddress;
   tFarmStorage.storage.burner = Burner["networks"][env.network]["burner"];
   tFarmStorage.storage.baker_registry =
     BakerRegistry["networks"][env.network]["baker_registry"];

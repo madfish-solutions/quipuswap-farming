@@ -1,10 +1,15 @@
 type use_type           is dex_action_type
 
-type token_type         is [@layout:comb] record [
+type fa12_type          is address
+
+type fa2_type           is [@layout:comb] record [
   token                   : address; (* Token address *)
-  id                      : nat; (* Token ID *)
-  is_fa2                  : bool; (* Flag: token standard is FA2 or not *)
+  id                      : token_id_type; (* Token ID *)
 ]
+
+type token_type         is
+  FA12                    of fa12_type
+| FA2                     of fa2_type
 
 type get_balance_type   is [@layout:comb] record [
   balance                 : nat; (* GOV token balance *)

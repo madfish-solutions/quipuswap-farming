@@ -7,18 +7,23 @@ import { ProxyMinter } from "./helpers/ProxyMinter";
 import { BakerRegistry } from "./helpers/BakerRegistry";
 import { QSFA12Factory } from "./helpers/QSFA12Factory";
 import { QSFA2Factory } from "./helpers/QSFA2Factory";
+import { QSFA12Dex } from "./helpers/QSFA12Dex";
+import { QSFA2Dex } from "./helpers/QSFA2Dex";
 
 import { SetFeeParams } from "./types/Common";
 import {
   DepositParams,
   NewFarmParams,
   SetAllocPointParams,
+  UserInfoType,
+  Farm,
 } from "./types/QFarm";
+import { UserInfo } from "./types/FA12";
 import { UpdateOperatorParam } from "./types/FA2";
 
 import { rejects, ok, strictEqual } from "assert";
 
-import { alice, bob } from "../scripts/sandbox/accounts";
+import { alice, bob, carol } from "../scripts/sandbox/accounts";
 
 import { fa12Storage } from "../storage/test/FA12";
 import { fa2Storage } from "../storage/test/FA2";
@@ -31,7 +36,9 @@ import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
 
 describe("QFarm tests", async () => {
   var fa12: FA12;
+  var fa12LP: QSFA12Dex;
   var qsGov: FA2;
+  var qsGovLP: QSFA2Dex;
   var utils: Utils;
   var qFarm: QFarm;
   var burner: Burner;
@@ -47,10 +54,21 @@ describe("QFarm tests", async () => {
 
     fa12 = await FA12.originate(utils.tezos, fa12Storage);
     qsGov = await FA2.originate(utils.tezos, fa2Storage);
+
+    bakerRegistry = await BakerRegistry.originate(
+      utils.tezos,
+      bakerRegistryStorage
+    );
+
+    qsFA12FactoryStorage.baker_validator = bakerRegistry.contract.address;
+
     qsFA12Factory = await QSFA12Factory.originate(
       utils.tezos,
       qsFA12FactoryStorage
     );
+
+    qsFA2FactoryStorage.baker_validator = bakerRegistry.contract.address;
+
     qsFA2Factory = await QSFA2Factory.originate(
       utils.tezos,
       qsFA2FactoryStorage
@@ -73,35 +91,36 @@ describe("QFarm tests", async () => {
       token_to_exchange: [[qsGov.contract.address, 0]],
     });
 
-    const qsgov_lp = await qsFA2Factory.storage.token_to_exchange[
-      `${qsGov.contract.address},${0}`
-    ];
+    const qsGovLPAddress: string =
+      qsFA2Factory.storage.token_to_exchange[`${qsGov.contract.address},${0}`];
 
-    burnerStorage.qsgov_lp.token = qsgov_lp;
-    burnerStorage.qsgov_lp.id = 0;
-    burnerStorage.qsgov_lp.is_fa2 = true;
+    await fa12.approve(qsFA12Factory.contract.address, 10000);
+    await qsFA12Factory.launchExchange(fa12.contract.address, 10000, 10000);
+    await qsFA12Factory.updateStorage({
+      token_to_exchange: [fa12.contract.address],
+    });
+
+    const fa12LPAddress: string =
+      qsFA12Factory.storage.token_to_exchange[fa12.contract.address];
+
+    fa12LP = await QSFA12Dex.init(fa12LPAddress, utils.tezos);
+    qsGovLP = await QSFA2Dex.init(qsGovLPAddress, utils.tezos);
+
+    burnerStorage.qsgov_lp = qsGovLP.contract.address;
     burnerStorage.qsgov.token = qsGov.contract.address;
     burnerStorage.qsgov.id = 0;
-    burnerStorage.qsgov.is_fa2 = true;
 
     proxyMinterStorage.qsgov.token = qsGov.contract.address;
     proxyMinterStorage.qsgov.id = 0;
-    proxyMinterStorage.qsgov.is_fa2 = true;
     proxyMinterStorage.admin = alice.pkh;
     proxyMinterStorage.pending_admin = zeroAddress;
 
     burner = await Burner.originate(utils.tezos, burnerStorage);
     proxyMinter = await ProxyMinter.originate(utils.tezos, proxyMinterStorage);
-    bakerRegistry = await BakerRegistry.originate(
-      utils.tezos,
-      bakerRegistryStorage
-    );
 
     qFarmStorage.storage.qsgov.token = qsGov.contract.address;
     qFarmStorage.storage.qsgov.id = 0;
-    qFarmStorage.storage.qsgov.is_fa2 = true;
-    qFarmStorage.storage.qsgov_lp.token = qsgov_lp;
-    qFarmStorage.storage.qsgov_lp.is_fa2 = true;
+    qFarmStorage.storage.qsgov_lp = qsGovLP.contract.address;
     qFarmStorage.storage.admin = alice.pkh;
     qFarmStorage.storage.pending_admin = zeroAddress;
     qFarmStorage.storage.burner = zeroAddress;
@@ -290,7 +309,8 @@ describe("QFarm tests", async () => {
 
     newFarmParams.fees.harvest_fee = 10;
     newFarmParams.fees.withdrawal_fee = 15;
-    newFarmParams.stake_params.staked_token.token = fa12.contract.address;
+    newFarmParams.stake_params.staked_token = { fA12: fa12.contract.address };
+    newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.timelock = 20;
     newFarmParams.alloc_point = 50;
 
@@ -310,51 +330,26 @@ describe("QFarm tests", async () => {
       newFarmParams.fees.withdrawal_fee
     );
     strictEqual(
-      qFarm.storage.storage.farms[0].stake_params.staked_token.token,
-      newFarmParams.stake_params.staked_token.token
-    );
-    strictEqual(
-      +qFarm.storage.storage.farms[0].stake_params.staked_token.id,
-      newFarmParams.stake_params.staked_token.id
-    );
-    strictEqual(
-      qFarm.storage.storage.farms[0].stake_params.staked_token.is_fa2,
-      newFarmParams.stake_params.staked_token.is_fa2
+      qFarm.storage.storage.farms[0].stake_params.staked_token.fA12,
+      newFarmParams.stake_params.staked_token.fA12
     );
     strictEqual(
       qFarm.storage.storage.farms[0].stake_params.is_lp_staked_token,
       newFarmParams.stake_params.is_lp_staked_token
     );
     strictEqual(
-      qFarm.storage.storage.farms[0].stake_params.token.token,
-      newFarmParams.stake_params.token.token
+      qFarm.storage.storage.farms[0].stake_params.token.fA12,
+      newFarmParams.stake_params.token.fA12
     );
     strictEqual(
-      +qFarm.storage.storage.farms[0].stake_params.token.id,
-      newFarmParams.stake_params.token.id
-    );
-    strictEqual(
-      qFarm.storage.storage.farms[0].stake_params.token.is_fa2,
-      newFarmParams.stake_params.token.is_fa2
-    );
-    strictEqual(
-      qFarm.storage.storage.farms[0].stake_params.qs_pool.token,
-      newFarmParams.stake_params.qs_pool.token
-    );
-    strictEqual(
-      +qFarm.storage.storage.farms[0].stake_params.qs_pool.id,
-      newFarmParams.stake_params.qs_pool.id
-    );
-    strictEqual(
-      qFarm.storage.storage.farms[0].stake_params.qs_pool.is_fa2,
-      newFarmParams.stake_params.qs_pool.is_fa2
+      qFarm.storage.storage.farms[0].stake_params.qs_pool,
+      newFarmParams.stake_params.qs_pool
     );
     strictEqual(
       qFarm.storage.storage.farms[0].reward_token.token,
       qsGov.contract.address
     );
     strictEqual(+qFarm.storage.storage.farms[0].reward_token.id, 0);
-    strictEqual(qFarm.storage.storage.farms[0].reward_token.is_fa2, true);
     strictEqual(
       +qFarm.storage.storage.farms[0].timelock,
       newFarmParams.timelock
@@ -572,5 +567,148 @@ describe("QFarm tests", async () => {
       qFarm.storage.storage.referrers[alice.pkh],
       depositParams.referrer
     );
+  });
+
+  it("should not set/update referrer if referrer param not passed", async () => {
+    const depositParams: DepositParams = {
+      fid: 0,
+      amt: 100,
+      referrer: undefined,
+      rewards_receiver: zeroAddress,
+      candidate: zeroAddress,
+    };
+
+    await qFarm.updateStorage({ referrers: [alice.pkh] });
+
+    strictEqual(qFarm.storage.storage.referrers[alice.pkh], bob.pkh);
+
+    await fa12.approve(qFarm.contract.address, depositParams.amt);
+    await qFarm.deposit(depositParams);
+    await qFarm.updateStorage({ referrers: [alice.pkh] });
+
+    strictEqual(qFarm.storage.storage.referrers[alice.pkh], bob.pkh);
+  });
+
+  it("should deposit single FA1.2 token", async () => {
+    const depositParams: DepositParams = {
+      fid: 0,
+      amt: 1000,
+      referrer: undefined,
+      rewards_receiver: carol.pkh,
+      candidate: zeroAddress,
+    };
+
+    await qFarm.updateStorage({
+      users_info: [[depositParams.fid, alice.pkh]],
+      farms: [depositParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [qFarm.contract.address, alice.pkh],
+    });
+
+    const initialFarm: Farm = qFarm.storage.storage.farms[depositParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${depositParams.fid},${alice.pkh}`];
+    const initialTokenAliceRecord: UserInfo = fa12.storage.ledger[alice.pkh];
+    const initialTokenFarmRecord: UserInfo =
+      fa12.storage.ledger[qFarm.contract.address];
+
+    await fa12.approve(qFarm.contract.address, depositParams.amt);
+    await qFarm.deposit(depositParams);
+    await qFarm.updateStorage({
+      users_info: [[depositParams.fid, alice.pkh]],
+      farms: [0],
+    });
+    await fa12.updateStorage({
+      ledger: [qFarm.contract.address, alice.pkh],
+    });
+
+    const finalFarm: Farm = qFarm.storage.storage.farms[depositParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${depositParams.fid},${alice.pkh}`];
+    const finalTokenAliceRecord: UserInfo = fa12.storage.ledger[alice.pkh];
+    const finalTokenFarmRecord: UserInfo =
+      fa12.storage.ledger[qFarm.contract.address];
+
+    strictEqual(+finalFarm.staked, +initialFarm.staked + depositParams.amt);
+    strictEqual(
+      +finalFarmAliceRecord.staked,
+      +initialFarmAliceRecord.staked + depositParams.amt
+    );
+    strictEqual(
+      +finalTokenAliceRecord.balance,
+      +initialTokenAliceRecord.balance - depositParams.amt
+    );
+    strictEqual(
+      +finalTokenFarmRecord.balance,
+      +initialTokenFarmRecord.balance + depositParams.amt
+    );
+
+    ok(finalFarmAliceRecord.last_staked > initialFarmAliceRecord.last_staked);
+  });
+
+  it("should deposit LP FA1.2 token", async () => {
+    let newFarmParams: NewFarmParams = await QFarmUtils.getMockNewFarmParams(
+      utils
+    );
+
+    newFarmParams.fees.harvest_fee = 5;
+    newFarmParams.fees.withdrawal_fee = 5;
+    newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
+    newFarmParams.stake_params.is_lp_staked_token = true;
+    newFarmParams.stake_params.token = { fA12: fa12.contract.address };
+    newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
+    newFarmParams.timelock = 0;
+    newFarmParams.alloc_point = 10;
+
+    await utils.setProvider(bob.sk);
+    await qFarm.addNewFarm(newFarmParams);
+
+    const depositParams: DepositParams = {
+      fid: 5,
+      amt: 100,
+      referrer: undefined,
+      rewards_receiver: carol.pkh,
+      candidate: bob.pkh,
+    };
+
+    await utils.setProvider(alice.sk);
+    await qFarm.updateStorage({
+      users_info: [[depositParams.fid, alice.pkh]],
+      farms: [depositParams.fid],
+    });
+    await fa12LP.updateStorage({
+      ledger: [qFarm.contract.address, alice.pkh],
+    });
+
+    const initialTokenAliceRecord: UserInfo =
+      fa12LP.storage.storage.ledger[alice.pkh];
+
+    await fa12LP.approve(qFarm.contract.address, depositParams.amt);
+    await qFarm.deposit(depositParams);
+    await qFarm.updateStorage({
+      users_info: [[depositParams.fid, alice.pkh]],
+      farms: [depositParams.fid],
+    });
+    await fa12LP.updateStorage({
+      ledger: [qFarm.contract.address, alice.pkh],
+    });
+
+    const finalFarm: Farm = qFarm.storage.storage.farms[depositParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${depositParams.fid},${alice.pkh}`];
+    const finalTokenAliceRecord: UserInfo =
+      fa12LP.storage.storage.ledger[alice.pkh];
+    const finalTokenFarmRecord: UserInfo =
+      fa12LP.storage.storage.ledger[qFarm.contract.address];
+
+    strictEqual(+finalFarm.staked, depositParams.amt);
+    strictEqual(+finalFarmAliceRecord.staked, depositParams.amt);
+    strictEqual(
+      +finalTokenAliceRecord.balance,
+      +initialTokenAliceRecord.balance - depositParams.amt
+    );
+    strictEqual(+finalTokenFarmRecord.balance, 0);
+    strictEqual(+finalTokenFarmRecord.frozen_balance, depositParams.amt);
   });
 });

@@ -2,7 +2,7 @@ type storage_type       is [@layout:comb] record [
   (* Set of registered farms *)
   farms                   : set(address);
   (* QS GOV token *)
-  qsgov                   : token_type;
+  qsgov                   : fa2_type;
   (* Contract's actual admin address *)
   admin                   : address;
   (* Contract's pending admin address *)

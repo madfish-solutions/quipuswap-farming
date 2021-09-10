@@ -59,7 +59,7 @@ function set_fees(
             farm.fees := params.fees;
 
             (* Save farm to the storage *)
-            s.farms[params.fid] := farm;
+            s.farms[farm.fid] := farm;
           } with s;
 
         (* Update fees *)
@@ -156,12 +156,20 @@ function add_new_farm(
           params.reward_per_second;
 
         (* Check reward token standard *)
-        if params.reward_token.is_fa2
-        then {
+        case params.reward_token of
+          FA12(token_address) -> {
+          (* Prepare FA1.2 transfer operation for reward token *)
+          operations := Tezos.transaction(
+            FA12_transfer_type(Tezos.sender, (Tezos.self_address, rew_amt)),
+            0mutez,
+            get_fa12_token_transfer_entrypoint(token_address)
+          ) # operations;
+        }
+        | FA2(token_info)     -> {
           (* Prepare FA2 token transfer params *)
           const dst : transfer_dst_type = record [
             to_      = Tezos.self_address;
-            token_id = params.reward_token.id;
+            token_id = token_info.id;
             amount   = rew_amt;
           ];
           const fa2_transfer_param : fa2_send_type = record [
@@ -173,19 +181,10 @@ function add_new_farm(
           operations := Tezos.transaction(
             FA2_transfer_type(list [fa2_transfer_param]),
             0mutez,
-            get_fa2_token_transfer_entrypoint(
-              params.reward_token.token
-            )
+            get_fa2_token_transfer_entrypoint(token_info.token)
           ) # operations;
         }
-        else {
-          (* Prepare FA1.2 transfer operation for reward token *)
-          operations := Tezos.transaction(
-            FA12_transfer_type(Tezos.sender, (Tezos.self_address, rew_amt)),
-            0mutez,
-            get_fa12_token_transfer_entrypoint(params.reward_token.token)
-          ) # operations;
-        };
+        end;
       }
     | _                                 -> skip
     end
@@ -218,7 +217,7 @@ function pause_farms(
             farm.paused := params.pause;
 
             (* Save farm to the storage *)
-            s.farms[params.fid] := farm;
+            s.farms[farm.fid] := farm;
           } with s;
 
         (* Pause or unpause farms from params list *)
@@ -289,65 +288,72 @@ function deposit(
         user.staked := user.staked + params.amt;
         user.prev_earned := user.staked * farm.rps;
 
-        (* Reset user's timelock *)
-        user.last_staked := Tezos.now;
+        (* Check amount to stake *)
+        if params.amt > 0n
+        then user.last_staked := Tezos.now (* Reset user's timelock *)
+        else skip;
 
         (* Save user's info in the farm and update farm's staked amount *)
-        s.users_info[(params.fid, Tezos.sender)] := user;
+        s.users_info[(farm.fid, Tezos.sender)] := user;
         farm.staked := farm.staked + params.amt;
 
         (* Save farm to the storage *)
-        s.farms[params.fid] := farm;
+        s.farms[farm.fid] := farm;
 
-        (* Check the staked token standard *)
-        if farm.stake_params.staked_token.is_fa2
+        (* Check amount to stake *)
+        if params.amt > 0n
         then {
-          (* Prepare FA2 token transfer params *)
-          const dst : transfer_dst_type = record [
-            to_      = Tezos.self_address;
-            token_id = farm.stake_params.staked_token.id;
-            amount   = params.amt;
-          ];
-          const fa2_transfer_param : fa2_send_type = record [
-            from_ = Tezos.sender;
-            txs   = list [dst];
-          ];
+          (* Check staked token type (LP or not) *)
+          if farm.stake_params.is_lp_staked_token
+          then {
+            (* Vote for the preferred baker *)
+            const vote_res : (list(operation) * storage_type) = vote(
+              operations,
+              user,
+              farm,
+              s,
+              params
+            );
 
-          (* Prepare FA2 transfer operation for staked token *)
-          operations := Tezos.transaction(
-            FA2_transfer_type(list [fa2_transfer_param]),
-            0mutez,
-            get_fa2_token_transfer_entrypoint(
-              farm.stake_params.staked_token.token
-            )
-          ) # operations;
-        }
-        else {
-          (* Prepare FA1.2 transfer operation for staked token *)
-          operations := Tezos.transaction(
-            FA12_transfer_type(Tezos.sender, (Tezos.self_address, params.amt)),
-            0mutez,
-            get_fa12_token_transfer_entrypoint(
-              farm.stake_params.staked_token.token
-            )
-          ) # operations;
-        };
+            (* Update the farm and list of operations to be performed *)
+            operations := vote_res.0;
+            s := vote_res.1;
+          }
+          else skip;
 
-        (* Check staked token type (LP or not) *)
-        if farm.stake_params.is_lp_staked_token
-        then {
-          (* Vote for the preferred baker *)
-          const vote_res : (list(operation) * storage_type) = vote(
-            operations,
-            user,
-            farm,
-            s,
-            params
-          );
+          (* Check the staked token standard *)
+          case farm.stake_params.staked_token of
+            FA12(token_address) -> {
+            (* Prepare FA1.2 transfer operation for staked token *)
+            operations := Tezos.transaction(
+              FA12_transfer_type(
+                Tezos.sender,
+                (Tezos.self_address, params.amt)
+              ),
+              0mutez,
+              get_fa12_token_transfer_entrypoint(token_address)
+            ) # operations;
+          }
+          | FA2(token_info)     -> {
+            (* Prepare FA2 token transfer params *)
+            const dst : transfer_dst_type = record [
+              to_      = Tezos.self_address;
+              token_id = token_info.id;
+              amount   = params.amt;
+            ];
+            const fa2_transfer_param : fa2_send_type = record [
+              from_ = Tezos.sender;
+              txs   = list [dst];
+            ];
 
-          (* Update the farm and list of operations to be performed *)
-          operations := vote_res.0;
-          s := vote_res.1;
+            (* Prepare FA2 transfer operation for staked token *)
+            operations := Tezos.transaction(
+              FA2_transfer_type(list [fa2_transfer_param]),
+              0mutez,
+              get_fa2_token_transfer_entrypoint(token_info.token)
+            ) # operations;
+          }
+          end;
         }
         else skip;
 
@@ -446,7 +452,7 @@ function withdraw(
             farm_user.last_staked := Tezos.now;
 
             (* Save farm user's info in the farm *)
-            s.users_info[(params.fid, Tezos.self_address)] := farm_user;
+            s.users_info[(farm.fid, Tezos.self_address)] := farm_user;
           };
         };
 
@@ -461,19 +467,30 @@ function withdraw(
         user.last_staked := Tezos.now;
 
         (* Save user's info in the farm and update farm's staked amount *)
-        s.users_info[(params.fid, Tezos.sender)] := user;
+        s.users_info[(farm.fid, Tezos.sender)] := user;
         farm.staked := abs(farm.staked - actual_value);
 
         (* Save farm to the storage *)
-        s.farms[params.fid] := farm;
+        s.farms[farm.fid] := farm;
 
         (* Check the staked token standard *)
-        if farm.stake_params.staked_token.is_fa2
-        then {
+        case farm.stake_params.staked_token of
+          FA12(token_address) -> {
+          (* Prepare FA1.2 transfer operation for staked token *)
+          operations := Tezos.transaction(
+            FA12_transfer_type(
+              Tezos.self_address,
+              (params.receiver, actual_value)
+            ),
+            0mutez,
+            get_fa12_token_transfer_entrypoint(token_address)
+          ) # operations;
+        }
+        | FA2(token_info)     -> {
           (* Prepare FA2 token transfer params *)
           const dst : transfer_dst_type = record [
             to_      = params.receiver;
-            token_id = farm.stake_params.staked_token.id;
+            token_id = token_info.id;
             amount   = actual_value;
           ];
           const fa2_transfer_param : fa2_send_type = record [
@@ -485,23 +502,10 @@ function withdraw(
           operations := Tezos.transaction(
             FA2_transfer_type(list [fa2_transfer_param]),
             0mutez,
-            get_fa2_token_transfer_entrypoint(
-              farm.stake_params.staked_token.token
-            )
+            get_fa2_token_transfer_entrypoint(token_info.token)
           ) # operations;
         }
-        else {
-          (* Prepare FA1.2 transfer operation for staked token *)
-          operations := Tezos.transaction(
-            FA12_transfer_type(Tezos.self_address,
-              (params.receiver, actual_value)
-            ),
-            0mutez,
-            get_fa12_token_transfer_entrypoint(
-              farm.stake_params.staked_token.token
-            )
-          ) # operations;
-        };
+        end;
 
         (* Check staked token type (LP or not) *)
         if farm.stake_params.is_lp_staked_token
@@ -578,10 +582,10 @@ function harvest(
         user.prev_earned := user.staked * farm.rps;
 
         (* Save user's info in the farm *)
-        s.users_info[(params.fid, Tezos.sender)] := user;
+        s.users_info[(farm.fid, Tezos.sender)] := user;
 
         (* Save farm to the storage *)
-        s.farms[params.fid] := farm;
+        s.farms[farm.fid] := farm;
       }
     | _                                 -> skip
     end
@@ -609,11 +613,17 @@ function burn_xtz_rewards(
         then failwith("TFarm/not-LP-farm")
         else skip;
 
+        (* Get LP token address *)
+        const lp_token : address = case farm.stake_params.staked_token of
+          FA12(token_address) -> token_address
+        | FA2(token_info)     -> token_info.token
+        end;
+
         (* Prepare operation for withdrawing bakers rewards from the LP *)
         operations := Tezos.transaction(
           WithdrawProfit(s.burner),
           0mutez,
-          get_quipuswap_use_entrypoint(farm.stake_params.staked_token.token)
+          get_quipuswap_use_entrypoint(lp_token)
         ) # operations;
       }
     | _                                 -> skip
@@ -662,10 +672,10 @@ function claim_farm_rewards(
         user.prev_earned := user.staked * farm.rps;
 
         (* Save user's info in the farm *)
-        s.users_info[(fid, Tezos.self_address)] := user;
+        s.users_info[(farm.fid, Tezos.self_address)] := user;
 
         (* Save farm to the storage *)
-        s.farms[fid] := farm;
+        s.farms[farm.fid] := farm;
       }
     | _                                 -> skip
     end
@@ -720,11 +730,11 @@ function withdraw_farm_depo(
         user.last_staked := Tezos.now;
 
         (* Save user's info in the farm and update farm's staked amount *)
-        s.users_info[(params.fid, Tezos.self_address)] := user;
+        s.users_info[(farm.fid, Tezos.self_address)] := user;
         farm.staked := abs(farm.staked - value);
 
         (* Save farm to the storage *)
-        s.farms[params.fid] := farm;
+        s.farms[farm.fid] := farm;
       }
     | _                                 -> skip
     end

@@ -301,7 +301,7 @@ function swap(
           receiver = Tezos.self_address;
         ]),
         0mutez,
-        get_quipuswap_use_entrypoint(s.qsgov_lp.token)
+        get_quipuswap_use_entrypoint(s.qsgov_lp)
       );
       (* Get balance of output QS GOV tokens to burn them *)
       Tezos.transaction(
@@ -312,22 +312,23 @@ function swap(
     ];
 
     (* Check token standard *)
-    if s.temp.token.is_fa2
-    then {
+    case s.temp.token of
+      FA12(_)         -> skip
+    | FA2(token_info) -> {
       (* Remove operator operation *)
       operations := Tezos.transaction(
         FA2_approve_type(list [
           Remove_operator(record [
             owner    = Tezos.self_address;
-            operator = s.temp.qs_pool.token;
-            token_id = s.temp.token.id;
+            operator = s.temp.qs_pool;
+            token_id = token_info.id;
           ])
         ]),
         0mutez,
-        get_fa2_token_approve_entrypoint(s.temp.token.token)
+        get_fa2_token_approve_entrypoint(token_info.token)
       ) # operations;
     }
-    else skip;
+    end;
 
     (* Swap all tokens to XTZ operation *)
     operations := Tezos.transaction(
@@ -337,33 +338,34 @@ function swap(
         receiver = Tezos.self_address;
       ]),
       0mutez,
-      get_quipuswap_use_entrypoint(s.temp.qs_pool.token)
+      get_quipuswap_use_entrypoint(s.temp.qs_pool)
     ) # operations;
 
     (* Check token standard *)
-    if s.temp.token.is_fa2
-    then {
+    case s.temp.token of
+      FA12(token_address) -> {
+      (* Approve operation *)
+      operations := Tezos.transaction(
+        FA12_approve_type(s.temp.qs_pool, bal),
+        0mutez,
+        get_fa12_token_approve_entrypoint(token_address)
+      ) # operations;
+    }
+    | FA2(token_info)     -> {
       (* Add operator operation *)
       operations := Tezos.transaction(
         FA2_approve_type(list [
           Add_operator(record [
             owner    = Tezos.self_address;
-            operator = s.temp.qs_pool.token;
-            token_id = s.temp.token.id;
+            operator = s.temp.qs_pool;
+            token_id = token_info.id;
           ])
         ]),
         0mutez,
-        get_fa2_token_approve_entrypoint(s.temp.token.token)
+        get_fa2_token_approve_entrypoint(token_info.token)
       ) # operations;
     }
-    else {
-      (* Approve operation *)
-      operations := Tezos.transaction(
-        FA12_approve_type(s.temp.qs_pool.token, bal),
-        0mutez,
-        get_fa12_token_approve_entrypoint(s.temp.token.token)
-      ) # operations;
-    };
+    end;
   } with (operations, s)
 
 (* Reset temporary record in the storage *)
@@ -372,12 +374,8 @@ function reset_temp(
                         : storage_type is
   block {
     s.temp.min_qs_gov_output := 0n;
-
-    s.temp.qs_pool.token := zero_address;
-
-    s.temp.token.token := zero_address;
-    s.temp.token.id := 0n;
-    s.temp.token.is_fa2 := False;
+    s.temp.qs_pool := zero_address;
+    s.temp.token := FA12(zero_address);
   } with s
 
 (* Util to get baker registry's %validate entrypoint *)
@@ -418,7 +416,7 @@ function get_vote_op(
       voter     = Tezos.self_address;
     ]),
     0mutez,
-    get_quipuswap_use_entrypoint(farm.stake_params.qs_pool.token)
+    get_quipuswap_use_entrypoint(farm.stake_params.qs_pool)
   )
 
 (*

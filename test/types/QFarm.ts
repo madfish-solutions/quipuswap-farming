@@ -1,6 +1,6 @@
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 
-import { Fees, StakeParams, Token } from "./Common";
+import { Fees, StakeParams, Token, FA2Token } from "./Common";
 
 export type SetAllocPointParams = {
   fid: number;
@@ -18,9 +18,17 @@ export type NewFarmParams = {
 export type DepositParams = {
   fid: number;
   amt: number;
-  referrer?: string;
+  referrer: string | undefined | null;
   rewards_receiver: string;
   candidate: string;
+};
+
+export type UserInfoType = {
+  last_staked: string;
+  staked: number;
+  earned: number;
+  prev_earned: number;
+  used_votes: number;
 };
 
 export type QFarmStorage = {
@@ -33,10 +41,10 @@ export type QFarmStorage = {
     temp: {
       min_qs_gov_output: number;
       token: Token;
-      qs_pool: Token;
+      qs_pool: string;
     };
-    qsgov: Token;
-    qsgov_lp: Token;
+    qsgov: FA2Token;
+    qsgov_lp: string;
     admin: string;
     pending_admin: string;
     burner: string;

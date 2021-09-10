@@ -43,7 +43,12 @@ export class Utils {
     let arr = [];
 
     Object.keys(obj).map(function (k) {
-      if (typeof obj[k] === "object" && !(obj[k] instanceof Date)) {
+      if (
+        typeof obj[k] === "object" &&
+        (!(obj[k] instanceof Date) ||
+          !(obj[k] instanceof null) ||
+          !(obj[k] instanceof undefined))
+      ) {
         arr = arr.concat(Utils.destructObj(obj[k]));
       } else {
         arr.push(obj[k]);

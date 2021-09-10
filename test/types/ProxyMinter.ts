@@ -1,4 +1,4 @@
-import { Token } from "./Common";
+import { FA2Token } from "./Common";
 
 export type MintParams = {
   receiver: string;
@@ -7,7 +7,7 @@ export type MintParams = {
 
 export type ProxyMinterStorage = {
   farms: string[];
-  qsgov: Token;
+  qsgov: FA2Token;
   admin: string;
   pending_admin: string;
 };

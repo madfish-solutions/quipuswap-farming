@@ -32,7 +32,7 @@ describe("ProxyMinter tests", async () => {
     proxyMinterStorage.admin = alice.pkh;
     proxyMinterStorage.pending_admin = zeroAddress;
     proxyMinterStorage.qsgov.token = qsGov.contract.address;
-    proxyMinterStorage.qsgov.is_fa2 = true;
+    proxyMinterStorage.qsgov.id = 0;
 
     proxyMinter = await ProxyMinter.originate(utils.tezos, proxyMinterStorage);
   });

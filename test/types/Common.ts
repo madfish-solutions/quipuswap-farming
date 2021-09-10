@@ -1,8 +1,11 @@
-export type Token = {
+export type FA12Token = string;
+
+export type FA2Token = {
   token: string;
   id: number;
-  is_fa2: boolean;
 };
+
+export type Token = { fa12: FA12Token } | { fa2: FA2Token };
 
 export type Fees = {
   harvest_fee: number;
@@ -18,5 +21,5 @@ export type StakeParams = {
   staked_token: Token;
   is_lp_staked_token: boolean;
   token: Token;
-  qs_pool: Token;
+  qs_pool: FA12Token;
 };

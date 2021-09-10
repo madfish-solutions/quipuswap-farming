@@ -1,5 +1,10 @@
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 
+export type UserInfo = {
+  balance: number;
+  allowances: MichelsonMap<MichelsonMapKey, unknown>;
+};
+
 export type FA12Storage = {
   total_supply: number;
   ledger: MichelsonMap<MichelsonMapKey, unknown>;

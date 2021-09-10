@@ -15,6 +15,8 @@ const { alice, dev } = require("../scripts/sandbox/accounts");
 const { qFarmStorage } = require("../storage/QFarm");
 const qFarmFunctions = require("../storage/json/QFarmFunctions.json");
 
+const { zeroAddress } = require("../test/helpers/Utils");
+
 const env = require("../env");
 
 module.exports = async (tezos) => {
@@ -30,21 +32,20 @@ module.exports = async (tezos) => {
     signer: await InMemorySigner.fromSecretKey(secretKey),
   });
 
-  const zeroAddress = "tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg";
-
   qFarmStorage.storage.qsgov.token = zeroAddress;
   qFarmStorage.storage.qsgov.id = 0;
-  qFarmStorage.storage.qsgov.is_fa2 = true;
-  qFarmStorage.storage.qsgov_lp.token = zeroAddress;
-  qFarmStorage.storage.qsgov_lp.id = 0;
-  qFarmStorage.storage.qsgov_lp.is_fa2 = true;
+  qFarmStorage.storage.qsgov_lp = zeroAddress;
   qFarmStorage.storage.admin = deployer;
-  qFarmStorage.storage.pending_admin = zeroAddress;
   qFarmStorage.storage.burner = Burner["networks"][env.network]["burner"];
   qFarmStorage.storage.proxy_minter =
     ProxyMinter["networks"][env.network]["proxy_minter"];
   qFarmStorage.storage.baker_registry =
     BakerRegistry["networks"][env.network]["baker_registry"];
+
+  // console.log(qFarmStorage);
+  // console.log(qFarmStorage.storage.temp);
+
+  // console.log(...Utils.destructObj(qFarmStorage));
 
   const qFarmAddress = await migrate(tezos, "q_farm", qFarmStorage);
 

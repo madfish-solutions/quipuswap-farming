@@ -66,10 +66,11 @@
    - should mint QS GOV tokens as harvest fee to zero address (in case when user does not have referrer);
    - ✅ should fail if user is trying to refer himself;
    - ✅ should set/update referrer;
-   - should deposit single token;
-   - should deposit LP token;
-   - should deposit FA1.2 token;
-   - should deposit FA2 token;
+   - ✅ should not set/update referrer if referrer param not passed;
+   - ✅ should deposit single FA1.2 token;
+   - should deposit LP FA1.2 token;
+   - should deposit single FA2 token;
+   - should deposit LP FA2 token;
    - should vote for the baker if LP token is deposited.
 
 11. `withdraw`:

@@ -1,6 +1,6 @@
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 
-import { Fees, StakeParams, Token } from "./Common";
+import { Fees, StakeParams, Token, FA2Token } from "./Common";
 
 export type NewFarmParams = {
   fees: Fees;
@@ -25,8 +25,8 @@ export type TFarmStorage = {
     users_info: MichelsonMap<MichelsonMapKey, unknown>;
     votes: MichelsonMap<MichelsonMapKey, unknown>;
     candidates: MichelsonMap<MichelsonMapKey, unknown>;
-    qsgov: Token;
-    qsgov_lp: Token;
+    qsgov: FA2Token;
+    qsgov_lp: string;
     admin: string;
     pending_admin: string;
     burner: string;

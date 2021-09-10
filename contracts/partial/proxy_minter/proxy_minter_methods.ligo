@@ -35,67 +35,31 @@ function mint_tokens(
   QS GOV token's mint entrypoint by other minters
 *)
 function withdraw_tokens(
+  const amt             : withdraw_type;
   var s                 : storage_type)
                         : return_type is
   block {
     (* Check of admin permissions *)
     only_admin(s.admin);
 
-    (* Prepare params for %balance_of transaction *)
-    const balance_of_params : balance_of_type = record [
-      requests = list [
-        record [
-          owner    = Tezos.self_address;
-          token_id = s.qsgov.id;
-        ]
-      ];
-      callback = get_withdraw_callback_entrypoint(Tezos.self_address)
-    ];
-  } with (list [
-    (* Balance of QS GOV token transaction *)
-    Tezos.transaction(
-      balance_of_params,
-      0mutez,
-      get_fa2_token_balance_of_entrypoint(s.qsgov.token)
-    )
-  ], s)
-
-(* Accept QS GOV token %balance_of callback and withdraw QS GOV tokens *)
-function withdraw_callback(
-  const responses       : withdraw_2_type;
-  var s                 : storage_type)
-                        : return_type is
-  block {
-    (* Check if transaction sender is QS GOV token *)
-    if Tezos.sender =/= s.qsgov.token
-    then failwith("ProxyMinter/not-QS-GOV-token")
-    else skip;
-
     (* Operations to be performed *)
     var operations : list(operation) := no_operations;
 
-    (* Get proxy minter's QS GOV token balance *)
-    const bal : nat = get_fa2_token_balance(
-      responses,
-      Tezos.self_address,
-      s.qsgov.id
-    );
-
-    (* Withdraw QS GOV tokens only if balance greater than 0 *)
-    if bal > 0n
+    (* Withdraw QS GOV tokens only if amount greater than 0 *)
+    if amt > 0n
     then {
       (* Create params to transfer QS GOV tokens to admin address *)
       const dst : transfer_dst_type = record [
         to_      = s.admin;
         token_id = s.qsgov.id;
-        amount   = bal;
+        amount   = amt;
       ];
       const fa2_transfer_param : fa2_send_type = record [
         from_ = Tezos.self_address;
         txs   = list [dst];
       ];
 
-      (* Add transfer QS GOV token operation to operations list *)
+      (* Add transfer QS GOV token operation to list of operations *)
       operations := Tezos.transaction(
         FA2_transfer_type(list [fa2_transfer_param]),
         0mutez,

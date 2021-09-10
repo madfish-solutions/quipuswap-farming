@@ -17,8 +17,7 @@ function main(
   case action of
     Add_minter(params)        -> add_minter(params, s)
   | Mint_tokens(params)       -> mint_tokens(params, s)
-  | Withdraw_tokens           -> withdraw_tokens(s)
-  | Withdraw_callback(params) -> withdraw_callback(params, s)
+  | Withdraw_tokens(params)   -> withdraw_tokens(params, s)
   | Set_admin(params)         -> set_admin(params, s)
   | Confirm_admin             -> confirm_admin(s)
   end

@@ -188,18 +188,16 @@
 3. `withdraw_tokens`:
 
    - ✅ should fail if not admin is trying to withdraw QS GOV tokens;
-   - ✅ should transfer all QS GOV tokens from proxy minter contract to admin address.
+   - ✅ should transfer the specified amount of QS GOV tokens from proxy minter contract to admin address;
+   - ✅ should withdraw all QS GOV tokens from the contract;
+   - ✅ should fail if the specified amount of QS GOV tokens is more than actual balance on the contract.
 
-4. `withdraw_callback`:
-
-   - ✅ should fail if not QS GOV token contract is trying to call callback.
-
-5. `set_admin`:
+4. `set_admin`:
 
    - ✅ should fail if not admin is trying to setup new pending admin;
    - ✅ should setup new pending admin by admin.
 
-6. `confirm_admin`:
+5. `confirm_admin`:
 
    - ✅ should fail if not pending admin is trying to confirm new admin;
    - ✅ should confirm new admin by pending admin.

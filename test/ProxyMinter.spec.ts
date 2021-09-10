@@ -10,12 +10,7 @@ import { fa2Storage } from "../storage/test/FA2";
 import { proxyMinterStorage } from "../storage/ProxyMinter";
 
 import { MintParams } from "./types/ProxyMinter";
-import {
-  Minter,
-  BalanceResponse,
-  BalanceRequest,
-  MintGovTokenParams,
-} from "./types/FA2";
+import { Minter, MintGovTokenParams } from "./types/FA2";
 
 describe("ProxyMinter tests", async () => {
   var qsGov: FA2;
@@ -149,15 +144,17 @@ describe("ProxyMinter tests", async () => {
   });
 
   it("should fail if not admin is trying to withdraw QS GOV tokens", async () => {
+    const withdrawAmount: number = 10;
+
     await utils.setProvider(alice.sk);
-    await rejects(proxyMinter.withdrawTokens(), (err: Error) => {
+    await rejects(proxyMinter.withdrawTokens(withdrawAmount), (err: Error) => {
       ok(err.message === "Not-admin");
 
       return true;
     });
   });
 
-  it("should transfer all QS GOV tokens from proxy minter contract to admin address", async () => {
+  it("should transfer the specified amount of QS GOV tokens from proxy minter contract to admin address", async () => {
     const amount = 666;
     const minters: Minter[] = [
       { minter: proxyMinter.contract.address, share: 71_000_000 },
@@ -175,6 +172,7 @@ describe("ProxyMinter tests", async () => {
         minters[1].share /
         totalShares
     );
+    const withdrawAmount: number = expectedProxyMinterTokensAmount / 2;
 
     await qsGov.setMinters(minters);
     await utils.setProvider(carol.sk);
@@ -195,9 +193,9 @@ describe("ProxyMinter tests", async () => {
     );
 
     await utils.setProvider(bob.sk);
-    await proxyMinter.withdrawTokens();
+    await proxyMinter.withdrawTokens(withdrawAmount);
     await qsGov.updateStorage({
-      account_info: [bob.pkh, dev.pkh, proxyMinter.contract.address],
+      account_info: [dev.pkh, proxyMinter.contract.address, bob.pkh],
     });
 
     strictEqual(
@@ -208,27 +206,46 @@ describe("ProxyMinter tests", async () => {
       +(await qsGov.storage.account_info[
         proxyMinter.contract.address
       ].balances.get("0")),
+      expectedProxyMinterTokensAmount / 2
+    );
+    strictEqual(
+      +(await qsGov.storage.account_info[bob.pkh].balances.get("0")),
+      50_000_000_000 + expectedProxyMinterTokensAmount / 2
+    );
+  });
+
+  it("should withdraw all QS GOV tokens from the contract", async () => {
+    const withdrawAmount: number = +(await qsGov.storage.account_info[
+      proxyMinter.contract.address
+    ].balances.get("0"));
+    const initialBobBalance: number = +(await qsGov.storage.account_info[
+      bob.pkh
+    ].balances.get("0"));
+
+    await proxyMinter.withdrawTokens(withdrawAmount);
+    await qsGov.updateStorage({
+      account_info: [proxyMinter.contract.address, bob.pkh],
+    });
+
+    strictEqual(
+      +(await qsGov.storage.account_info[
+        proxyMinter.contract.address
+      ].balances.get("0")),
       0
     );
     strictEqual(
       +(await qsGov.storage.account_info[bob.pkh].balances.get("0")),
-      50_000_000_000 + expectedProxyMinterTokensAmount
+      initialBobBalance + withdrawAmount
     );
   });
 
-  it("should fail if not proxy minter contract is trying to call callback", async () => {
-    const balanceRequest: BalanceRequest = { owner: alice.pkh, token_id: 0 };
-    const balanceResponse: BalanceResponse[] = [
-      { request: balanceRequest, balance: 666 },
-    ];
+  it("should fail if the specified amount of QS GOV tokens is more than actual balance on the contract", async () => {
+    const withdrawAmount: number = 1;
 
-    await rejects(
-      proxyMinter.withdrawCallback(balanceResponse),
-      (err: Error) => {
-        ok(err.message === "ProxyMinter/not-QS-GOV-token");
+    await rejects(proxyMinter.withdrawTokens(withdrawAmount), (err: Error) => {
+      ok(err.message === "FA2_INSUFFICIENT_BALANCE");
 
-        return true;
-      }
-    );
+      return true;
+    });
   });
 });

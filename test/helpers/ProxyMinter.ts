@@ -12,7 +12,6 @@ import env from "../../env";
 import { confirmOperation } from "../../scripts/confirmation";
 
 import { ProxyMinterStorage, MintParams } from "../types/ProxyMinter";
-import { BalanceResponse } from "../types/FA2";
 
 export class ProxyMinter {
   contract: Contract;
@@ -86,21 +85,9 @@ export class ProxyMinter {
     return operation;
   }
 
-  async withdrawTokens(): Promise<TransactionOperation> {
+  async withdrawTokens(amount: number): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
-      .withdraw_tokens([])
-      .send();
-
-    await confirmOperation(this.tezos, operation.hash);
-
-    return operation;
-  }
-
-  async withdrawCallback(
-    balanceResponse: BalanceResponse[]
-  ): Promise<TransactionOperation> {
-    const operation: TransactionOperation = await this.contract.methods
-      .withdraw_callback(balanceResponse)
+      .withdraw_tokens(amount)
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

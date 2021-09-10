@@ -16,9 +16,7 @@ type add_minter_type    is [@layout:comb] record [
   register                : bool;
 ]
 
-type withdraw_1_type    is unit
-
-type withdraw_2_type    is list(bal_response_type)
+type withdraw_type      is nat (* Amount of tokens to withdraw *)
 
 type set_admin_type     is address (* New admin address *)
 
@@ -27,8 +25,7 @@ type confirm_admin_type is unit
 type action_type        is
   Add_minter              of add_minter_type
 | Mint_tokens             of mint_gov_toks_type
-| Withdraw_tokens         of withdraw_1_type
-| Withdraw_callback       of withdraw_2_type
+| Withdraw_tokens         of withdraw_type
 | Set_admin               of set_admin_type
 | Confirm_admin           of confirm_admin_type
 

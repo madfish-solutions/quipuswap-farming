@@ -12,18 +12,3 @@ function get_mint_qsgov_tokens_entrypoint(
                         : contract(mint_gov_toks_type)
   )
   end
-
-(* Util to get proxy minter's %withdraw_callback entrypoint *)
-function get_withdraw_callback_entrypoint(
-  const this            : address)
-                        : contract(list(bal_response_type)) is
-  case (
-    Tezos.get_entrypoint_opt("%withdraw_callback", this)
-                        : option(contract(list(bal_response_type)))
-  ) of
-    Some(contr) -> contr
-  | None        -> (
-    failwith("ProxyMinter/withdraw-callback-entrypoint-404")
-                        : contract(list(bal_response_type))
-  )
-  end

@@ -53,6 +53,8 @@ function set_alloc_points(
                           : storage_type is
           block {
             (* Update all farms rewards *)
+            (* TODO: test how many update farms can be done before the gas out
+            of range will be reached *)
             s := update_all_farms_rewards(s);
 
             (* Retrieve farm from the storage *)
@@ -127,6 +129,7 @@ function set_reward_per_second(
         only_admin(Tezos.sender, s.admin);
 
         (* Update reward per second *)
+        (* TODO: update pools before *)
         s.qsgov_per_second := rps;
       }
     | _                                 -> skip
@@ -220,7 +223,6 @@ function add_new_farm(
           fid               = s.farms_count;
           total_votes       = 0n;
         ];
-
         (* Update farms count *)
         s.farms_count := s.farms_count + 1n;
       }
@@ -241,7 +243,8 @@ function deposit(
       Deposit(params)                   -> {
         (* Retrieve farm from the storage *)
         var farm : farm_type := get_farm(params.fid, s);
-
+        (* TODO: the pool with delay won't pass the check even if the start_time
+        is passed already *)
         if farm.alloc_point = 0n
         then failwith("QFarm/farm-is-paused")
         else skip;
@@ -415,6 +418,7 @@ function withdraw(
           res := burn_rewards(user, False, s); (* Burn QS GOV tokens *)
 
           (* Calculate actual value including withdrawal fee *)
+          (* TODO: don't use magic numbers *)
           actual_value := value *
             abs(10000n - farm.fees.withdrawal_fee) / 10000n;
 
@@ -438,6 +442,7 @@ function withdraw(
             farm_user.prev_earned := farm_user.staked * farm.rps;
 
             (* Reset farm user's timelock *)
+            (* TODO: it is not a new stake; so no need to update the time *)
             farm_user.last_staked := Tezos.now;
 
             (* Save farm user's info in the farm *)
@@ -453,6 +458,7 @@ function withdraw(
         user.prev_earned := user.staked * farm.rps;
 
         (* Reset user's timelock *)
+        (* TODO: it is not a new stake; so no need to update the time *)
         user.last_staked := Tezos.now;
 
         (* Save user's info in the farm and update farm's staked amount *)

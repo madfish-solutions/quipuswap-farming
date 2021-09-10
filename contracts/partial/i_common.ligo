@@ -1,5 +1,6 @@
 type use_type           is dex_action_type
 
+(* TODO: use variant type instead *)
 type token_type         is [@layout:comb] record [
   token                   : address; (* Token address *)
   id                      : nat; (* Token ID *)

@@ -55,6 +55,8 @@ function update_farm_rewards(
         const time_diff : nat = abs(Tezos.now - _farm.upd);
 
         (* Calculate new rewards to be minted for the farm *)
+        (* TODO: let's keep s.qsgov_per_second already multiplyed by precision
+        it will allow to configure more accurade reward amounts *)
         const reward : nat = time_diff * s.qsgov_per_second *
           precision * _farm.alloc_point / s.total_alloc_point;
 
@@ -128,6 +130,7 @@ function claim_rewards(
       user.earned := abs(user.earned - earned * precision);
 
       (* Calculate actual reward including harvest fee *)
+      (* TODO: remove magic 10000n number; use global precision const instead *)
       const actual_earned : nat = earned *
         abs(10000n - farm.fees.harvest_fee) / 10000n;
 
@@ -199,6 +202,9 @@ function burn_rewards(
       if pay_burn_reward
       then {
         (* Calculate real amount to burn (without 3% as a reward) *)
+        (* TODO: remove magical numbers; use const or upgradable storage
+        variable instead;
+        TODO: use global precision *)
         const burn_amount : nat = earned * 97n / 100n;
 
         (* Calculate 3% reward for the transaction sender *)
@@ -371,6 +377,11 @@ function reset_temp(
   var s                 : storage_type)
                         : storage_type is
   block {
+    (* TODO: use setting the default record i.e:
+    s.temp := record [
+      min_qs_gov_output= 0n;
+      ...
+    ]*)
     s.temp.min_qs_gov_output := 0n;
 
     s.temp.qs_pool.token := zero_address;
@@ -542,6 +553,7 @@ function vote(
   !DEV! order of operations creating is reverted cause of Ligo's features:
   items can only be added to the beginning of the list
 *)
+(* TODO: merge vote and revote methods *)
 function revote(
   var operations        : list(operation);
   var user              : user_info_type;

@@ -15,7 +15,9 @@ function main(
   const s               : storage_type)
                         : return_type is
   case action of
+    (* TODO: rename to Add_minter because there can be other utils such as lotery or vault *)
     Register_farm(params)     -> register_farm(params, s)
+    (* TODO: simplify names using Mint_tokens and Withdraw_tokens *)
   | Mint_qsgov_tokens(params) -> mint_qsgov_tokens(params, s)
   | Withdraw_qsgov_tokens     -> withdraw_qsgov_tokens(s)
   | Withdraw_callback(params) -> withdraw_qsgov_tokens_callback(params, s)

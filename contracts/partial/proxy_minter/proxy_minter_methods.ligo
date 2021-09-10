@@ -34,6 +34,9 @@ function mint_qsgov_tokens(
   Withdraw QS GOV tokens minted to this proxy minter in result of calling
   QS GOV token's mint entrypoint by other minters
 *)
+(* TODO: it will be better to allow the admin to withdraw any amount of QUIPU
+tokens on the contract and not just "all"; it will simplify the method and make
+it more flexible *)
 function withdraw_qsgov_tokens(
   var s                 : storage_type)
                         : return_type is

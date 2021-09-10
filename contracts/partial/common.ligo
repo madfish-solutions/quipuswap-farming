@@ -1,5 +1,7 @@
 (* Util to check if user has admin access *)
 function only_admin(
+  (* TODO: simplify the function; the user is always Tezos.sender; don't make
+  user to pay for overcomputation *)
   const user            : address;
   const admin           : address)
                         : unit is
@@ -11,6 +13,8 @@ function only_admin(
 
 (* Util to check if user has pending admin access *)
 function only_pending_admin(
+  (* TODO: simplify the function; the user is always Tezos.sender; don't make
+  user to pay for overcomputation *)
   const user            : address;
   const pending_admin   : address)
                         : unit is

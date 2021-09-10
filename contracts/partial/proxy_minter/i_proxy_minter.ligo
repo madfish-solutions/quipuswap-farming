@@ -13,6 +13,7 @@ type register_farm_type is [@layout:comb] record [
   (* Farm address *)
   farm                    : address;
   (* Flag: register or unregister *)
+  (* TODO: remove the argument because it is not used *)
   register                : bool;
 ]
 

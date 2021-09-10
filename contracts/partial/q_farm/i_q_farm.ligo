@@ -48,17 +48,25 @@ type farm_type          is [@layout:comb] record [
   current_candidate       : key_hash;
   (* Farm allocation point *)
   alloc_point             : nat;
+  (* TODO: as far as start_time only matters if the points are not allocated, it
+  would be better to define the type for allocated as followed:
+  type allocated_type is 
+    Yes
+  | No of timestamp
+  Where No contains the start_time *)
   (* Flag: points already allocated or nor *)
   allocated               : bool;
+  (* Farm start timestamp *)
+  start_time              : timestamp;
   (* Reward per share *)
   rps                     : nat;
   (* Total count of staked tokens in the farm *)
   staked                  : nat;
-  (* Farm start timestamp *)
-  start_time              : timestamp;
   (* Farm ID *)
   fid                     : fid_type;
   (* Total votes participated in voting *)
+  (* All the staked tokens must participate in voting; so that
+  total_votes variable isn't needed *)
   total_votes             : nat;
 ]
 
@@ -85,8 +93,10 @@ type storage_type       is [@layout:comb] record [
   (* Temp data that stores data between inter contract calls and callbacks *)
   temp                    : temp_type;
   (* QS GOV token *)
+  (* TODO: don't use complex types if the type is totally defined *)
   qsgov                   : token_type;
   (* QS GOV token LP on Quipuswap DEX *)
+  (* TODO: don't use complex types if the type is totally defined *)
   qsgov_lp                : token_type;
   (* Contract's actual admin address *)
   admin                   : address;

@@ -8,6 +8,8 @@ function get_mint_qsgov_tokens_entrypoint(
   ) of
     Some(contr) -> contr
   | None        -> (
+    (* TODO: usually the first part of the error is the name of the contract
+    where it is raisen; ProxyMinter in this case *)
     failwith("QSGOV/mint-gov-token-entrypoint-404")
                         : contract(mint_gov_toks_type)
   )

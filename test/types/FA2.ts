@@ -1,5 +1,16 @@
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 
+export type UserFA2Info = {
+  balances: MichelsonMap<MichelsonMapKey, unknown>;
+  allowances: string[];
+};
+
+export type UserFA2LPInfo = {
+  balance: number;
+  frozen_balance: number;
+  allowances: string[];
+};
+
 export type OperatorParam = {
   owner: string;
   operator: string;

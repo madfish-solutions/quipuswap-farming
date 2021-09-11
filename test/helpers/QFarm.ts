@@ -21,12 +21,17 @@ import { getLigo } from "../../scripts/helpers";
 
 import qFarmFunctions from "../../storage/json/QFarmFunctions.json";
 
-import { Fees, StakeParams, SetFeeParams } from "../types/Common";
+import {
+  Fees,
+  StakeParams,
+  SetFeeParams,
+  PauseFarmParam,
+} from "../types/Common";
 import {
   QFarmStorage,
   NewFarmParams,
-  SetAllocPointParams,
   DepositParams,
+  RPS,
 } from "../types/QFarm";
 import { Utils, zeroAddress } from "./Utils";
 
@@ -146,18 +151,6 @@ export class QFarm {
     return operation;
   }
 
-  async setAllocPoints(
-    allocPoints: SetAllocPointParams[]
-  ): Promise<TransactionOperation> {
-    const operation: TransactionOperation = await this.contract.methods
-      .set_alloc_points(allocPoints)
-      .send();
-
-    await confirmOperation(this.tezos, operation.hash);
-
-    return operation;
-  }
-
   async setFees(fees: SetFeeParams[]): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .set_fees(fees)
@@ -168,11 +161,9 @@ export class QFarm {
     return operation;
   }
 
-  async setRewardPerSecond(
-    newRewardperSecond: number
-  ): Promise<TransactionOperation> {
+  async setRewardPerSecond(params: RPS[]): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
-      .set_reward_per_second(newRewardperSecond)
+      .set_reward_per_second(params)
       .send();
 
     await confirmOperation(this.tezos, operation.hash);
@@ -224,6 +215,18 @@ export class QFarm {
     return operation;
   }
 
+  async pauseFarms(
+    pauseFarmParams: PauseFarmParam[]
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .pause_farms(pauseFarmParams)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
   async deposit(depositParams: DepositParams): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .deposit(...Utils.destructObj(depositParams))
@@ -257,8 +260,9 @@ export class QFarmUtils {
     const newFarmParams: NewFarmParams = {
       fees: fees,
       stake_params: stakeParams,
+      paused: false,
+      qsgov_per_second: 0,
       timelock: 0,
-      alloc_point: 0,
       start_time: String(
         Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000
       ),

@@ -46,10 +46,10 @@ type farm_type          is [@layout:comb] record [
   current_delegated       : key_hash;
   (* The best candidate to become next delegated *)
   current_candidate       : key_hash;
-  (* Farm allocation point *)
-  alloc_point             : nat;
-  (* Flag: points already allocated or nor *)
-  allocated               : bool;
+  (* Falg: farm paused or not *)
+  paused                  : bool;
+  (* QS GOV tokens (reward) per second *)
+  qsgov_per_second        : nat;
   (* Reward per share *)
   rps                     : nat;
   (* Total count of staked tokens in the farm *)
@@ -100,24 +100,11 @@ type storage_type       is [@layout:comb] record [
   baker_registry          : address;
   (* Number of farms registered on contract *)
   farms_count             : nat;
-  (* Reward per second for all farms *)
-  qsgov_per_second        : nat;
-  (* Sum of all allocation points in farms *)
-  total_alloc_point       : nat;
 ]
 
 type set_admin_type     is address (* New admin address *)
 
 type confirm_admin_type is unit
-
-type set_alloc_type     is [@layout:comb] record [
-  (* Farm ID *)
-  fid                     : fid_type;
-  (* New allocation for the farm *)
-  alloc_point             : nat;
-]
-
-type set_allocs_type    is list(set_alloc_type)
 
 type set_fee_type       is [@layout:comb] record [
   (* Farm ID *)
@@ -128,7 +115,14 @@ type set_fee_type       is [@layout:comb] record [
 
 type set_fees_type      is list(set_fee_type)
 
-type set_rps_type       is nat (* QS GOV tokens (reward) per second *)
+type rps_type           is [@layout:comb] record [
+  (* Farm ID *)
+  fid                     : fid_type;
+  (* QS GOV tokens (reward) per second *)
+  rps                    : nat;
+]
+
+type set_rps_type       is list(rps_type)
 
 type set_burner_type    is address (* New burner contract address *)
 
@@ -141,13 +135,24 @@ type add_new_farm_type  is [@layout:comb] record [
   fees                    : fees_type;
   (* Staking params *)
   stake_params            : stake_params_type;
+  (* Flag: paused or not at the beginning *)
+  paused                  : bool;
+  (* QS GOV tokens (reward) per second *)
+  qsgov_per_second        : nat;
   (* Timelock in seconds, 0 for farms without timelock *)
   timelock                : nat;
-  (* Farm allocation point *)
-  alloc_point             : nat;
   (* Farm start timestamp *)
   start_time              : timestamp;
 ]
+
+type pause_farm_type    is [@layout:comb] record [
+  (* Farm ID *)
+  fid                     : fid_type;
+  (* Flag: pause or unpause *)
+  pause                   : bool;
+]
+
+type pause_farms_type   is list(pause_farm_type)
 
 type deposit_type       is [@layout:comb] record [
   (* Farm ID *)
@@ -200,13 +205,13 @@ type fa2_bal_type       is list(bal_response_type)
 type action_type        is
   Set_admin               of set_admin_type
 | Confirm_admin           of confirm_admin_type
-| Set_alloc_points        of set_allocs_type
 | Set_fees                of set_fees_type
 | Set_reward_per_second   of set_rps_type
 | Set_burner              of set_burner_type
 | Set_proxy_minter        of set_proxy_type
 | Set_baker_registry      of set_registry_type
 | Add_new_farm            of add_new_farm_type
+| Pause_farms             of pause_farms_type
 | Deposit                 of deposit_type
 | Withdraw                of withdraw_type
 | Harvest                 of harvest_type

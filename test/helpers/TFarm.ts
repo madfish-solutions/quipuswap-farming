@@ -21,8 +21,13 @@ import { getLigo } from "../../scripts/helpers";
 
 import tFarmFunctions from "../../storage/json/TFarmFunctions.json";
 
-import { Fees, SetFeeParams, StakeParams } from "../types/Common";
-import { NewFarmParams, PauseFarmParam, TFarmStorage } from "../types/TFarm";
+import {
+  Fees,
+  SetFeeParams,
+  StakeParams,
+  PauseFarmParam,
+} from "../types/Common";
+import { NewFarmParams, TFarmStorage } from "../types/TFarm";
 
 import { Utils, zeroAddress } from "./Utils";
 

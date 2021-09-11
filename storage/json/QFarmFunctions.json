@@ -9,31 +9,31 @@
   },
   {
     "index": 2,
-    "name": "set_alloc_points"
-  },
-  {
-    "index": 3,
     "name": "set_fees"
   },
   {
-    "index": 4,
+    "index": 3,
     "name": "set_reward_per_second"
   },
   {
-    "index": 5,
+    "index": 4,
     "name": "set_burner"
   },
   {
-    "index": 6,
+    "index": 5,
     "name": "set_proxy_minter"
   },
   {
-    "index": 7,
+    "index": 6,
     "name": "set_baker_registry"
   },
   {
-    "index": 8,
+    "index": 7,
     "name": "add_new_farm"
+  },
+  {
+    "index": 8,
+    "name": "pause_farms"
   },
   {
     "index": 9,

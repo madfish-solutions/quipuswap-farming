@@ -10,13 +10,13 @@ import { QSFA2Factory } from "./helpers/QSFA2Factory";
 import { QSFA12Dex } from "./helpers/QSFA12Dex";
 import { QSFA2Dex } from "./helpers/QSFA2Dex";
 
-import { SetFeeParams } from "./types/Common";
+import { PauseFarmParam, SetFeeParams } from "./types/Common";
 import {
   DepositParams,
   NewFarmParams,
-  SetAllocPointParams,
   UserInfoType,
   Farm,
+  RPS,
 } from "./types/QFarm";
 import { UserInfo } from "./types/FA12";
 import { UpdateOperatorParam } from "./types/FA2";
@@ -168,11 +168,11 @@ describe("QFarm tests", async () => {
     strictEqual(qFarm.storage.storage.pending_admin, zeroAddress);
   });
 
-  it("should fail if not admin is trying to set allocation points", async () => {
-    const allocPoints: SetAllocPointParams[] = [{ fid: 0, alloc_point: 15 }];
+  it("should fail if not admin is trying to set reward per second", async () => {
+    const params: RPS[] = [{ fid: 0, rps: 100 }];
 
     await utils.setProvider(alice.sk);
-    await rejects(qFarm.setAllocPoints(allocPoints), (err: Error) => {
+    await rejects(qFarm.setRewardPerSecond(params), (err: Error) => {
       ok(err.message === "Not-admin");
 
       return true;
@@ -180,35 +180,14 @@ describe("QFarm tests", async () => {
   });
 
   it("should fail if one farm from list of farms not found", async () => {
-    const allocPoints: SetAllocPointParams[] = [{ fid: 0, alloc_point: 15 }];
+    const params: RPS[] = [{ fid: 0, rps: 100 }];
 
     await utils.setProvider(bob.sk);
-    await rejects(qFarm.setAllocPoints(allocPoints), (err: Error) => {
+    await rejects(qFarm.setRewardPerSecond(params), (err: Error) => {
       ok(err.message === "QFarm/farm-not-set");
 
       return true;
     });
-  });
-
-  it("should fail if not admin is trying to set reward per second", async () => {
-    const newRPS: number = 100;
-
-    await utils.setProvider(alice.sk);
-    await rejects(qFarm.setRewardPerSecond(newRPS), (err: Error) => {
-      ok(err.message === "Not-admin");
-
-      return true;
-    });
-  });
-
-  it("should change reward per second by admin", async () => {
-    const newRPS: number = 100;
-
-    await utils.setProvider(bob.sk);
-    await qFarm.setRewardPerSecond(newRPS);
-    await qFarm.updateStorage();
-
-    strictEqual(+qFarm.storage.storage.qsgov_per_second, newRPS);
   });
 
   it("should fail if not admin is trying to set burner", async () => {
@@ -311,14 +290,13 @@ describe("QFarm tests", async () => {
     newFarmParams.fees.withdrawal_fee = 15;
     newFarmParams.stake_params.staked_token = { fA12: fa12.contract.address };
     newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
+    newFarmParams.qsgov_per_second = 100;
     newFarmParams.timelock = 20;
-    newFarmParams.alloc_point = 50;
 
     await utils.setProvider(bob.sk);
     await qFarm.addNewFarm(newFarmParams);
     await qFarm.updateStorage({ farms: [0] });
 
-    strictEqual(+qFarm.storage.storage.total_alloc_point, 0);
     strictEqual(+qFarm.storage.storage.farms_count, 1);
 
     strictEqual(
@@ -356,9 +334,10 @@ describe("QFarm tests", async () => {
     );
     strictEqual(qFarm.storage.storage.farms[0].current_delegated, zeroAddress);
     strictEqual(qFarm.storage.storage.farms[0].current_candidate, zeroAddress);
+    strictEqual(qFarm.storage.storage.farms[0].paused, newFarmParams.paused);
     strictEqual(
-      +qFarm.storage.storage.farms[0].alloc_point,
-      newFarmParams.alloc_point
+      +qFarm.storage.storage.farms[0].qsgov_per_second,
+      newFarmParams.qsgov_per_second
     );
     strictEqual(+qFarm.storage.storage.farms[0].rps, 0);
     strictEqual(+qFarm.storage.storage.farms[0].staked, 0);
@@ -444,55 +423,131 @@ describe("QFarm tests", async () => {
     }
   });
 
-  it("should fail if farm not started yet", async () => {
-    const allocPoints: SetAllocPointParams[] = [{ fid: 3, alloc_point: 15 }];
-    let newFarmParams: NewFarmParams = await QFarmUtils.getMockNewFarmParams(
-      utils
-    );
+  it("should fail if not admin is trying to pause farm", async () => {
+    const pauseFarmParams: PauseFarmParam[] = [{ fid: 0, pause: true }];
 
-    newFarmParams.start_time = String(+newFarmParams.start_time + 60000);
-
-    await qFarm.addNewFarm(newFarmParams);
-    await rejects(qFarm.setAllocPoints(allocPoints), (err: Error) => {
-      ok(err.message === "QFarm/not-started-yet");
+    await utils.setProvider(alice.sk);
+    await rejects(qFarm.pauseFarms(pauseFarmParams), (err: Error) => {
+      ok(err.message === "Not-admin");
 
       return true;
     });
   });
 
-  it("should set/update allocation point for one farm", async () => {
-    const allocPoints: SetAllocPointParams[] = [{ fid: 0, alloc_point: 15 }];
+  it("should fail if one farm from list of farms not found", async () => {
+    const pauseFarmParams: PauseFarmParam[] = [{ fid: 666, pause: true }];
 
-    await qFarm.setAllocPoints(allocPoints);
-    await qFarm.updateStorage({ farms: [0] });
+    await utils.setProvider(bob.sk);
+    await rejects(qFarm.pauseFarms(pauseFarmParams), (err: Error) => {
+      ok(err.message === "QFarm/farm-not-set");
 
-    strictEqual(+qFarm.storage.storage.total_alloc_point, 15);
-
-    strictEqual(+qFarm.storage.storage.farms[0].alloc_point, 15);
-    strictEqual(qFarm.storage.storage.farms[0].allocated, true);
+      return true;
+    });
   });
 
-  it("should set/update allocation points for group of farms", async () => {
-    const allocPoints: SetAllocPointParams[] = [
-      { fid: 0, alloc_point: 35 },
-      { fid: 1, alloc_point: 5 },
-      { fid: 2, alloc_point: 45 },
-    ];
+  it("should pause one farm", async () => {
+    const pauseFarmParams: PauseFarmParam[] = [{ fid: 0, pause: true }];
 
-    await qFarm.setAllocPoints(allocPoints);
-    await qFarm.updateStorage({ farms: [0, 1, 2] });
+    await qFarm.pauseFarms(pauseFarmParams);
+    await qFarm.updateStorage({ farms: [0] });
 
     strictEqual(
-      +qFarm.storage.storage.total_alloc_point,
-      allocPoints.reduce((acc, curr) => acc + curr.alloc_point, 0)
+      qFarm.storage.storage.farms[0].paused,
+      pauseFarmParams[0].pause
     );
+  });
 
-    for (let i = 0; i < allocPoints.length; ++i) {
+  it("should unpause one farm", async () => {
+    const pauseFarmParams: PauseFarmParam[] = [{ fid: 0, pause: false }];
+
+    await qFarm.pauseFarms(pauseFarmParams);
+    await qFarm.updateStorage({ farms: [0] });
+
+    strictEqual(
+      qFarm.storage.storage.farms[0].paused,
+      pauseFarmParams[0].pause
+    );
+  });
+
+  it("should pause group of farms", async () => {
+    const pauseFarmParams: PauseFarmParam[] = [
+      { fid: 0, pause: true },
+      { fid: 1, pause: true },
+      { fid: 2, pause: true },
+    ];
+
+    await qFarm.pauseFarms(pauseFarmParams);
+    await qFarm.updateStorage({ farms: [0, 1, 2] });
+
+    for (let pauseFarmParam of pauseFarmParams) {
       strictEqual(
-        +qFarm.storage.storage.farms[i].alloc_point,
-        allocPoints[i].alloc_point
+        qFarm.storage.storage.farms[pauseFarmParam.fid].paused,
+        pauseFarmParam.pause
       );
-      strictEqual(qFarm.storage.storage.farms[i].allocated, true);
+    }
+  });
+
+  it("should unpause group of farms", async () => {
+    const pauseFarmParams: PauseFarmParam[] = [
+      { fid: 0, pause: false },
+      { fid: 2, pause: false },
+    ];
+
+    await qFarm.pauseFarms(pauseFarmParams);
+    await qFarm.updateStorage({ farms: [0, 2] });
+
+    for (let pauseFarmParam of pauseFarmParams) {
+      strictEqual(
+        qFarm.storage.storage.farms[pauseFarmParam.fid].paused,
+        pauseFarmParam.pause
+      );
+    }
+  });
+
+  it("should pause/unpause group of farms", async () => {
+    const pauseFarmParams: PauseFarmParam[] = [
+      { fid: 1, pause: false },
+      { fid: 2, pause: true },
+    ];
+
+    await qFarm.pauseFarms(pauseFarmParams);
+    await qFarm.updateStorage({ farms: [0, 1, 2] });
+
+    for (let pauseFarmParam of pauseFarmParams) {
+      strictEqual(
+        qFarm.storage.storage.farms[pauseFarmParam.fid].paused,
+        pauseFarmParam.pause
+      );
+    }
+  });
+
+  it("should set reward per second for one farm", async () => {
+    const params: RPS[] = [{ fid: 0, rps: 100 }];
+
+    await qFarm.setRewardPerSecond(params);
+    await qFarm.updateStorage({ farms: [0] });
+
+    strictEqual(
+      +qFarm.storage.storage.farms[0].qsgov_per_second,
+      params[0].rps
+    );
+  });
+
+  it("should set reward per second for group of farms", async () => {
+    const params: RPS[] = [
+      { fid: 0, rps: 100 },
+      { fid: 1, rps: 50 },
+      { fid: 2, rps: 250 },
+    ];
+
+    await qFarm.setRewardPerSecond(params);
+    await qFarm.updateStorage({ farms: [0, 1, 2] });
+
+    for (let i = 0; i < params.length; ++i) {
+      strictEqual(
+        +qFarm.storage.storage.farms[params[0].fid].qsgov_per_second,
+        params[0].rps
+      );
     }
   });
 
@@ -512,16 +567,23 @@ describe("QFarm tests", async () => {
     });
   });
 
-  it("should fail if farm is paused (allocation point equal to 0)", async () => {
+  it("should fail if farm is paused", async () => {
+    let newFarmParams: NewFarmParams = await QFarmUtils.getMockNewFarmParams(
+      utils
+    );
+
+    newFarmParams.paused = true;
+
+    await qFarm.addNewFarm(newFarmParams);
+
     const depositParams: DepositParams = {
-      fid: 4,
+      fid: 3,
       amt: 0,
       referrer: zeroAddress,
       rewards_receiver: zeroAddress,
       candidate: zeroAddress,
     };
 
-    await qFarm.addNewFarm(await QFarmUtils.getMockNewFarmParams(utils));
     await rejects(qFarm.deposit(depositParams), (err: Error) => {
       ok(err.message === "QFarm/farm-is-paused");
 
@@ -659,13 +721,12 @@ describe("QFarm tests", async () => {
     newFarmParams.stake_params.token = { fA12: fa12.contract.address };
     newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.timelock = 0;
-    newFarmParams.alloc_point = 10;
 
     await utils.setProvider(bob.sk);
     await qFarm.addNewFarm(newFarmParams);
 
     const depositParams: DepositParams = {
-      fid: 5,
+      fid: 4,
       amt: 100,
       referrer: undefined,
       rewards_receiver: carol.pkh,

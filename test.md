@@ -12,50 +12,54 @@
    - ✅ should fail if not pending admin is trying to confirm new admin;
    - ✅ should confirm new admin by pending admin.
 
-3. `set_alloc_points`:
-
-   - ✅ should fail if not admin is trying to set allocation points;
-   - ✅ should fail if one farm from list of farms not found;
-   - ✅ should fail if farm not started yet;
-   - ✅ should set/update allocation point for one farm;
-   - ✅ should set/update allocation points for group of farms.
-
-4. `set_fees`:
+3. `set_fees`:
 
    - ✅ should fail if not admin is trying to set fees;
    - ✅ should fail if one farm from list of farms not found;
    - ✅ should set/update fees for one farm;
    - ✅ should set/update fees for group of farms.
 
-5. `set_reward_per_second`:
+4. `set_reward_per_second`:
 
    - ✅ should fail if not admin is trying to set reward per second;
-   - ✅ should change reward per second by admin.
+   - ✅ should fail if one farm from list of farms not found;
+   - ✅ should set reward per second for one farm;
+   - ✅ should set reward per second for group of farms.
 
-6. `set_burner`:
+5. `set_burner`:
 
    - ✅ should fail if not admin is trying to set burner;
    - ✅ should change burner by admin.
 
-7. `set_proxy_minter`:
+6. `set_proxy_minter`:
 
    - ✅ should fail if not admin is trying to set proxy minter;
    - ✅ should change proxy minter by admin.
 
-8. `set_baker_registry`:
+7. `set_baker_registry`:
 
    - ✅ should fail if not admin is trying to set baker registry;
    - ✅ should change baker registry by admin.
 
-9. `add_new_farm`:
+8. `add_new_farm`:
 
    - ✅ should fail if not admin is trying to add new farm;
    - ✅ should add new farm by admin and set all farm's fields correctly.
 
+9. `pause_farms`:
+
+   - ✅ should fail if not admin is trying to pause farm;
+   - ✅ should fail if one farm from list of farms not found;
+   - ✅ should pause one farm;
+   - ✅ should unpause one farm;
+   - ✅ should pause group of farms;
+   - ✅ should unpause group of farms;
+   - ✅ should pause/unpause group of farms.
+
 10. `deposit`:
 
    - ✅ should fail if farm not found;
-   - ✅ should fail if farm is paused (allocation point equal to 0);
+   - ✅ should fail if farm is paused;
    - should update rewards correctly;
    - should update user's and farm's data correctly;
    - should claim user's rewards in time of every deposit (in farms without timelock);

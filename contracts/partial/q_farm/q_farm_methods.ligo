@@ -8,13 +8,13 @@
     const id : nat = case action of
       Set_admin(_)             -> 0n
     | Confirm_admin(_)         -> 1n
-    | Set_alloc_points(_)      -> 2n
-    | Set_fees(_)              -> 3n
-    | Set_reward_per_second(_) -> 4n
-    | Set_burner(_)            -> 5n
-    | Set_proxy_minter(_)      -> 6n
-    | Set_baker_registry(_)    -> 7n
-    | Add_new_farm(_)          -> 8n
+    | Set_fees(_)              -> 2n
+    | Set_reward_per_second(_) -> 3n
+    | Set_burner(_)            -> 4n
+    | Set_proxy_minter(_)      -> 5n
+    | Set_baker_registry(_)    -> 6n
+    | Add_new_farm(_)          -> 7n
+    | Pause_farms(_)           -> 8n
     | Deposit(_)               -> 9n
     | Withdraw(_)              -> 10n
     | Harvest(_)               -> 11n

@@ -77,7 +77,7 @@ module.exports = async (tezos) => {
     ProxyMinter["networks"][env.network]["proxy_minter"]
   );
   const operation = await proxyMinter.methods
-    .register_farm(qFarmAddress, true)
+    .add_minter(qFarmAddress, true)
     .send();
 
   await confirmOperation(tezos, operation.hash);

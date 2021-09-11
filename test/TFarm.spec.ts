@@ -8,8 +8,8 @@ import { QSFA12Factory } from "./helpers/QSFA12Factory";
 import { QSFA2Factory } from "./helpers/QSFA2Factory";
 
 import { UpdateOperatorParam } from "./types/FA2";
-import { NewFarmParams, PauseFarmParam } from "./types/TFarm";
-import { SetFeeParams } from "./types/Common";
+import { NewFarmParams } from "./types/TFarm";
+import { SetFeeParams, PauseFarmParam } from "./types/Common";
 
 import { ok, rejects, strictEqual } from "assert";
 

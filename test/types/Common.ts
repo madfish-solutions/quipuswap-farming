@@ -17,6 +17,11 @@ export type SetFeeParams = {
   fees: Fees;
 };
 
+export type PauseFarmParam = {
+  fid: number;
+  pause: boolean;
+};
+
 export type StakeParams = {
   staked_token: Token;
   is_lp_staked_token: boolean;

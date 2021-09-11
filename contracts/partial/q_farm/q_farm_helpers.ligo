@@ -37,17 +37,6 @@ function update_farm_rewards(
     if Tezos.now < _farm.start_time
     then skip
     else {
-      (* Check if allocation points already allocated *)
-      if not _farm.allocated
-      then {
-        (* Update total allocation point *)
-        s.total_alloc_point := s.total_alloc_point + _farm.alloc_point;
-
-        (* Update farm's allocation flag *)
-        _farm.allocated := True;
-      }
-      else skip;
-
       (* Check if some tokens is already staked *)
       if _farm.staked =/= 0n
       then {
@@ -55,8 +44,7 @@ function update_farm_rewards(
         const time_diff : nat = abs(Tezos.now - _farm.upd);
 
         (* Calculate new rewards to be minted for the farm *)
-        const reward : nat = time_diff * s.qsgov_per_second *
-          precision * _farm.alloc_point / s.total_alloc_point;
+        const reward : nat = time_diff * _farm.qsgov_per_second * precision;
 
         (* Update farm's reward per share *)
         _farm.rps := _farm.rps + reward / _farm.staked;

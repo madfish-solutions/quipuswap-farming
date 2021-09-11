@@ -2,16 +2,17 @@ import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 
 import { Fees, StakeParams, Token, FA2Token } from "./Common";
 
-export type SetAllocPointParams = {
+export type RPS = {
   fid: number;
-  alloc_point: number;
+  rps: number;
 };
 
 export type NewFarmParams = {
   fees: Fees;
   stake_params: StakeParams;
+  paused: boolean;
+  qsgov_per_second: number;
   timelock: number;
-  alloc_point: number;
   start_time: string;
 };
 
@@ -39,8 +40,8 @@ export type Farm = {
   timelock: number;
   current_delegated: string;
   current_candidate: string;
-  alloc_point: number;
-  allocated: boolean;
+  paused: boolean;
+  qsgov_per_second: number;
   rps: number;
   staked: number;
   start_time: string;
@@ -68,8 +69,6 @@ export type QFarmStorage = {
     proxy_minter: string;
     baker_registry: string;
     farms_count: number;
-    qsgov_per_second: number;
-    total_alloc_point: number;
   };
   q_farm_lambdas: MichelsonMap<MichelsonMapKey, unknown>;
 };

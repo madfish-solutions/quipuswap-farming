@@ -35,52 +35,6 @@ function confirm_admin(
     end
   } with (no_operations, s)
 
-(* Update allocation points for farms *)
-function set_alloc_points(
-  const action          : action_type;
-  var s                 : storage_type)
-                        : return_type is
-  block {
-    case action of
-      Set_alloc_points(params)          -> {
-        (* Check of admin permissions *)
-        only_admin(s.admin);
-
-        (* Update allocation point for the specified farm *)
-        function set_alloc_point(
-          var s           : storage_type;
-          const params    : set_alloc_type)
-                          : storage_type is
-          block {
-            (* Update all farms rewards *)
-            s := update_all_farms_rewards(s);
-
-            (* Retrieve farm from the storage *)
-            var farm : farm_type := get_farm(params.fid, s);
-
-            if Tezos.now < farm.start_time
-            then failwith("QFarm/not-started-yet")
-            else skip;
-
-            (* Update total allocation point *)
-            s.total_alloc_point := abs(
-              s.total_alloc_point - farm.alloc_point
-            ) + params.alloc_point;
-
-            (* Update farm's allocation point *)
-            farm.alloc_point := params.alloc_point;
-
-            (* Save farm to the storage *)
-            s.farms[farm.fid] := farm;
-          } with s;
-
-        (* Update allocation points *)
-        s := List.fold(set_alloc_point, params, s);
-      }
-    | _                                 -> skip
-    end
-  } with (no_operations, s)
-
 (* Update fees for farms *)
 function set_fees(
   const action          : action_type;
@@ -115,19 +69,35 @@ function set_fees(
     end
   } with (no_operations, s)
 
-(* Update reward per second in QS GOV tokens *)
+(* Update reward per second (in QS GOV tokens) for the specified farm *)
 function set_reward_per_second(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
   block {
     case action of
-      Set_reward_per_second(rps)        -> {
+      Set_reward_per_second(params)     -> {
         (* Check of admin permissions *)
         only_admin(s.admin);
 
-        (* Update reward per second *)
-        s.qsgov_per_second := rps;
+        (* Update reward per second for the specified farm *)
+        function set_rps(
+          var s           : storage_type;
+          const params    : rps_type)
+                          : storage_type is
+          block {
+            (* Retrieve farm from the storage *)
+            var farm : farm_type := get_farm(params.fid, s);
+
+            (* Update farm's reward per second *)
+            farm.qsgov_per_second := params.rps;
+
+            (* Save farm to the storage *)
+            s.farms[farm.fid] := farm;
+          } with s;
+
+        (* Update rewards per second *)
+        s := List.fold(set_rps, params, s);
       }
     | _                                 -> skip
     end
@@ -212,8 +182,8 @@ function add_new_farm(
           timelock          = params.timelock;
           current_delegated = zero_key_hash;
           current_candidate = zero_key_hash;
-          alloc_point       = params.alloc_point;
-          allocated         = False;
+          paused            = params.paused;
+          qsgov_per_second  = params.qsgov_per_second;
           rps               = 0n;
           staked            = 0n;
           start_time        = start_time;
@@ -223,6 +193,43 @@ function add_new_farm(
 
         (* Update farms count *)
         s.farms_count := s.farms_count + 1n;
+      }
+    | _                                 -> skip
+    end
+  } with (no_operations, s)
+
+(* Pause or unpause farms *)
+function pause_farms(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    case action of
+      Pause_farms(params)               -> {
+        (* Check of admin permissions *)
+        only_admin(s.admin);
+
+        (* Pause or unpause the specified farm *)
+        function pause_farm(
+          var s           : storage_type;
+          const params    : pause_farm_type)
+                          : storage_type is
+          block {
+            (* Retrieve farm from the storage *)
+            var farm : farm_type := get_farm(params.fid, s);
+
+            (* Update rewards for the farm *)
+            s := update_farm_rewards(farm, s);
+
+            (* Pause or unpause the farm *)
+            farm.paused := params.pause;
+
+            (* Save farm to the storage *)
+            s.farms[farm.fid] := farm;
+          } with s;
+
+        (* Pause or unpause farms from params list *)
+        s := List.fold(pause_farm, params, s);
       }
     | _                                 -> skip
     end
@@ -242,7 +249,7 @@ function deposit(
         (* Retrieve farm from the storage *)
         var farm : farm_type := get_farm(params.fid, s);
 
-        if farm.alloc_point = 0n
+        if farm.paused
         then failwith("QFarm/farm-is-paused")
         else skip;
 

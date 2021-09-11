@@ -443,9 +443,6 @@ function vote(
     (* Update user's new candidate votes amount *)
     s.votes[(farm.fid, depo.candidate)] := votes3 + user.staked;
 
-    (* Update farm's total votes amount *)
-    farm.total_votes := farm.total_votes + depo.amt;
-
     (* Update user's candidate *)
     s.candidates[(farm.fid, Tezos.sender)] := depo.candidate;
 
@@ -553,9 +550,6 @@ function revote(
       users_candidate := candidate;
     }
     end;
-
-    (* Update farm's total votes amount *)
-    farm.total_votes := abs(farm.total_votes - value);
 
     (* Update user's used votes amount (equal to all staked tokens amount) *)
     user.used_votes := abs(user.used_votes - value);

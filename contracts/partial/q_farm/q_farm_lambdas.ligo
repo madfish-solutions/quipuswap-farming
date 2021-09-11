@@ -89,6 +89,9 @@ function set_reward_per_second(
             (* Retrieve farm from the storage *)
             var farm : farm_type := get_farm(params.fid, s);
 
+            (* Update rewards for the farm *)
+            s := update_farm_rewards(farm, s);
+
             (* Update farm's reward per second *)
             farm.qsgov_per_second := params.rps;
 
@@ -188,7 +191,6 @@ function add_new_farm(
           staked            = 0n;
           start_time        = start_time;
           fid               = s.farms_count;
-          total_votes       = 0n;
         ];
 
         (* Update farms count *)
@@ -425,7 +427,7 @@ function withdraw(
           (* Calculate withdrawal fee *)
           const withdrawal_fee : nat = abs(value - actual_value);
 
-          (* Check if withdrawal fee is greater than 0 *)
+          (* Check if withdrawal fee is greater than 0 and stake *)
           if withdrawal_fee = 0n
           then skip
           else {
@@ -455,9 +457,6 @@ function withdraw(
         (* Update user's staked and earned tokens amount *)
         user.staked := abs(user.staked - value);
         user.prev_earned := user.staked * farm.rps;
-
-        (* Reset user's timelock *)
-        user.last_staked := Tezos.now;
 
         (* Save user's info in the farm and update farm's staked amount *)
         s.users_info[(farm.fid, Tezos.sender)] := user;
@@ -792,9 +791,6 @@ function buyback(
         (* Update user's staked and earned tokens amount *)
         user.staked := abs(user.staked - value);
         user.prev_earned := user.staked * farm.rps;
-
-        (* Reset user's timelock *)
-        user.last_staked := Tezos.now;
 
         (* Save user's info in the farm and update farm's staked amount *)
         s.users_info[(farm.fid, Tezos.self_address)] := user;

@@ -46,7 +46,6 @@ export type Farm = {
   staked: number;
   start_time: string;
   fid: number;
-  total_votes: number;
 };
 
 export type QFarmStorage = {

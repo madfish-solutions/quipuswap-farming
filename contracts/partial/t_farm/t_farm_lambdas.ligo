@@ -145,7 +145,6 @@ function add_new_farm(
           start_time        = start_time;
           end_time          = params.end_time;
           fid               = s.farms_count;
-          total_votes       = 0n;
         ];
 
         (* Update farms count *)
@@ -463,9 +462,6 @@ function withdraw(
         user.staked := abs(user.staked - value);
         user.prev_earned := user.staked * farm.rps;
 
-        (* Reset user's timelock *)
-        user.last_staked := Tezos.now;
-
         (* Save user's info in the farm and update farm's staked amount *)
         s.users_info[(farm.fid, Tezos.sender)] := user;
         farm.staked := abs(farm.staked - actual_value);
@@ -725,9 +721,6 @@ function withdraw_farm_depo(
         (* Update user's staked and earned tokens amount *)
         user.staked := abs(user.staked - value);
         user.prev_earned := user.staked * farm.rps;
-
-        (* Reset user's timelock *)
-        user.last_staked := Tezos.now;
 
         (* Save user's info in the farm and update farm's staked amount *)
         s.users_info[(farm.fid, Tezos.self_address)] := user;

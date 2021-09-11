@@ -342,7 +342,6 @@ describe("QFarm tests", async () => {
     strictEqual(+qFarm.storage.storage.farms[0].rps, 0);
     strictEqual(+qFarm.storage.storage.farms[0].staked, 0);
     strictEqual(+qFarm.storage.storage.farms[0].fid, 0);
-    strictEqual(+qFarm.storage.storage.farms[0].total_votes, 0);
 
     ok(
       Date.parse(qFarm.storage.storage.farms[0].upd) >=

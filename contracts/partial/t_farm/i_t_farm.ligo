@@ -60,8 +60,6 @@ type farm_type          is [@layout:comb] record [
   end_time                : timestamp;
   (* Farm ID *)
   fid                     : fid_type;
-  (* Total votes participated in voting *)
-  total_votes             : nat;
 ]
 
 type storage_type       is [@layout:comb] record [

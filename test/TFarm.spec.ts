@@ -282,7 +282,6 @@ describe("TFarm tests", async () => {
     strictEqual(+tFarm.storage.storage.farms[0].rps, 0);
     strictEqual(+tFarm.storage.storage.farms[0].staked, 0);
     strictEqual(+tFarm.storage.storage.farms[0].fid, 0);
-    strictEqual(+tFarm.storage.storage.farms[0].total_votes, 0);
 
     ok(
       Date.parse(tFarm.storage.storage.farms[0].upd) >=

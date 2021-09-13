@@ -31,7 +31,7 @@ function get_user_info(
 function update_farm_rewards(
   var _farm             : farm_type;
   var s                 : storage_type)
-                        : storage_type is
+                        : storage_type * farm_type is
   block {
     (* Check if farm is already started *)
     if Tezos.now < _farm.start_time
@@ -44,7 +44,7 @@ function update_farm_rewards(
         const time_diff : nat = abs(Tezos.now - _farm.upd);
 
         (* Calculate new rewards to be minted for the farm *)
-        const reward : nat = time_diff * _farm.qsgov_per_second * precision;
+        const reward : nat = time_diff * _farm.qsgov_per_second;
 
         (* Update farm's reward per share *)
         _farm.rps := _farm.rps + reward / _farm.staked;
@@ -57,27 +57,7 @@ function update_farm_rewards(
       (* Save the farm to the storage *)
       s.farms[_farm.fid] := _farm;
     };
-  } with s
-
-(* Util to update all farms rewards *)
-function update_all_farms_rewards(
-  var s                 : storage_type)
-                        : storage_type is
-  block {
-    var _i : nat := 0n;
-
-    while _i < s.farms_count
-      block {
-        (* Retrieve farm from the storage *)
-        var farm : farm_type := get_farm(_i, s);
-
-        (* Update rewards for the farm *)
-        s := update_farm_rewards(farm, s);
-
-        (* Update counter *)
-        _i := _i + 1n;
-      }
-  } with s
+  } with (s, _farm)
 
 (* Util to get proxy minter's %mint_qsgov_tokens entrypoint *)
 function get_proxy_minter_mint_entrypoint(
@@ -117,7 +97,8 @@ function claim_rewards(
 
       (* Calculate actual reward including harvest fee *)
       const actual_earned : nat = earned *
-        abs(10000n - farm.fees.harvest_fee) / 10000n;
+        abs(100n * fee_precision - farm.fees.harvest_fee) /
+        100n / fee_precision;
 
       (* Calculate harvest fee *)
       const harvest_fee : nat = abs(earned - actual_earned);
@@ -361,9 +342,11 @@ function reset_temp(
   var s                 : storage_type)
                         : storage_type is
   block {
-    s.temp.min_qs_gov_output := 0n;
-    s.temp.qs_pool := zero_address;
-    s.temp.token := FA12(zero_address);
+    s.temp := record [
+      min_qs_gov_output = 0n;
+      qs_pool           = zero_address;
+      token             = FA12(zero_address);
+    ];
   } with s
 
 (* Util to get baker registry's %validate entrypoint *)
@@ -438,10 +421,13 @@ function vote(
     (* Get votes amount for all used below candidates *)
     const votes1 : nat = get_votes(farm.fid, farm.current_delegated, s);
     const votes2 : nat = get_votes(farm.fid, farm.current_candidate, s);
-    const votes3 : nat = get_votes(farm.fid, depo.candidate, s);
+    var votes3 : nat := get_votes(farm.fid, depo.candidate, s);
 
     (* Update user's new candidate votes amount *)
     s.votes[(farm.fid, depo.candidate)] := votes3 + user.staked;
+
+    (* Update votes for the candidate from user's deposit *)
+    votes3 := get_votes(farm.fid, depo.candidate, s);
 
     (* Update user's candidate *)
     s.candidates[(farm.fid, Tezos.sender)] := depo.candidate;
@@ -455,11 +441,11 @@ function vote(
     (* Check if farm already voted for the baker *)
     case s.votes[(farm.fid, farm.current_delegated)] of
       None    -> {
-        (* Update the baker who was voted for by the majority *)
-        farm.current_delegated := depo.candidate;
+      (* Update the baker who was voted for by the majority *)
+      farm.current_delegated := depo.candidate;
 
-        (* Prepare Quipuswap LP vote operation *)
-        operations := get_vote_op(farm, depo.candidate) # operations;
+      (* Prepare Quipuswap LP vote operation *)
+      operations := get_vote_op(farm, depo.candidate) # operations;
     }
     | Some(_) -> {
       if votes1 =/= votes3
@@ -565,11 +551,11 @@ function revote(
     (* Check if farm already voted for the baker *)
     case s.votes[(farm.fid, farm.current_delegated)] of
       None    -> {
-        (* Update the baker who was voted for by the majority *)
-        farm.current_delegated := users_candidate;
+      (* Update the baker who was voted for by the majority *)
+      farm.current_delegated := users_candidate;
 
-        (* Prepare Quipuswap LP vote operation *)
-        operations := get_vote_op(farm, users_candidate) # operations;
+      (* Prepare Quipuswap LP vote operation *)
+      operations := get_vote_op(farm, users_candidate) # operations;
     }
     | Some(_) -> {
       if votes1 =/= votes3

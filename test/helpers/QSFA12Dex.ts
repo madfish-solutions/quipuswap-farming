@@ -46,6 +46,20 @@ export class QSFA12Dex {
     }
   }
 
+  async transfer(
+    src: string,
+    dst: string,
+    value: number
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .transfer(src, dst, value)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
   async approve(spender: string, value: number): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .approve(spender, value)

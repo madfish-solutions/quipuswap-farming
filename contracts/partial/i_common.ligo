@@ -25,3 +25,5 @@ type get_balance_type   is [@layout:comb] record [
 [@inline] const no_operations : list(operation) = nil;
 
 [@inline] const precision : nat = 1000000000000000000n;
+
+[@inline] const fee_precision : nat = 100n;

@@ -31,7 +31,7 @@ function get_user_info(
 function update_farm_rewards(
   var _farm             : farm_type;
   var s                 : storage_type)
-                        : storage_type is
+                        : storage_type * farm_type is
   block {
     (* Check if farm is already started *)
     if Tezos.now < _farm.start_time
@@ -44,7 +44,7 @@ function update_farm_rewards(
         const time_diff : nat = abs(Tezos.now - _farm.upd);
 
         (* Calculate new reward *)
-        const reward : nat = time_diff * _farm.reward_per_second * precision;
+        const reward : nat = time_diff * _farm.reward_per_second;
 
         (* Update farm's reward per share *)
         _farm.rps := _farm.rps + reward / _farm.staked;
@@ -57,7 +57,7 @@ function update_farm_rewards(
       (* Save the farm to the storage *)
       s.farms[_farm.fid] := _farm;
     };
-  } with s
+  } with (s, _farm)
 
 (* Util to claim sender's rewards *)
 function claim_rewards(
@@ -80,7 +80,8 @@ function claim_rewards(
 
       (* Calculate actual reward including harvest fee *)
       const actual_earned : nat = earned *
-        abs(10000n - farm.fees.harvest_fee) / 10000n;
+        abs(100n * fee_precision - farm.fees.harvest_fee) /
+        100n / fee_precision;
 
       (* Calculate harvest fee *)
       const harvest_fee : nat = abs(earned - actual_earned);
@@ -280,10 +281,13 @@ function vote(
     (* Get votes amount for all used below candidates *)
     const votes1 : nat = get_votes(farm.fid, farm.current_delegated, s);
     const votes2 : nat = get_votes(farm.fid, farm.current_candidate, s);
-    const votes3 : nat = get_votes(farm.fid, depo.candidate, s);
+    var votes3 : nat := get_votes(farm.fid, depo.candidate, s);
 
     (* Update user's new candidate votes amount *)
     s.votes[(farm.fid, depo.candidate)] := votes3 + user.staked;
+
+    (* Update votes for the candidate from user's deposit *)
+    votes3 := get_votes(farm.fid, depo.candidate, s);
 
     (* Update user's candidate *)
     s.candidates[(farm.fid, Tezos.sender)] := depo.candidate;

@@ -58,24 +58,30 @@
 
 10. `deposit`:
 
-   - ✅ should fail if farm not found;
-   - ✅ should fail if farm is paused;
-   - should update rewards correctly;
-   - should update user's and farm's data correctly;
-   - should claim user's rewards in time of every deposit (in farms without timelock);
-   - should claim user's rewards if timelock is finished (in farms with timelock);
-   - should calculate harest fee correctly;
-   - should mint QS GOV tokens as reward to rewards receiver;
-   - should mint QS GOV tokens as harvest fee to referrer (in case when user have referrer);
-   - should mint QS GOV tokens as harvest fee to zero address (in case when user does not have referrer);
-   - ✅ should fail if user is trying to refer himself;
-   - ✅ should set/update referrer;
-   - ✅ should not set/update referrer if referrer param not passed;
-   - ✅ should deposit single FA1.2 token;
-   - ✅ should deposit LP FA1.2 token;
-   - ✅ should deposit single FA2 token;
-   - ✅ should deposit LP FA2 token;
-   - should vote for the baker if LP token is deposited.
+    - ✅ should fail if farm not found;
+    - ✅ should fail if farm is paused;
+    - ✅ should claim user's rewards (in farms without timelock);
+    - ✅ should claim user's rewards if timelock is finished (in farms with
+      timelock);
+    - ✅ should not claim user's rewards if timelock is not finished (in farms
+      with timelock);
+    - ✅ should mint QS GOV tokens as reward to rewards receiver;
+    - ✅ should mint QS GOV tokens as harvest fee to referrer (in case when
+      user have referrer);
+    - ✅ should mint QS GOV tokens as harvest fee to zero address (in case when
+      user does not have referrer);
+    - ✅ should calculate and mint QS GOV tokens as harvest fee with decimals
+      (like 4.2%);
+    - ✅ should fail if user is trying to refer himself;
+    - ✅ should set/update referrer;
+    - ✅ should not set/update referrer if referrer param not passed;
+    - ✅ should deposit single FA1.2 token;
+    - ✅ should deposit LP FA1.2 token;
+    - ✅ should deposit single FA2 token;
+    - ✅ should deposit LP FA2 token;
+    - ✅ should vote for the baker if LP token is deposited;
+    - ✅ should change current delegated for the next candidate if votes were
+      redistributed.
 
 11. `withdraw`:
 

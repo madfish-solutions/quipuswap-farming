@@ -90,7 +90,12 @@ function set_reward_per_second(
             var farm : farm_type := get_farm(params.fid, s);
 
             (* Update rewards for the farm *)
-            s := update_farm_rewards(farm, s);
+            const upd_res : (storage_type * farm_type) =
+              update_farm_rewards(farm, s);
+
+            (* Update storage and the farm *)
+            s := upd_res.0;
+            farm := upd_res.1;
 
             (* Update farm's reward per second *)
             farm.qsgov_per_second := params.rps;
@@ -221,7 +226,12 @@ function pause_farms(
             var farm : farm_type := get_farm(params.fid, s);
 
             (* Update rewards for the farm *)
-            s := update_farm_rewards(farm, s);
+            const upd_res : (storage_type * farm_type) =
+              update_farm_rewards(farm, s);
+
+            (* Update storage and the farm *)
+            s := upd_res.0;
+            farm := upd_res.1;
 
             (* Pause or unpause the farm *)
             farm.paused := params.pause;
@@ -256,7 +266,12 @@ function deposit(
         else skip;
 
         (* Update rewards for the farm *)
-        s := update_farm_rewards(farm, s);
+        const upd_res : (storage_type * farm_type) =
+          update_farm_rewards(farm, s);
+
+        (* Update storage and the farm *)
+        s := upd_res.0;
+        farm := upd_res.1;
 
         (* Retrieve user data for the specified farm *)
         var user : user_info_type := get_user_info(farm.fid, Tezos.sender, s);
@@ -385,7 +400,12 @@ function withdraw(
         var farm : farm_type := get_farm(params.fid, s);
 
         (* Update rewards for the farm *)
-        s := update_farm_rewards(farm, s);
+        const upd_res : (storage_type * farm_type) =
+          update_farm_rewards(farm, s);
+
+        (* Update storage and the farm *)
+        s := upd_res.0;
+        farm := upd_res.1;
 
         (* Retrieve user data for the specified farm *)
         var user : user_info_type := get_user_info(farm.fid, Tezos.sender, s);
@@ -542,7 +562,12 @@ function harvest(
         var farm : farm_type := get_farm(params.fid, s);
 
         (* Update rewards for the farm *)
-        s := update_farm_rewards(farm, s);
+        const upd_res : (storage_type * farm_type) =
+          update_farm_rewards(farm, s);
+
+        (* Update storage and the farm *)
+        s := upd_res.0;
+        farm := upd_res.1;
 
         (* Retrieve user data for the specified farm *)
         var user : user_info_type := get_user_info(farm.fid, Tezos.sender, s);
@@ -636,7 +661,12 @@ function burn_farm_rewards(
         var farm : farm_type := get_farm(fid, s);
 
         (* Update rewards for the farm *)
-        s := update_farm_rewards(farm, s);
+        const upd_res : (storage_type * farm_type) =
+          update_farm_rewards(farm, s);
+
+        (* Update storage and the farm *)
+        s := upd_res.0;
+        farm := upd_res.1;
 
         (* Retrieve user data for the specified farm *)
         var user : user_info_type :=
@@ -765,7 +795,12 @@ function buyback(
         var farm : farm_type := get_farm(params.fid, s);
 
         (* Update rewards for the farm *)
-        s := update_farm_rewards(farm, s);
+        const upd_res : (storage_type * farm_type) =
+          update_farm_rewards(farm, s);
+
+        (* Update storage and the farm *)
+        s := upd_res.0;
+        farm := upd_res.1;
 
         (* Retrieve user data for the specified farm *)
         var user : user_info_type :=

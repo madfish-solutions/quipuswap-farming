@@ -1,9 +1,9 @@
-import { TezosToolkit } from "@taquito/taquito";
+import { TezosToolkit, TransactionOperation } from "@taquito/taquito";
 import { InMemorySigner } from "@taquito/signer";
 
 import { confirmOperation } from "../../scripts/confirmation";
 
-import { carol } from "../../scripts/sandbox/accounts";
+import { carol, dev } from "../../scripts/sandbox/accounts";
 
 import env from "../../env";
 
@@ -24,8 +24,16 @@ export class Utils {
       signer: await InMemorySigner.fromSecretKey(providerSK),
     });
 
-    const operation = await this.tezos.contract.transfer({
+    let operation = await this.tezos.contract.transfer({
       to: carol.pkh,
+      amount: 50000000,
+      mutez: true,
+    });
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    operation = await this.tezos.contract.transfer({
+      to: dev.pkh,
       amount: 50000000,
       mutez: true,
     });
@@ -37,6 +45,18 @@ export class Utils {
     this.tezos.setProvider({
       signer: await InMemorySigner.fromSecretKey(newProviderSK),
     });
+  }
+
+  async bakeBlocks(count: number) {
+    for (let i: number = 0; i < count; ++i) {
+      const operation: TransactionOperation =
+        await this.tezos.contract.transfer({
+          to: await this.tezos.signer.publicKeyHash(),
+          amount: 1,
+        });
+
+      await confirmOperation(this.tezos, operation.hash);
+    }
   }
 
   static destructObj(obj: any) {

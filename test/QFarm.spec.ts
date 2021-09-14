@@ -10,7 +10,12 @@ import { QSFA2Factory } from "./helpers/QSFA2Factory";
 import { QSFA12Dex } from "./helpers/QSFA12Dex";
 import { QSFA2Dex } from "./helpers/QSFA2Dex";
 
-import { FarmData, HarvestParams, PauseFarmParam } from "./types/Common";
+import {
+  PauseFarmParam,
+  WithdrawParams,
+  HarvestParams,
+  FarmData,
+} from "./types/Common";
 import {
   DepositParams,
   NewFarmParams,
@@ -2018,6 +2023,150 @@ describe.only("QFarm tests", async () => {
           res.referralCommission
         )
       )
+    );
+  });
+
+  it("should fail if farm not found", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 666,
+      amt: 100,
+      receiver: alice.pkh,
+      rewards_receiver: dev.pkh,
+    };
+
+    await rejects(qFarm.withdraw(withdrawParams), (err: Error) => {
+      ok(err.message === "QFarm/farm-not-set");
+
+      return true;
+    });
+  });
+
+  it("should fail if staked by user amount is less than amount to withdraw", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 0,
+      amt: 100_000_000,
+      receiver: alice.pkh,
+      rewards_receiver: dev.pkh,
+    };
+
+    await rejects(qFarm.withdraw(withdrawParams), (err: Error) => {
+      ok(err.message === "QFarm/balance-too-low");
+
+      return true;
+    });
+  });
+
+  it("should withdraw single FA1.2 token", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 0,
+      amt: 100,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await qFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [qFarm.contract.address, alice.pkh],
+    });
+
+    const initialFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialTokenAliceRecord: UserFA12Info =
+      fa12.storage.ledger[alice.pkh];
+    const initialTokenFarmRecord: UserFA12Info =
+      fa12.storage.ledger[qFarm.contract.address];
+
+    await qFarm.withdraw(withdrawParams);
+    await qFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [qFarm.contract.address, alice.pkh],
+    });
+
+    const finalFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalTokenAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
+    const finalTokenFarmRecord: UserFA12Info =
+      fa12.storage.ledger[qFarm.contract.address];
+
+    strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
+    strictEqual(
+      +finalFarmAliceRecord.staked,
+      +initialFarmAliceRecord.staked - withdrawParams.amt
+    );
+    strictEqual(
+      +finalTokenAliceRecord.balance,
+      +initialTokenAliceRecord.balance + withdrawParams.amt
+    );
+    strictEqual(
+      +finalTokenFarmRecord.balance,
+      +initialTokenFarmRecord.balance - withdrawParams.amt
+    );
+
+    ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
+  });
+
+  it("should withdraw LP FA1.2 token", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 4,
+      amt: 100,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await qFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12LP.updateStorage({
+      ledger: [qFarm.contract.address, alice.pkh],
+    });
+
+    const initialFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialTokenAliceRecord: UserFA12Info =
+      fa12LP.storage.storage.ledger[alice.pkh];
+    const initialTokenFarmRecord: UserFA12Info =
+      fa12LP.storage.storage.ledger[qFarm.contract.address];
+
+    await qFarm.withdraw(withdrawParams);
+    await qFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12LP.updateStorage({
+      ledger: [qFarm.contract.address, alice.pkh],
+    });
+
+    const finalFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalTokenAliceRecord: UserFA12Info =
+      fa12LP.storage.storage.ledger[alice.pkh];
+    const finalTokenFarmRecord: UserFA12Info =
+      fa12LP.storage.storage.ledger[qFarm.contract.address];
+
+    strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
+    strictEqual(
+      +finalFarmAliceRecord.staked,
+      +initialFarmAliceRecord.staked - withdrawParams.amt
+    );
+    strictEqual(
+      +finalTokenAliceRecord.balance,
+      +initialTokenAliceRecord.balance + withdrawParams.amt
+    );
+    strictEqual(+finalTokenFarmRecord.balance, 0);
+    strictEqual(
+      +finalTokenFarmRecord.frozen_balance,
+      +initialTokenFarmRecord.frozen_balance - withdrawParams.amt
     );
   });
 });

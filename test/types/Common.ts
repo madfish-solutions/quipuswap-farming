@@ -26,6 +26,13 @@ export type HarvestParams = {
   rewards_receiver: string;
 };
 
+export type WithdrawParams = {
+  fid: number;
+  amt: number;
+  receiver: string;
+  rewards_receiver: string;
+};
+
 export type FarmData = {
   expectedShareReward: BigNumber;
   expectedUserPrevEarned: BigNumber;

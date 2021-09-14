@@ -25,6 +25,7 @@ import qFarmFunctions from "../../storage/json/QFarmFunctions.json";
 
 import {
   PauseFarmParam,
+  WithdrawParams,
   HarvestParams,
   StakeParams,
   FarmData,
@@ -236,6 +237,18 @@ export class QFarm {
   async deposit(depositParams: DepositParams): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .deposit(...Utils.destructObj(depositParams))
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async withdraw(
+    withdrawParams: WithdrawParams
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .withdraw(...Utils.destructObj(withdrawParams))
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

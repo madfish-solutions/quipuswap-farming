@@ -582,6 +582,9 @@ function revote(
             else skip;
           }
           end;
+
+          (* Prepare Quipuswap LP vote operation *)
+          operations := get_vote_op(farm, farm.current_delegated) # operations;
         };
       }
       else {

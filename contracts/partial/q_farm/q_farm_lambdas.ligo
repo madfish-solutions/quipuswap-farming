@@ -438,11 +438,12 @@ function withdraw(
         if abs(Tezos.now - user.last_staked) >= farm.timelock
         then res := claim_rewards(user, farm, params.rewards_receiver, s)
         else { (* Burn reward and stake withdrawal fee from farm's name *)
-          res := burn_rewards(user, False, s); (* Burn QS GOV tokens *)
+          res := burn_rewards(user, farm, False, s); (* Burn QS GOV tokens *)
 
           (* Calculate actual value including withdrawal fee *)
           actual_value := value *
-            abs(10000n - farm.fees.withdrawal_fee) / 10000n;
+            abs(100n * fee_precision - farm.fees.withdrawal_fee) /
+            100n / fee_precision;
 
           (* Calculate withdrawal fee *)
           const withdrawal_fee : nat = abs(value - actual_value);
@@ -678,7 +679,7 @@ function burn_farm_rewards(
 
         (* Burn QS GOV tokens (farm's rewards) *)
         var res : (option(operation) * user_info_type) :=
-          burn_rewards(user, True, s);
+          burn_rewards(user, farm, True, s);
 
         (* Update user's info *)
         user := res.1;

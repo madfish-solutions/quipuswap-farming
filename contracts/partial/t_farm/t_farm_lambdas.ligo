@@ -441,7 +441,8 @@ function withdraw(
 
           (* Calculate actual value including withdrawal fee *)
           actual_value := value *
-            abs(10000n - farm.fees.withdrawal_fee) / 10000n;
+            abs(100n * fee_precision - farm.fees.withdrawal_fee) /
+            100n / fee_precision;
 
           (* Calculate withdrawal fee *)
           const withdrawal_fee : nat = abs(value - actual_value);

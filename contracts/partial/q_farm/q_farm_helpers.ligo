@@ -145,6 +145,7 @@ function claim_rewards(
 (* Util to burn user's rewards *)
 function burn_rewards(
   var user              : user_info_type;
+  const farm            : farm_type;
   const pay_burn_reward : bool;
   const s               : storage_type)
                         : (option(operation) * user_info_type) is
@@ -167,10 +168,12 @@ function burn_rewards(
 
       if pay_burn_reward
       then {
-        (* Calculate real amount to burn (without 3% as a reward) *)
-        const burn_amount : nat = earned * 97n / 100n;
+        (* Calculate real amount to burn (without reward for the caller) *)
+        const burn_amount : nat = earned *
+          abs(100n * fee_precision - farm.fees.buyback_reward) /
+          100n / fee_precision;
 
-        (* Calculate 3% reward for the transaction sender *)
+        (* Calculate buyback reward for the transaction sender *)
         const reward : nat = abs(earned - burn_amount);
 
         (* Prepare destination params for minting *)

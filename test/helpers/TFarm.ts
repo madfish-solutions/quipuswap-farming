@@ -1,12 +1,12 @@
 import {
-  TezosToolkit,
   TransactionOperation,
   OriginationOperation,
   WalletOperationBatch,
+  WalletParamsWithKind,
   WalletOperation,
+  TezosToolkit,
   Contract,
   OpKind,
-  WalletParamsWithKind,
 } from "@taquito/taquito";
 
 import { execSync } from "child_process";
@@ -21,13 +21,13 @@ import { getLigo } from "../../scripts/helpers";
 
 import tFarmFunctions from "../../storage/json/TFarmFunctions.json";
 
+import { StakeParams, PauseFarmParam } from "../types/Common";
 import {
-  Fees,
+  NewFarmParams,
   SetFeeParams,
-  StakeParams,
-  PauseFarmParam,
-} from "../types/Common";
-import { NewFarmParams, TFarmStorage } from "../types/TFarm";
+  TFarmStorage,
+  TFees,
+} from "../types/TFarm";
 
 import { Utils, zeroAddress } from "./Utils";
 
@@ -209,7 +209,7 @@ export class TFarmUtils {
     const time: string = String(
       Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000
     );
-    const fees: Fees = {
+    const fees: TFees = {
       harvest_fee: 0,
       withdrawal_fee: 0,
     };

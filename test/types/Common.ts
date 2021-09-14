@@ -1,3 +1,5 @@
+import { BigNumber } from "bignumber.js";
+
 export type FA12Token = string;
 
 export type FA2Token = {
@@ -6,16 +8,6 @@ export type FA2Token = {
 };
 
 export type Token = { fA12: FA12Token } | { fA2: FA2Token };
-
-export type Fees = {
-  harvest_fee: number;
-  withdrawal_fee: number;
-};
-
-export type SetFeeParams = {
-  fid: number;
-  fees: Fees;
-};
 
 export type PauseFarmParam = {
   fid: number;
@@ -27,4 +19,18 @@ export type StakeParams = {
   is_lp_staked_token: boolean;
   token: Token;
   qs_pool: FA12Token;
+};
+
+export type HarvestParams = {
+  fid: number;
+  rewards_receiver: string;
+};
+
+export type FarmData = {
+  expectedShareReward: BigNumber;
+  expectedUserPrevEarned: BigNumber;
+  expectedUserEarned: BigNumber;
+  expectedUserEarnedAfterHarvest: BigNumber;
+  actualUserEarned: BigNumber;
+  referralCommission: BigNumber;
 };

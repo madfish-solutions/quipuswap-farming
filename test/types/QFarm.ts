@@ -1,14 +1,25 @@
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 
-import { Fees, StakeParams, Token, FA2Token } from "./Common";
+import { StakeParams, Token, FA2Token } from "./Common";
 
 export type RPS = {
   fid: number;
   rps: number;
 };
 
+export type QFees = {
+  harvest_fee: number;
+  withdrawal_fee: number;
+  buyback_reward: number;
+};
+
+export type SetFeeParams = {
+  fid: number;
+  fees: QFees;
+};
+
 export type NewFarmParams = {
-  fees: Fees;
+  fees: QFees;
   stake_params: StakeParams;
   paused: boolean;
   qsgov_per_second: number;
@@ -33,7 +44,7 @@ export type UserInfoType = {
 };
 
 export type Farm = {
-  fees: Fees;
+  fees: QFees;
   upd: string;
   stake_params: StakeParams;
   reward_token: FA2Token;

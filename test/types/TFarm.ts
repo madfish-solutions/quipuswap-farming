@@ -1,9 +1,19 @@
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 
-import { Fees, StakeParams, Token, FA2Token } from "./Common";
+import { StakeParams, Token, FA2Token } from "./Common";
+
+export type TFees = {
+  harvest_fee: number;
+  withdrawal_fee: number;
+};
+
+export type SetFeeParams = {
+  fid: number;
+  fees: TFees;
+};
 
 export type NewFarmParams = {
-  fees: Fees;
+  fees: TFees;
   stake_params: StakeParams;
   reward_token: Token;
   paused: boolean;

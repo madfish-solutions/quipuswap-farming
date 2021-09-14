@@ -1,15 +1,17 @@
 import {
-  TezosToolkit,
   TransactionOperation,
   OriginationOperation,
   WalletOperationBatch,
+  WalletParamsWithKind,
   WalletOperation,
+  TezosToolkit,
   Contract,
   OpKind,
-  WalletParamsWithKind,
 } from "@taquito/taquito";
 
 import { execSync } from "child_process";
+
+import { BigNumber } from "bignumber.js";
 
 import fs from "fs";
 
@@ -22,15 +24,19 @@ import { getLigo } from "../../scripts/helpers";
 import qFarmFunctions from "../../storage/json/QFarmFunctions.json";
 
 import {
-  Fees,
-  StakeParams,
-  SetFeeParams,
   PauseFarmParam,
+  HarvestParams,
+  StakeParams,
+  FarmData,
 } from "../types/Common";
 import {
-  QFarmStorage,
   NewFarmParams,
   DepositParams,
+  QFarmStorage,
+  SetFeeParams,
+  UserInfoType,
+  QFees,
+  Farm,
   RPS,
 } from "../types/QFarm";
 import { Utils, zeroAddress } from "./Utils";
@@ -236,13 +242,24 @@ export class QFarm {
 
     return operation;
   }
+
+  async harvest(harvestParams: HarvestParams): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .harvest(...Utils.destructObj(harvestParams))
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
 }
 
 export class QFarmUtils {
   static async getMockNewFarmParams(utils: Utils): Promise<NewFarmParams> {
-    const fees: Fees = {
+    const fees: QFees = {
       harvest_fee: 0,
       withdrawal_fee: 0,
+      buyback_reward: 0,
     };
     const stakeParams: StakeParams = {
       staked_token: {
@@ -269,5 +286,60 @@ export class QFarmUtils {
     };
 
     return newFarmParams;
+  }
+
+  static getFarmData(
+    initialFarm: Farm,
+    finalFarm: Farm,
+    initialFarmUserRecord: UserInfoType,
+    finalFarmUserRecord: UserInfoType,
+    precision: number,
+    feePrecision: number
+  ): FarmData {
+    const timeLeft: number =
+      (Date.parse(finalFarm.upd) - Date.parse(initialFarm.upd)) / 1000;
+    const newReward: BigNumber = new BigNumber(
+      timeLeft * finalFarm.qsgov_per_second
+    );
+    const expectedShareReward: BigNumber = new BigNumber(initialFarm.rps).plus(
+      newReward.div(initialFarm.staked).integerValue(BigNumber.ROUND_DOWN)
+    );
+    const expectedUserPrevEarned: BigNumber = expectedShareReward.multipliedBy(
+      finalFarmUserRecord.staked
+    );
+    const expectedUserEarned: BigNumber = new BigNumber(
+      initialFarmUserRecord.earned
+    ).plus(
+      expectedShareReward
+        .multipliedBy(initialFarmUserRecord.staked)
+        .minus(initialFarmUserRecord.prev_earned)
+    );
+    const expectedUserEarnedAfterHarvest: BigNumber = expectedUserEarned.minus(
+      expectedUserEarned
+        .div(precision)
+        .integerValue(BigNumber.ROUND_DOWN)
+        .multipliedBy(precision)
+    );
+    const actualUserEarned: BigNumber = expectedUserEarned
+      .div(precision)
+      .integerValue(BigNumber.ROUND_DOWN)
+      .multipliedBy(100 * feePrecision - finalFarm.fees.harvest_fee)
+      .div(100)
+      .integerValue(BigNumber.ROUND_DOWN)
+      .div(feePrecision)
+      .integerValue(BigNumber.ROUND_DOWN);
+    const referralCommission: BigNumber = expectedUserEarned
+      .div(precision)
+      .integerValue(BigNumber.ROUND_DOWN)
+      .minus(actualUserEarned);
+
+    return {
+      expectedShareReward: expectedShareReward,
+      expectedUserPrevEarned: expectedUserPrevEarned,
+      expectedUserEarned: expectedUserEarned,
+      expectedUserEarnedAfterHarvest: expectedUserEarnedAfterHarvest,
+      actualUserEarned: actualUserEarned,
+      referralCommission: referralCommission,
+    };
   }
 }

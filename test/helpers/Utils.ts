@@ -3,7 +3,7 @@ import { InMemorySigner } from "@taquito/signer";
 
 import { confirmOperation } from "../../scripts/confirmation";
 
-import { carol, dev } from "../../scripts/sandbox/accounts";
+import { dev } from "../../scripts/sandbox/accounts";
 
 import env from "../../env";
 
@@ -24,15 +24,7 @@ export class Utils {
       signer: await InMemorySigner.fromSecretKey(providerSK),
     });
 
-    let operation = await this.tezos.contract.transfer({
-      to: carol.pkh,
-      amount: 50000000,
-      mutez: true,
-    });
-
-    await confirmOperation(this.tezos, operation.hash);
-
-    operation = await this.tezos.contract.transfer({
+    const operation = await this.tezos.contract.transfer({
       to: dev.pkh,
       amount: 50000000,
       mutez: true,

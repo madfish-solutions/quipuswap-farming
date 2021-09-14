@@ -8,8 +8,8 @@ import { QSFA12Factory } from "./helpers/QSFA12Factory";
 import { QSFA2Factory } from "./helpers/QSFA2Factory";
 
 import { UpdateOperatorParam } from "./types/FA2";
-import { NewFarmParams } from "./types/TFarm";
-import { SetFeeParams, PauseFarmParam } from "./types/Common";
+import { NewFarmParams, SetFeeParams } from "./types/TFarm";
+import { PauseFarmParam } from "./types/Common";
 
 import { ok, rejects, strictEqual } from "assert";
 
@@ -32,6 +32,9 @@ describe("TFarm tests", async () => {
   var bakerRegistry: BakerRegistry;
   var qsFA12Factory: QSFA12Factory;
   var qsFA2Factory: QSFA2Factory;
+
+  var precision = 10 ** 18;
+  var feePrecision = 10 ** 2;
 
   before("setup", async () => {
     utils = new Utils();
@@ -214,8 +217,8 @@ describe("TFarm tests", async () => {
     );
     const lifetime: number = 10; // 10 seconds
 
-    newFarmParams.fees.harvest_fee = 10;
-    newFarmParams.fees.withdrawal_fee = 15;
+    newFarmParams.fees.harvest_fee = 10 * feePrecision;
+    newFarmParams.fees.withdrawal_fee = 15 * feePrecision;
     newFarmParams.stake_params.staked_token = {
       fA2: { token: qsGov.contract.address, id: 0 },
     };
@@ -380,7 +383,13 @@ describe("TFarm tests", async () => {
 
   it("should fail if not admin is trying to set fees", async () => {
     const fees: SetFeeParams[] = [
-      { fid: 0, fees: { harvest_fee: 15, withdrawal_fee: 10 } },
+      {
+        fid: 0,
+        fees: {
+          harvest_fee: 15 * feePrecision,
+          withdrawal_fee: 10 * feePrecision,
+        },
+      },
     ];
 
     await utils.setProvider(alice.sk);
@@ -393,8 +402,20 @@ describe("TFarm tests", async () => {
 
   it("should fail if one farm from list of farms not found", async () => {
     const fees: SetFeeParams[] = [
-      { fid: 0, fees: { harvest_fee: 15, withdrawal_fee: 10 } },
-      { fid: 666, fees: { harvest_fee: 15, withdrawal_fee: 10 } },
+      {
+        fid: 0,
+        fees: {
+          harvest_fee: 15 * feePrecision,
+          withdrawal_fee: 10 * feePrecision,
+        },
+      },
+      {
+        fid: 666,
+        fees: {
+          harvest_fee: 15 * feePrecision,
+          withdrawal_fee: 10 * feePrecision,
+        },
+      },
     ];
 
     await utils.setProvider(bob.sk);
@@ -407,7 +428,13 @@ describe("TFarm tests", async () => {
 
   it("should set/update fees for one farm", async () => {
     const fees: SetFeeParams[] = [
-      { fid: 0, fees: { harvest_fee: 1, withdrawal_fee: 5 } },
+      {
+        fid: 0,
+        fees: {
+          harvest_fee: 1 * feePrecision,
+          withdrawal_fee: 5 * feePrecision,
+        },
+      },
     ];
 
     await tFarm.setFees(fees);
@@ -425,9 +452,27 @@ describe("TFarm tests", async () => {
 
   it("should set/update fees for group of farms", async () => {
     const fees: SetFeeParams[] = [
-      { fid: 0, fees: { harvest_fee: 16, withdrawal_fee: 21 } },
-      { fid: 1, fees: { harvest_fee: 5, withdrawal_fee: 25 } },
-      { fid: 2, fees: { harvest_fee: 3, withdrawal_fee: 3 } },
+      {
+        fid: 0,
+        fees: {
+          harvest_fee: 16 * feePrecision,
+          withdrawal_fee: 21 * feePrecision,
+        },
+      },
+      {
+        fid: 1,
+        fees: {
+          harvest_fee: 5 * feePrecision,
+          withdrawal_fee: 25 * feePrecision,
+        },
+      },
+      {
+        fid: 2,
+        fees: {
+          harvest_fee: 3 * feePrecision,
+          withdrawal_fee: 3 * feePrecision,
+        },
+      },
     ];
 
     await tFarm.setFees(fees);

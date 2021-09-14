@@ -61,17 +61,12 @@
     - ✅ should fail if farm not found;
     - ✅ should fail if farm is paused;
     - ✅ should claim user's rewards (in farms without timelock);
-    - ✅ should claim user's rewards if timelock is finished (in farms with
-      timelock);
-    - ✅ should not claim user's rewards if timelock is not finished (in farms
-      with timelock);
+    - ✅ should claim user's rewards if timelock is finished (in farms with timelock);
+    - ✅ should not claim user's rewards if timelock is not finished (in farms with timelock);
     - ✅ should mint QS GOV tokens as reward to rewards receiver;
-    - ✅ should mint QS GOV tokens as harvest fee to referrer (in case when
-      user have referrer);
-    - ✅ should mint QS GOV tokens as harvest fee to zero address (in case when
-      user does not have referrer);
-    - ✅ should calculate and mint QS GOV tokens as harvest fee with decimals
-      (like 4.2%);
+    - ✅ should mint QS GOV tokens as harvest fee to referrer (in case when user have referrer);
+    - ✅ should mint QS GOV tokens as harvest fee to zero address (in case when user does not have referrer);
+    - ✅ should calculate and mint QS GOV tokens as harvest fee with decimals (like 4.2%);
     - ✅ should fail if user is trying to refer himself;
     - ✅ should set/update referrer;
     - ✅ should not set/update referrer if referrer param not passed;
@@ -80,12 +75,36 @@
     - ✅ should deposit single FA2 token;
     - ✅ should deposit LP FA2 token;
     - ✅ should vote for the baker if LP token is deposited;
-    - ✅ should change current delegated for the next candidate if votes were
-      redistributed.
+    - ✅ should change current delegated for the next candidate if votes were redistributed.
 
 11. `withdraw`:
 
+    - should fail if farm not found;
+    - should fail if staked amount is less than amount to withdraw;
+    - should withdraw all with 0 amount parameter passed;
+    - should claim user's rewards (in farms without timelock);
+    - should claim user's rewards if timelock is finished (in farms with timelock);
+    - should burn user's rewards if timelock is not finished (in farms with timelock);
+    - should stake withdrawal fee from farm's name;
+    - should mint QS GOV tokens as reward to rewards receiver;
+    - should mint QS GOV tokens as harvest fee to referrer (in case when user have referrer);
+    - should mint QS GOV tokens as harvest fee to zero address (in case when user does not have referrer);
+    - should calculate and stake tokens from farm's name as withdrawal fee with decimals (like 4.2%);
+    - should withdraw single FA1.2 token;
+    - should withdraw LP FA1.2 token;
+    - should withdraw single FA2 token;
+    - should withdraw LP FA2 token;
+    - should change current delegated for the next candidate if votes were redistributed.
+
 12. `harvest`:
+
+    - ✅ should fail if farm not found;
+    - ✅ should fail if timelock is not finished (in farms with timelock);
+    - ✅ should claim user's rewards;
+    - ✅ should mint QS GOV tokens as reward to rewards receiver;
+    - ✅ should mint QS GOV tokens as harvest fee to referrer (in case when user have referrer);
+    - ✅ should mint QS GOV tokens as harvest fee to zero address (in case when user does not have referrer);
+    - ✅ should calculate and mint QS GOV tokens as harvest fee with decimals (like 4.2%).
 
 13. `burn_xtz_rewards`:
 

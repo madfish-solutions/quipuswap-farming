@@ -81,20 +81,20 @@
 
     - ✅ should fail if farm not found;
     - ✅ should fail if staked by user amount is less than amount to withdraw;
-    - should claim user's rewards (in farms without timelock);
-    - should claim user's rewards if timelock is finished (in farms with timelock);
-    - should burn user's rewards if timelock is not finished (in farms with timelock);
-    - should stake withdrawal fee from farm's name;
-    - should mint QS GOV tokens as reward to rewards receiver;
-    - should mint QS GOV tokens as harvest fee to referrer (in case when user have referrer);
-    - should mint QS GOV tokens as harvest fee to zero address (in case when user does not have referrer);
-    - should calculate and stake tokens from farm's name as withdrawal fee with decimals (like 4.2%);
+    - ✅ should claim user's rewards (in farms without timelock);
+    - ✅ should claim user's rewards if timelock is finished (in farms with timelock);
+    - ✅ should burn user's rewards if timelock is not finished (in farms with timelock);
+    - ✅ should stake withdrawal fee from farm's name;
+    - ✅ should mint QS GOV tokens as reward to rewards receiver;
+    - ✅ should mint QS GOV tokens as harvest fee to referrer (in case when user have referrer);
+    - ✅ should mint QS GOV tokens as harvest fee to zero address (in case when user does not have referrer);
+    - ✅ should calculate and stake tokens from farm's name as withdrawal fee with decimals (like 4.2%);
     - ✅ should withdraw single FA1.2 token;
     - ✅ should withdraw LP FA1.2 token;
-    - should withdraw single FA2 token;
-    - should withdraw LP FA2 token;
-    - should withdraw tokens to the specified receiver;
-    - should withdraw all with 0 amount parameter passed;
+    - ✅ should withdraw single FA2 token;
+    - ✅ should withdraw LP FA2 token;
+    - ✅ should withdraw tokens to the specified receiver;
+    - ✅ should withdraw all with 0 amount parameter passed;
     - should change current delegated for the next candidate if votes were redistributed.
 
 12. `harvest`:

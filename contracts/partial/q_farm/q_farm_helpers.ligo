@@ -472,11 +472,17 @@ function vote(
             else skip;
           }
           end;
+
+          (* Prepare Quipuswap LP vote operation *)
+          operations := get_vote_op(farm, farm.current_delegated) # operations;
         };
       }
       else {
         case s.votes[(farm.fid, farm.current_candidate)] of
-          None    -> skip
+          None    -> {
+          (* Prepare Quipuswap LP vote operation *)
+          operations := get_vote_op(farm, farm.current_delegated) # operations;
+        }
         | Some(_) -> {
           if votes2 > votes1
           then {
@@ -589,7 +595,10 @@ function revote(
       }
       else {
         case s.votes[(farm.fid, farm.current_candidate)] of
-          None    -> skip
+          None    -> {
+          (* Prepare Quipuswap LP vote operation *)
+          operations := get_vote_op(farm, farm.current_delegated) # operations;
+        }
         | Some(_) -> {
           if votes2 > votes1
           then {

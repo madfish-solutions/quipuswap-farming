@@ -27,6 +27,7 @@ import {
   PauseFarmParam,
   WithdrawParams,
   HarvestParams,
+  WithdrawData,
   StakeParams,
   FarmData,
 } from "../types/Common";
@@ -341,6 +342,9 @@ export class QFarmUtils {
       .integerValue(BigNumber.ROUND_DOWN)
       .div(feePrecision)
       .integerValue(BigNumber.ROUND_DOWN);
+    const actualUserBurned: BigNumber = expectedUserEarned
+      .div(precision)
+      .integerValue(BigNumber.ROUND_DOWN);
     const referralCommission: BigNumber = expectedUserEarned
       .div(precision)
       .integerValue(BigNumber.ROUND_DOWN)
@@ -352,7 +356,29 @@ export class QFarmUtils {
       expectedUserEarned: expectedUserEarned,
       expectedUserEarnedAfterHarvest: expectedUserEarnedAfterHarvest,
       actualUserEarned: actualUserEarned,
+      actualUserBurned: actualUserBurned,
       referralCommission: referralCommission,
+    };
+  }
+
+  static getWithdrawData(
+    initialFarm: Farm,
+    withdrawValue: number,
+    feePrecision: number
+  ): WithdrawData {
+    const actualUserWithdraw: BigNumber = new BigNumber(withdrawValue)
+      .multipliedBy(100 * feePrecision - initialFarm.fees.withdrawal_fee)
+      .div(100)
+      .integerValue(BigNumber.ROUND_DOWN)
+      .div(feePrecision)
+      .integerValue(BigNumber.ROUND_DOWN);
+    const wirthdrawCommission: BigNumber = new BigNumber(withdrawValue).minus(
+      actualUserWithdraw
+    );
+
+    return {
+      actualUserWithdraw: actualUserWithdraw,
+      wirthdrawCommission: wirthdrawCommission,
     };
   }
 }

@@ -34,6 +34,8 @@ import { BigNumber } from "bignumber.js";
 
 import { alice, bob, carol, dev } from "../scripts/sandbox/accounts";
 
+import { confirmOperation } from "../scripts/confirmation";
+
 import { fa12Storage } from "../storage/test/FA12";
 import { fa2Storage } from "../storage/test/FA2";
 import { qFarmStorage } from "../storage/QFarm";
@@ -318,7 +320,7 @@ describe.only("QFarm tests", async () => {
 
     newFarmParams.fees.harvest_fee = 10 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 15 * feePrecision;
-    newFarmParams.fees.buyback_reward = 23 * feePrecision;
+    newFarmParams.fees.burn_reward = 23 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12.contract.address };
     newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.qsgov_per_second = 100 * precision;
@@ -339,8 +341,8 @@ describe.only("QFarm tests", async () => {
       newFarmParams.fees.withdrawal_fee
     );
     strictEqual(
-      +qFarm.storage.storage.farms[0].fees.buyback_reward,
-      newFarmParams.fees.buyback_reward
+      +qFarm.storage.storage.farms[0].fees.burn_reward,
+      newFarmParams.fees.burn_reward
     );
     strictEqual(
       qFarm.storage.storage.farms[0].stake_params.staked_token.fA12,
@@ -395,7 +397,7 @@ describe.only("QFarm tests", async () => {
         fees: {
           harvest_fee: 15 * feePrecision,
           withdrawal_fee: 10 * feePrecision,
-          buyback_reward: 10 * feePrecision,
+          burn_reward: 10 * feePrecision,
         },
       },
     ];
@@ -415,7 +417,7 @@ describe.only("QFarm tests", async () => {
         fees: {
           harvest_fee: 15 * feePrecision,
           withdrawal_fee: 10 * feePrecision,
-          buyback_reward: 23 * feePrecision,
+          burn_reward: 23 * feePrecision,
         },
       },
       {
@@ -423,7 +425,7 @@ describe.only("QFarm tests", async () => {
         fees: {
           harvest_fee: 15 * feePrecision,
           withdrawal_fee: 10 * feePrecision,
-          buyback_reward: 23 * feePrecision,
+          burn_reward: 23 * feePrecision,
         },
       },
     ];
@@ -443,7 +445,7 @@ describe.only("QFarm tests", async () => {
         fees: {
           harvest_fee: 1 * feePrecision,
           withdrawal_fee: 5 * feePrecision,
-          buyback_reward: 3 * feePrecision,
+          burn_reward: 3 * feePrecision,
         },
       },
     ];
@@ -460,8 +462,8 @@ describe.only("QFarm tests", async () => {
       fees[0].fees.withdrawal_fee
     );
     strictEqual(
-      +qFarm.storage.storage.farms[0].fees.buyback_reward,
-      fees[0].fees.buyback_reward
+      +qFarm.storage.storage.farms[0].fees.burn_reward,
+      fees[0].fees.burn_reward
     );
   });
 
@@ -472,7 +474,7 @@ describe.only("QFarm tests", async () => {
         fees: {
           harvest_fee: 16 * feePrecision,
           withdrawal_fee: 21 * feePrecision,
-          buyback_reward: 25 * feePrecision,
+          burn_reward: 25 * feePrecision,
         },
       },
       {
@@ -480,7 +482,7 @@ describe.only("QFarm tests", async () => {
         fees: {
           harvest_fee: 5 * feePrecision,
           withdrawal_fee: 25 * feePrecision,
-          buyback_reward: 15 * feePrecision,
+          burn_reward: 15 * feePrecision,
         },
       },
       {
@@ -488,7 +490,7 @@ describe.only("QFarm tests", async () => {
         fees: {
           harvest_fee: 3 * feePrecision,
           withdrawal_fee: 3 * feePrecision,
-          buyback_reward: 1 * feePrecision,
+          burn_reward: 1 * feePrecision,
         },
       },
     ];
@@ -508,8 +510,8 @@ describe.only("QFarm tests", async () => {
         fees[i].fees.withdrawal_fee
       );
       strictEqual(
-        +qFarm.storage.storage.farms[i].fees.buyback_reward,
-        fees[i].fees.buyback_reward
+        +qFarm.storage.storage.farms[i].fees.burn_reward,
+        fees[i].fees.burn_reward
       );
     }
   });
@@ -808,7 +810,7 @@ describe.only("QFarm tests", async () => {
 
     newFarmParams.fees.harvest_fee = 4.2 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 5 * feePrecision;
-    newFarmParams.fees.buyback_reward = 6 * feePrecision;
+    newFarmParams.fees.burn_reward = 6 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
     newFarmParams.stake_params.is_lp_staked_token = true;
     newFarmParams.stake_params.token = { fA12: fa12.contract.address };
@@ -870,7 +872,7 @@ describe.only("QFarm tests", async () => {
 
     newFarmParams.fees.harvest_fee = 6 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 6 * feePrecision;
-    newFarmParams.fees.buyback_reward = 6 * feePrecision;
+    newFarmParams.fees.burn_reward = 6 * feePrecision;
     newFarmParams.stake_params.staked_token = {
       fA2: { token: fa2.contract.address, id: 0 },
     };
@@ -946,7 +948,7 @@ describe.only("QFarm tests", async () => {
 
     newFarmParams.fees.harvest_fee = 12 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 23 * feePrecision;
-    newFarmParams.fees.buyback_reward = 18 * feePrecision;
+    newFarmParams.fees.burn_reward = 18 * feePrecision;
     newFarmParams.stake_params.staked_token = {
       fA2: { token: fa2LP.contract.address, id: 0 },
     };
@@ -2814,178 +2816,6 @@ describe.only("QFarm tests", async () => {
     );
   });
 
-  it("should burn user's rewards if timelock is not finished (in farms with timelock)", async () => {
-    const depositParams: DepositParams = {
-      fid: 0,
-      amt: 1000,
-      referrer: undefined,
-      rewards_receiver: alice.pkh,
-      candidate: zeroAddress,
-    };
-    const withdrawParams: WithdrawParams = {
-      fid: 0,
-      amt: 500,
-      receiver: alice.pkh,
-      rewards_receiver: alice.pkh,
-    };
-
-    await fa12.approve(qFarm.contract.address, depositParams.amt);
-    await qFarm.deposit(depositParams);
-    await utils.bakeBlocks(3);
-    await qFarm.updateStorage({
-      users_info: [[withdrawParams.fid, alice.pkh]],
-      farms: [withdrawParams.fid],
-    });
-    await qsGov.updateStorage({
-      account_info: [alice.pkh, zeroAddress],
-    });
-
-    const initialFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
-    const initialFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
-    const initialQsGovAliceRecord: UserFA2Info =
-      qsGov.storage.account_info[alice.pkh];
-    const initialQsGovZeroRecord: UserFA2Info =
-      qsGov.storage.account_info[zeroAddress];
-
-    await qFarm.withdraw(withdrawParams);
-    await qFarm.updateStorage({
-      users_info: [[withdrawParams.fid, alice.pkh]],
-      farms: [withdrawParams.fid],
-    });
-    await qsGov.updateStorage({
-      account_info: [alice.pkh, zeroAddress],
-    });
-
-    const finalFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
-    const finalFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
-    const finalQsGovAliceRecord: UserFA2Info =
-      qsGov.storage.account_info[alice.pkh];
-    const finalQsGovZeroRecord: UserFA2Info =
-      qsGov.storage.account_info[zeroAddress];
-    const res: FarmData = QFarmUtils.getFarmData(
-      initialFarm,
-      finalFarm,
-      initialFarmAliceRecord,
-      finalFarmAliceRecord,
-      precision,
-      feePrecision
-    );
-
-    ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
-    ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
-    ok(
-      new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
-        res.expectedUserPrevEarned
-      )
-    );
-    ok(
-      new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
-        res.expectedUserEarnedAfterHarvest
-      )
-    );
-    ok(
-      new BigNumber(+(await finalQsGovAliceRecord.balances.get("0"))).isEqualTo(
-        new BigNumber(+(await initialQsGovAliceRecord.balances.get("0")))
-      )
-    );
-    ok(
-      new BigNumber(+(await finalQsGovZeroRecord.balances.get("0"))).isEqualTo(
-        new BigNumber(+(await initialQsGovZeroRecord.balances.get("0"))).plus(
-          res.actualUserBurned
-        )
-      )
-    );
-  });
-
-  it("should burn user's rewards if timelock is not finished (in farms with timelock)", async () => {
-    const depositParams: DepositParams = {
-      fid: 0,
-      amt: 1000,
-      referrer: undefined,
-      rewards_receiver: alice.pkh,
-      candidate: zeroAddress,
-    };
-    const withdrawParams: WithdrawParams = {
-      fid: 0,
-      amt: 500,
-      receiver: alice.pkh,
-      rewards_receiver: alice.pkh,
-    };
-
-    await fa12.approve(qFarm.contract.address, depositParams.amt);
-    await qFarm.deposit(depositParams);
-    await utils.bakeBlocks(3);
-    await qFarm.updateStorage({
-      users_info: [[withdrawParams.fid, alice.pkh]],
-      farms: [withdrawParams.fid],
-    });
-    await qsGov.updateStorage({
-      account_info: [alice.pkh, zeroAddress],
-    });
-
-    const initialFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
-    const initialFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
-    const initialQsGovAliceRecord: UserFA2Info =
-      qsGov.storage.account_info[alice.pkh];
-    const initialQsGovZeroRecord: UserFA2Info =
-      qsGov.storage.account_info[zeroAddress];
-
-    await qFarm.withdraw(withdrawParams);
-    await qFarm.updateStorage({
-      users_info: [[withdrawParams.fid, alice.pkh]],
-      farms: [withdrawParams.fid],
-    });
-    await qsGov.updateStorage({
-      account_info: [alice.pkh, zeroAddress],
-    });
-
-    const finalFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
-    const finalFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
-    const finalQsGovAliceRecord: UserFA2Info =
-      qsGov.storage.account_info[alice.pkh];
-    const finalQsGovZeroRecord: UserFA2Info =
-      qsGov.storage.account_info[zeroAddress];
-    const res: FarmData = QFarmUtils.getFarmData(
-      initialFarm,
-      finalFarm,
-      initialFarmAliceRecord,
-      finalFarmAliceRecord,
-      precision,
-      feePrecision
-    );
-
-    ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
-    ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
-    ok(
-      new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
-        res.expectedUserPrevEarned
-      )
-    );
-    ok(
-      new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
-        res.expectedUserEarnedAfterHarvest
-      )
-    );
-    ok(
-      new BigNumber(+(await finalQsGovAliceRecord.balances.get("0"))).isEqualTo(
-        new BigNumber(+(await initialQsGovAliceRecord.balances.get("0")))
-      )
-    );
-    ok(
-      new BigNumber(+(await finalQsGovZeroRecord.balances.get("0"))).isEqualTo(
-        new BigNumber(+(await initialQsGovZeroRecord.balances.get("0"))).plus(
-          res.actualUserBurned
-        )
-      )
-    );
-  });
-
   it("should stake withdrawal fee from farm's name", async () => {
     const withdrawParams: WithdrawParams = {
       fid: 0,
@@ -3076,6 +2906,294 @@ describe.only("QFarm tests", async () => {
     strictEqual(
       +finalFarmAliceRecord.staked,
       +initialFarmAliceRecord.staked - withdrawParams.amt
+    );
+  });
+
+  it("should change current delegated for the next candidate if votes were redistributed", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 4,
+      amt: 3000,
+      receiver: dev.pkh,
+      rewards_receiver: dev.pkh,
+    };
+
+    await qFarm.updateStorage({
+      users_info: [[withdrawParams.fid, dev.pkh]],
+      votes: [
+        [withdrawParams.fid, alice.pkh],
+        [withdrawParams.fid, bob.pkh],
+      ],
+      farms: [withdrawParams.fid],
+    });
+
+    const initialFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmDevRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${withdrawParams.fid},${dev.pkh}`];
+    const initialFarmAliceVotes: number =
+      qFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
+    const initialFarmBobVotes: number =
+      qFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
+
+    await utils.setProvider(dev.sk);
+    await qFarm.withdraw(withdrawParams);
+    await qFarm.updateStorage({
+      users_info: [[withdrawParams.fid, dev.pkh]],
+      candidates: [[withdrawParams.fid, dev.pkh]],
+      votes: [
+        [withdrawParams.fid, alice.pkh],
+        [withdrawParams.fid, bob.pkh],
+      ],
+      farms: [withdrawParams.fid],
+    });
+
+    const finalFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmDevRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${withdrawParams.fid},${dev.pkh}`];
+    const finalFarmDevCandidate: string =
+      qFarm.storage.storage.candidates[`${withdrawParams.fid},${dev.pkh}`];
+    const finalFarmAliceVotes: number =
+      qFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
+    const finalFarmBobVotes: number =
+      qFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
+
+    strictEqual(finalFarm.current_delegated, initialFarm.current_candidate);
+    strictEqual(finalFarm.current_candidate, initialFarm.current_delegated);
+    strictEqual(+finalFarmDevRecord.used_votes, 0);
+    strictEqual(finalFarmDevCandidate, finalFarm.current_candidate);
+    strictEqual(
+      +finalFarmAliceVotes,
+      +initialFarmAliceVotes - initialFarmDevRecord.used_votes
+    );
+    strictEqual(+finalFarmBobVotes, +initialFarmBobVotes);
+  });
+
+  it("should fail if not admint is trying to burn XTZ rewards", async () => {
+    await rejects(qFarm.burnXTZRewards(0), (err: Error) => {
+      ok(err.message === "Not-admin");
+
+      return true;
+    });
+  });
+
+  it("should fail if farm not found", async () => {
+    await utils.setProvider(bob.sk);
+    await rejects(qFarm.burnXTZRewards(666), (err: Error) => {
+      ok(err.message === "QFarm/farm-not-set");
+
+      return true;
+    });
+  });
+
+  it("should fail if not LP token is staked on the farm", async () => {
+    await rejects(qFarm.burnXTZRewards(0), (err: Error) => {
+      ok(err.message === "QFarm/not-LP-farm");
+
+      return true;
+    });
+  });
+
+  it("should withdraw bakers rewards in XTZ from the QS pool, swap for QS GOV tokens and burn them", async () => {
+    await fa12LP.updateStorage({
+      ledger: [alice.pkh],
+    });
+    await qsGov.updateStorage({
+      account_info: [zeroAddress],
+    });
+
+    const depositParams: DepositParams = {
+      fid: 4,
+      amt: +fa12LP.storage.storage.ledger[alice.pkh].balance,
+      referrer: bob.pkh,
+      rewards_receiver: alice.pkh,
+      candidate: alice.pkh,
+    };
+    const initialQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+
+    await utils.setProvider(alice.sk);
+    await fa12LP.approve(
+      qFarm.contract.address,
+      +fa12LP.storage.storage.ledger[alice.pkh].balance
+    );
+    await qFarm.deposit(depositParams);
+    await utils.setProvider(bob.sk);
+
+    const operation = await utils.tezos.contract.transfer({
+      to: qFarm.storage.storage.farms[depositParams.fid].stake_params.qs_pool,
+      amount: 500,
+      mutez: true,
+    });
+
+    await confirmOperation(utils.tezos, operation.hash);
+    await utils.bakeBlocks(2);
+    await qFarm.burnXTZRewards(4);
+    await qsGov.updateStorage({
+      account_info: [zeroAddress],
+    });
+
+    const finalQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+
+    ok(
+      +(await finalQsGovZeroRecord.balances.get("0")) >
+        +(await initialQsGovZeroRecord.balances.get("0"))
+    );
+  });
+
+  it("should fail if farm not found", async () => {
+    await rejects(qFarm.burnFarmRewards(666), (err: Error) => {
+      ok(err.message === "QFarm/farm-not-set");
+
+      return true;
+    });
+  });
+
+  it("should burn farm rewards", async () => {
+    const fid: number = 0;
+
+    await qFarm.updateStorage({
+      users_info: [[fid, qFarm.contract.address]],
+      farms: [fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, zeroAddress],
+    });
+
+    const initialFarm: Farm = qFarm.storage.storage.farms[fid];
+    const initialFarmFarmRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${fid},${qFarm.contract.address}`];
+    const initialQsGovAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const initialQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+
+    await utils.setProvider(alice.sk);
+    await qFarm.burnFarmRewards(fid);
+    await qFarm.updateStorage({
+      users_info: [[fid, qFarm.contract.address]],
+      farms: [fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, zeroAddress],
+    });
+
+    const finalFarm: Farm = qFarm.storage.storage.farms[fid];
+    const finalFarmFarmRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${fid},${qFarm.contract.address}`];
+    const finalQsGovAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const finalQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+    const res: FarmData = QFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmFarmRecord,
+      finalFarmFarmRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(finalFarmFarmRecord.last_staked === initialFarmFarmRecord.last_staked);
+    ok(finalFarm.upd > initialFarm.upd);
+    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarmFarmRecord.prev_earned).isEqualTo(
+        res.expectedUserPrevEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmFarmRecord.earned).isEqualTo(
+        res.expectedUserEarnedAfterHarvest
+      )
+    );
+    ok(
+      new BigNumber(+(await finalQsGovAliceRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialQsGovAliceRecord.balances.get("0"))).plus(
+          res.expectedUserBurnReward
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalQsGovZeroRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialQsGovZeroRecord.balances.get("0"))).plus(
+          res.burnAmount
+        )
+      )
+    );
+  });
+
+  it("should pay burn reward to the transaction sender", async () => {
+    const fid: number = 0;
+
+    await utils.bakeBlocks(3);
+    await qFarm.updateStorage({
+      users_info: [[fid, qFarm.contract.address]],
+      farms: [fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [bob.pkh, zeroAddress],
+    });
+
+    const initialFarm: Farm = qFarm.storage.storage.farms[fid];
+    const initialFarmFarmRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${fid},${qFarm.contract.address}`];
+    const initialQsGovBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+    const initialQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+
+    await utils.setProvider(bob.sk);
+    await qFarm.burnFarmRewards(fid);
+    await qFarm.updateStorage({
+      users_info: [[fid, qFarm.contract.address]],
+      farms: [fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [bob.pkh, zeroAddress],
+    });
+
+    const finalFarm: Farm = qFarm.storage.storage.farms[fid];
+    const finalFarmFarmRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${fid},${qFarm.contract.address}`];
+    const finalQsGovBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+    const finalQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+    const res: FarmData = QFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmFarmRecord,
+      finalFarmFarmRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(finalFarmFarmRecord.last_staked === initialFarmFarmRecord.last_staked);
+    ok(finalFarm.upd > initialFarm.upd);
+    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarmFarmRecord.prev_earned).isEqualTo(
+        res.expectedUserPrevEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmFarmRecord.earned).isEqualTo(
+        res.expectedUserEarnedAfterHarvest
+      )
+    );
+    ok(
+      new BigNumber(+(await finalQsGovBobRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialQsGovBobRecord.balances.get("0"))).plus(
+          res.expectedUserBurnReward
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalQsGovZeroRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialQsGovZeroRecord.balances.get("0"))).plus(
+          res.burnAmount
+        )
+      )
     );
   });
 });

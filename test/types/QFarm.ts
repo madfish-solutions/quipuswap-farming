@@ -10,7 +10,7 @@ export type RPS = {
 export type QFees = {
   harvest_fee: number;
   withdrawal_fee: number;
-  buyback_reward: number;
+  burn_reward: number;
 };
 
 export type SetFeeParams = {

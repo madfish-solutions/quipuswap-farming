@@ -266,6 +266,26 @@ export class QFarm {
 
     return operation;
   }
+
+  async burnXTZRewards(fid: number): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .burn_xtz_rewards(fid)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async burnFarmRewards(fid: number): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .burn_farm_rewards(fid)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
 }
 
 export class QFarmUtils {
@@ -273,7 +293,7 @@ export class QFarmUtils {
     const fees: QFees = {
       harvest_fee: 0,
       withdrawal_fee: 0,
-      buyback_reward: 0,
+      burn_reward: 0,
     };
     const stakeParams: StakeParams = {
       staked_token: {
@@ -349,12 +369,26 @@ export class QFarmUtils {
       .div(precision)
       .integerValue(BigNumber.ROUND_DOWN)
       .minus(actualUserEarned);
+    const burnAmount: BigNumber = expectedUserEarned
+      .div(precision)
+      .integerValue(BigNumber.ROUND_DOWN)
+      .multipliedBy(100 * feePrecision - finalFarm.fees.burn_reward)
+      .div(100)
+      .integerValue(BigNumber.ROUND_DOWN)
+      .div(feePrecision)
+      .integerValue(BigNumber.ROUND_DOWN);
+    const expectedUserBurnReward: BigNumber = expectedUserEarned
+      .div(precision)
+      .integerValue(BigNumber.ROUND_DOWN)
+      .minus(burnAmount);
 
     return {
       expectedShareReward: expectedShareReward,
       expectedUserPrevEarned: expectedUserPrevEarned,
       expectedUserEarned: expectedUserEarned,
       expectedUserEarnedAfterHarvest: expectedUserEarnedAfterHarvest,
+      expectedUserBurnReward: expectedUserBurnReward,
+      burnAmount: burnAmount,
       actualUserEarned: actualUserEarned,
       actualUserBurned: actualUserBurned,
       referralCommission: referralCommission,

@@ -38,6 +38,8 @@ export type FarmData = {
   expectedUserPrevEarned: BigNumber;
   expectedUserEarned: BigNumber;
   expectedUserEarnedAfterHarvest: BigNumber;
+  expectedUserBurnReward: BigNumber;
+  burnAmount: BigNumber;
   actualUserEarned: BigNumber;
   actualUserBurned: BigNumber;
   referralCommission: BigNumber;

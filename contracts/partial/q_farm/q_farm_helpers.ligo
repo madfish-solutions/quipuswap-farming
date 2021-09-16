@@ -170,10 +170,10 @@ function burn_rewards(
       then {
         (* Calculate real amount to burn (without reward for the caller) *)
         const burn_amount : nat = earned *
-          abs(100n * fee_precision - farm.fees.buyback_reward) /
+          abs(100n * fee_precision - farm.fees.burn_reward) /
           100n / fee_precision;
 
-        (* Calculate buyback reward for the transaction sender *)
+        (* Calculate burn reward for the transaction sender *)
         const reward : nat = abs(earned - burn_amount);
 
         (* Prepare destination params for minting *)
@@ -181,14 +181,23 @@ function burn_rewards(
           receiver = zero_address;
           amount   = burn_amount;
         ];
-        const dst2 : mint_gov_tok_type = record [
-          receiver = Tezos.sender;
-          amount   = reward;
-        ];
 
         (* Update list with data about minting *)
         mint_data := dst1 # mint_data;
-        mint_data := dst2 # mint_data;
+
+        (* Ensure reward is greater than 0 *)
+        if reward > 0n
+        then {
+          (* Prepare destination params for minting *)
+          const dst2 : mint_gov_tok_type = record [
+            receiver = Tezos.sender;
+            amount   = reward;
+          ];
+
+          (* Update list with data about minting *)
+          mint_data := dst2 # mint_data;
+        }
+        else skip;
       }
       else {
         (* Prepare destination param for minting *)

@@ -5,8 +5,8 @@ type fees_type          is [@layout:comb] record [
   harvest_fee             : nat;
   (* % of withdrawal amount *)
   withdrawal_fee          : nat;
-  (* % from buyback amount *)
-  buyback_reward          : nat;
+  (* % from burn amount (farm rewards) *)
+  burn_reward          : nat;
 ]
 
 type user_info_type     is [@layout:comb] record [

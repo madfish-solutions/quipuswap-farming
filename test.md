@@ -95,7 +95,7 @@
     - ✅ should withdraw LP FA2 token;
     - ✅ should withdraw tokens to the specified receiver;
     - ✅ should withdraw all with 0 amount parameter passed;
-    - should change current delegated for the next candidate if votes were redistributed.
+    - ✅ should change current delegated for the next candidate if votes were redistributed.
 
 12. `harvest`:
 
@@ -109,7 +109,16 @@
 
 13. `burn_xtz_rewards`:
 
+    - ✅ should fail if not admint is trying to burn XTZ rewards;
+    - ✅ should fail if farm not found;
+    - ✅ should fail if not LP token is staked on the farm;
+    - ✅ should withdraw bakers rewards in XTZ from the QS pool, swap for QS GOV tokens and burn them.
+
 14. `burn_farm_rewards`:
+
+    - ✅ should fail if farm not found;
+    - ✅ should burn farm rewards;
+    - ✅ should pay burn reward to the transaction sender.
 
 15. `fa12_tok_bal_callback`:
 

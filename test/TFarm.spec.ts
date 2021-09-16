@@ -9,7 +9,7 @@ import { QSFA2Factory } from "./helpers/QSFA2Factory";
 
 import { UpdateOperatorParam } from "./types/FA2";
 import { NewFarmParams, SetFeeParams } from "./types/TFarm";
-import { PauseFarmParam } from "./types/Common";
+import { DepositParams, PauseFarmParam } from "./types/Common";
 
 import { ok, rejects, strictEqual } from "assert";
 
@@ -23,7 +23,7 @@ import { bakerRegistryStorage } from "../storage/BakerRegistry";
 import { qsFA12FactoryStorage } from "../storage/test/QSFA12Factory";
 import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
 
-describe("TFarm tests", async () => {
+describe.only("TFarm tests", async () => {
   var fa12: FA12;
   var qsGov: FA2;
   var utils: Utils;
@@ -211,11 +211,30 @@ describe("TFarm tests", async () => {
     });
   });
 
+  it("should fail if timelock is more than farm's lifetime", async () => {
+    const newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
+      utils
+    );
+    const lifetime: number = 10; // 10 seconds
+
+    newFarmParams.timelock = 20;
+    newFarmParams.end_time = String(
+      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
+        lifetime
+    );
+
+    await rejects(tFarm.addNewFarm(newFarmParams), (err: Error) => {
+      ok(err.message === "TFarm/wrong-timelock");
+
+      return true;
+    });
+  });
+
   it("should add new farm by admin and set all farm's fields correctly", async () => {
     let newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
       utils
     );
-    const lifetime: number = 10; // 10 seconds
+    const lifetime: number = 60; // 1 minute
 
     newFarmParams.fees.harvest_fee = 10 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 15 * feePrecision;
@@ -328,7 +347,7 @@ describe("TFarm tests", async () => {
     );
     strictEqual(
       +fa12.storage.ledger[tFarm.contract.address].balance,
-      rewardsAmount + 1000 // 1000 from previous test
+      rewardsAmount + 6000 // 6000 from previous test
     );
   });
 
@@ -573,13 +592,12 @@ describe("TFarm tests", async () => {
 
   it("should pause/unpause group of farms", async () => {
     const pauseFarmParams: PauseFarmParam[] = [
-      { fid: 0, pause: true },
       { fid: 1, pause: false },
       { fid: 2, pause: true },
     ];
 
     await tFarm.pauseFarms(pauseFarmParams);
-    await tFarm.updateStorage({ farms: [0, 1, 2] });
+    await tFarm.updateStorage({ farms: [1, 2] });
 
     for (let pauseFarmParam of pauseFarmParams) {
       strictEqual(
@@ -587,5 +605,37 @@ describe("TFarm tests", async () => {
         pauseFarmParam.pause
       );
     }
+  });
+
+  it("should fail if farm not found", async () => {
+    const depositParams: DepositParams = {
+      fid: 666,
+      amt: 0,
+      referrer: zeroAddress,
+      rewards_receiver: zeroAddress,
+      candidate: zeroAddress,
+    };
+
+    await rejects(tFarm.deposit(depositParams), (err: Error) => {
+      ok(err.message === "TFarm/farm-not-set");
+
+      return true;
+    });
+  });
+
+  it("should fail if farm is paused", async () => {
+    const depositParams: DepositParams = {
+      fid: 2,
+      amt: 0,
+      referrer: zeroAddress,
+      rewards_receiver: zeroAddress,
+      candidate: zeroAddress,
+    };
+
+    await rejects(tFarm.deposit(depositParams), (err: Error) => {
+      ok(err.message === "TFarm/farm-is-paused");
+
+      return true;
+    });
   });
 });

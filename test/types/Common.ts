@@ -21,15 +21,23 @@ export type StakeParams = {
   qs_pool: FA12Token;
 };
 
-export type HarvestParams = {
+export type DepositParams = {
   fid: number;
+  amt: number;
+  referrer: string | undefined | null;
   rewards_receiver: string;
+  candidate: string;
 };
 
 export type WithdrawParams = {
   fid: number;
   amt: number;
   receiver: string;
+  rewards_receiver: string;
+};
+
+export type HarvestParams = {
+  fid: number;
   rewards_receiver: string;
 };
 

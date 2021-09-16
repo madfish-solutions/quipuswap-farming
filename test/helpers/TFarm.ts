@@ -21,8 +21,15 @@ import { getLigo } from "../../scripts/helpers";
 
 import tFarmFunctions from "../../storage/json/TFarmFunctions.json";
 
-import { StakeParams, PauseFarmParam } from "../types/Common";
 import {
+  PauseFarmParam,
+  WithdrawParams,
+  DepositParams,
+  HarvestParams,
+  StakeParams,
+} from "../types/Common";
+import {
+  WithdrawFarmDepoParams,
   NewFarmParams,
   SetFeeParams,
   TFarmStorage,
@@ -196,6 +203,70 @@ export class TFarm {
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .pause_farms(pauseFarmParams)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async deposit(depositParams: DepositParams): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .deposit(...Utils.destructObj(depositParams))
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async withdraw(
+    withdrawParams: WithdrawParams
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .withdraw(...Utils.destructObj(withdrawParams))
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async harvest(harvestParams: HarvestParams): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .harvest(...Utils.destructObj(harvestParams))
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async burnXTZRewards(fid: number): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .burn_xtz_rewards(fid)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async claimFarmRewards(fid: number): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .claim_farm_rewards(fid)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async withdrawFarmDepo(
+    params: WithdrawFarmDepoParams
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .withdraw_farm_depo(params)
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

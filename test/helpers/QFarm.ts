@@ -26,6 +26,7 @@ import qFarmFunctions from "../../storage/json/QFarmFunctions.json";
 import {
   PauseFarmParam,
   WithdrawParams,
+  DepositParams,
   HarvestParams,
   WithdrawData,
   StakeParams,
@@ -33,7 +34,6 @@ import {
 } from "../types/Common";
 import {
   NewFarmParams,
-  DepositParams,
   QFarmStorage,
   SetFeeParams,
   UserInfoType,

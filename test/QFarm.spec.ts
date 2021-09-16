@@ -13,12 +13,12 @@ import { QSFA2Dex } from "./helpers/QSFA2Dex";
 import {
   PauseFarmParam,
   WithdrawParams,
+  DepositParams,
   HarvestParams,
   WithdrawData,
   FarmData,
 } from "./types/Common";
 import {
-  DepositParams,
   NewFarmParams,
   SetFeeParams,
   UserInfoType,
@@ -45,7 +45,7 @@ import { bakerRegistryStorage } from "../storage/BakerRegistry";
 import { qsFA12FactoryStorage } from "../storage/test/QSFA12Factory";
 import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
 
-describe.only("QFarm tests", async () => {
+describe("QFarm tests", async () => {
   var fa12: FA12;
   var fa12LP: QSFA12Dex;
   var fa2: FA2;
@@ -2967,7 +2967,7 @@ describe.only("QFarm tests", async () => {
     strictEqual(+finalFarmBobVotes, +initialFarmBobVotes);
   });
 
-  it("should fail if not admint is trying to burn XTZ rewards", async () => {
+  it("should fail if not admin is trying to burn XTZ rewards", async () => {
     await rejects(qFarm.burnXTZRewards(0), (err: Error) => {
       ok(err.message === "Not-admin");
 

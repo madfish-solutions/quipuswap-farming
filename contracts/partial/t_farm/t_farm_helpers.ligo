@@ -162,7 +162,7 @@ function claim_rewards(
 function transfer_rewards_to_admin(
   var user              : user_info_type;
   var operations        : list(operation);
-  const farm            : farm_type;
+  const reward_token    : token_type;
   const admin           : address)
                         : (list(operation) * user_info_type) is
   block {
@@ -177,7 +177,7 @@ function transfer_rewards_to_admin(
       user.earned := abs(user.earned - earned * precision);
 
       (* Check reward token standard *)
-      case farm.reward_token of
+      case reward_token of
         FA12(token_address) -> {
         (* Prepare FA1.2 transfer operation for earned tokens *)
         operations := Tezos.transaction(

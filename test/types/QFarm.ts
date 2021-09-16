@@ -27,14 +27,6 @@ export type NewFarmParams = {
   start_time: string;
 };
 
-export type DepositParams = {
-  fid: number;
-  amt: number;
-  referrer: string | undefined | null;
-  rewards_receiver: string;
-  candidate: string;
-};
-
 export type UserInfoType = {
   last_staked: string;
   staked: number;

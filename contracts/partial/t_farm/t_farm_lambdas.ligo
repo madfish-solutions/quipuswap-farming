@@ -129,6 +129,11 @@ function add_new_farm(
         then failwith("TFarm/wrong-end-time")
         else skip;
 
+        (* Ensure timelock is correct *)
+        if params.timelock > abs(params.end_time - params.start_time)
+        then failwith("TFarm/wrong-timelock")
+        else skip;
+
         (* Add new farm info to the storage *)
         s.farms[s.farms_count] := record [
           fees              = params.fees;
@@ -437,7 +442,12 @@ function withdraw(
         }
         else { (* Burn reward and stake withdrawal fee from farm's name *)
           (* Burn reward tokens *)
-          res := transfer_rewards_to_admin(user, operations, farm, s.admin);
+          res := transfer_rewards_to_admin(
+            user,
+            operations,
+            farm.reward_token,
+            s.admin
+          );
 
           (* Calculate actual value including withdrawal fee *)
           actual_value := value *
@@ -682,7 +692,12 @@ function claim_farm_rewards(
 
         (* Claim reward tokens (farm's rewards) and transfer them to admin *)
         var res : (list(operation) * user_info_type) :=
-          transfer_rewards_to_admin(user, operations, farm, s.admin);
+          transfer_rewards_to_admin(
+            user,
+            operations,
+            farm.reward_token,
+            s.admin
+          );
 
         (* Update user's info *)
         user := res.1;
@@ -762,4 +777,4 @@ function withdraw_farm_depo(
       }
     | _                                 -> skip
     end
-  } with(operations, s)
+  } with (operations, s)

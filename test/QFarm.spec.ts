@@ -16,12 +16,12 @@ import {
   DepositParams,
   HarvestParams,
   WithdrawData,
-  FarmData,
+  UserInfoType,
 } from "./types/Common";
 import {
   NewFarmParams,
   SetFeeParams,
-  UserInfoType,
+  FarmData,
   Farm,
   RPS,
 } from "./types/QFarm";

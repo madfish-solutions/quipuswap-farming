@@ -157,7 +157,7 @@ function add_new_farm(
 
         (* Calculate reward tokens amount to be transferred to contract *)
         const rew_amt : nat = abs(params.end_time - params.start_time) *
-          params.reward_per_second;
+          (params.reward_per_second / precision);
 
         (* Check reward token standard *)
         case params.reward_token of
@@ -285,8 +285,9 @@ function deposit(
         }
         else skip;
 
-        (* Update user's info *)
+        (* Update user's info and list of operations *)
         user := res.1;
+        operations := res.0;
 
         (* Update user's referrer *)
         case params.referrer of
@@ -370,9 +371,6 @@ function deposit(
           end;
         }
         else skip;
-
-        (* Concat claim rewards operations with list of operations *)
-        operations := concat_op_lists(res.0, operations);
       }
     | _                                 -> skip
     end

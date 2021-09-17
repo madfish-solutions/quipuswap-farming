@@ -11,6 +11,8 @@ import {
 
 import { execSync } from "child_process";
 
+import { BigNumber } from "bignumber.js";
+
 import fs from "fs";
 
 import env from "../../env";
@@ -26,6 +28,8 @@ import {
   WithdrawParams,
   DepositParams,
   HarvestParams,
+  UserInfoType,
+  WithdrawData,
   StakeParams,
 } from "../types/Common";
 import {
@@ -33,7 +37,9 @@ import {
   NewFarmParams,
   SetFeeParams,
   TFarmStorage,
+  FarmData,
   TFees,
+  Farm,
 } from "../types/TFarm";
 
 import { Utils, zeroAddress } from "./Utils";
@@ -308,5 +314,85 @@ export class TFarmUtils {
     };
 
     return newFarmParams;
+  }
+
+  static getFarmData(
+    initialFarm: Farm,
+    finalFarm: Farm,
+    initialFarmUserRecord: UserInfoType,
+    finalFarmUserRecord: UserInfoType,
+    precision: number,
+    feePrecision: number
+  ): FarmData {
+    const timeLeft: number =
+      (Date.parse(finalFarm.upd) - Date.parse(initialFarm.upd)) / 1000;
+    const newReward: BigNumber = new BigNumber(
+      timeLeft * finalFarm.reward_per_second
+    );
+    const expectedShareReward: BigNumber = new BigNumber(initialFarm.rps).plus(
+      newReward.div(initialFarm.staked).integerValue(BigNumber.ROUND_DOWN)
+    );
+    const expectedUserPrevEarned: BigNumber = expectedShareReward.multipliedBy(
+      finalFarmUserRecord.staked
+    );
+    const expectedUserEarned: BigNumber = new BigNumber(
+      initialFarmUserRecord.earned
+    ).plus(
+      expectedShareReward
+        .multipliedBy(initialFarmUserRecord.staked)
+        .minus(initialFarmUserRecord.prev_earned)
+    );
+    const expectedUserEarnedAfterHarvest: BigNumber = expectedUserEarned.minus(
+      expectedUserEarned
+        .div(precision)
+        .integerValue(BigNumber.ROUND_DOWN)
+        .multipliedBy(precision)
+    );
+    const actualUserEarned: BigNumber = expectedUserEarned
+      .div(precision)
+      .integerValue(BigNumber.ROUND_DOWN)
+      .multipliedBy(100 * feePrecision - finalFarm.fees.harvest_fee)
+      .div(100)
+      .integerValue(BigNumber.ROUND_DOWN)
+      .div(feePrecision)
+      .integerValue(BigNumber.ROUND_DOWN);
+    const actualUserBurned: BigNumber = expectedUserEarned
+      .div(precision)
+      .integerValue(BigNumber.ROUND_DOWN);
+    const referralCommission: BigNumber = expectedUserEarned
+      .div(precision)
+      .integerValue(BigNumber.ROUND_DOWN)
+      .minus(actualUserEarned);
+
+    return {
+      expectedShareReward: expectedShareReward,
+      expectedUserPrevEarned: expectedUserPrevEarned,
+      expectedUserEarned: expectedUserEarned,
+      expectedUserEarnedAfterHarvest: expectedUserEarnedAfterHarvest,
+      actualUserEarned: actualUserEarned,
+      actualUserBurned: actualUserBurned,
+      referralCommission: referralCommission,
+    };
+  }
+
+  static getWithdrawData(
+    initialFarm: Farm,
+    withdrawValue: number,
+    feePrecision: number
+  ): WithdrawData {
+    const actualUserWithdraw: BigNumber = new BigNumber(withdrawValue)
+      .multipliedBy(100 * feePrecision - initialFarm.fees.withdrawal_fee)
+      .div(100)
+      .integerValue(BigNumber.ROUND_DOWN)
+      .div(feePrecision)
+      .integerValue(BigNumber.ROUND_DOWN);
+    const wirthdrawCommission: BigNumber = new BigNumber(withdrawValue).minus(
+      actualUserWithdraw
+    );
+
+    return {
+      actualUserWithdraw: actualUserWithdraw,
+      wirthdrawCommission: wirthdrawCommission,
+    };
   }
 }

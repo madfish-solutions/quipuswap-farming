@@ -178,25 +178,25 @@
 
    - ✅ should fail if farm not found;
    - ✅ should fail if farm is paused;
-   - should claim user's rewards (in farms without timelock);
-   - should claim user's rewards if timelock is finished (in farms with timelock);
-   - should not claim user's rewards if timelock is not finished (in farms with timelock);
-   - should transfer FA1.2 reward tokens as reward to rewards receiver;
-   - should transfer FA2 reward tokens as reward to rewards receiver;
-   - should transfer FA1.2 reward tokens as harvest fee to referrer (in case when user have referrer);
-   - should transfer FA2 reward tokens as harvest fee to referrer (in case when user have referrer);
-   - should transfer FA1.2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
-   - should transfer FA2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
-   - should calculate and transfer reward tokens as harvest fee with decimals (like 4.2%);
-   - should fail if user is trying to refer himself;
-   - should set/update referrer;
-   - should not set/update referrer if referrer param not passed;
-   - should deposit single FA1.2 token;
-   - should deposit LP FA1.2 token;
-   - should deposit single FA2 token;
-   - should deposit LP FA2 token;
-   - should vote for the baker if LP token is deposited;
-   - should change current delegated for the next candidate if votes were redistributed.
+   - ✅ should claim user's rewards (in farms without timelock);
+   - ✅ should claim user's rewards if timelock is finished (in farms with timelock);
+   - ✅ should not claim user's rewards if timelock is not finished (in farms with timelock);
+   - ✅ should transfer FA1.2 reward tokens as reward to rewards receiver;
+   - ✅ should transfer FA2 reward tokens as reward to rewards receiver;
+   - ✅ should transfer FA1.2 reward tokens as harvest fee to referrer (in case when user have referrer);
+   - ✅ should transfer FA2 reward tokens as harvest fee to referrer (in case when user have referrer);
+   - ✅ should transfer FA1.2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
+   - ✅ should transfer FA2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
+   - ✅ should calculate and transfer reward tokens as harvest fee with decimals (like 4.2%);
+   - ✅ should fail if user is trying to refer himself;
+   - ✅ should set/update referrer;
+   - ✅ should not set/update referrer if referrer param not passed;
+   - ✅ should deposit single FA1.2 token;
+   - ✅ should deposit LP FA1.2 token;
+   - ✅ should deposit single FA2 token;
+   - ✅ should deposit LP FA2 token;
+   - ✅ should vote for the baker if LP token is deposited;
+   - ✅ should change current delegated for the next candidate if votes were redistributed.
 
 9. `withdraw`:
 

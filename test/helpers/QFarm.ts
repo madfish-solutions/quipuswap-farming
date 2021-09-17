@@ -29,14 +29,14 @@ import {
   DepositParams,
   HarvestParams,
   WithdrawData,
+  UserInfoType,
   StakeParams,
-  FarmData,
 } from "../types/Common";
 import {
   NewFarmParams,
   QFarmStorage,
   SetFeeParams,
-  UserInfoType,
+  FarmData,
   QFees,
   Farm,
   RPS,

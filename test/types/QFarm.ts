@@ -1,5 +1,7 @@
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 
+import { BigNumber } from "bignumber.js";
+
 import { StakeParams, Token, FA2Token } from "./Common";
 
 export type RPS = {
@@ -27,12 +29,16 @@ export type NewFarmParams = {
   start_time: string;
 };
 
-export type UserInfoType = {
-  last_staked: string;
-  staked: number;
-  earned: number;
-  prev_earned: number;
-  used_votes: number;
+export type FarmData = {
+  expectedShareReward: BigNumber;
+  expectedUserPrevEarned: BigNumber;
+  expectedUserEarned: BigNumber;
+  expectedUserEarnedAfterHarvest: BigNumber;
+  expectedUserBurnReward: BigNumber;
+  burnAmount: BigNumber;
+  actualUserEarned: BigNumber;
+  actualUserBurned: BigNumber;
+  referralCommission: BigNumber;
 };
 
 export type Farm = {

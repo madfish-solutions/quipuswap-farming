@@ -41,16 +41,12 @@ export type HarvestParams = {
   rewards_receiver: string;
 };
 
-export type FarmData = {
-  expectedShareReward: BigNumber;
-  expectedUserPrevEarned: BigNumber;
-  expectedUserEarned: BigNumber;
-  expectedUserEarnedAfterHarvest: BigNumber;
-  expectedUserBurnReward: BigNumber;
-  burnAmount: BigNumber;
-  actualUserEarned: BigNumber;
-  actualUserBurned: BigNumber;
-  referralCommission: BigNumber;
+export type UserInfoType = {
+  last_staked: string;
+  staked: number;
+  earned: number;
+  prev_earned: number;
+  used_votes: number;
 };
 
 export type WithdrawData = {

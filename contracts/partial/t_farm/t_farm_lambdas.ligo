@@ -285,9 +285,9 @@ function deposit(
         }
         else skip;
 
-        (* Update user's info and list of operations *)
-        user := res.1;
+        (* Update list of operations and user's info *)
         operations := res.0;
+        user := res.1;
 
         (* Update user's referrer *)
         case params.referrer of
@@ -479,7 +479,8 @@ function withdraw(
           };
         };
 
-        (* Update user's info *)
+        (* Update list of operations and user's info *)
+        operations := res.0;
         user := res.1;
 
         (* Update user's staked and earned tokens amount *)
@@ -544,9 +545,6 @@ function withdraw(
           s := revote_res.1;
         }
         else skip;
-
-        (* Concat claim or burn rewards operations with list of operations *)
-        operations := concat_op_lists(res.0, operations);
       }
     | _                                 -> skip
     end
@@ -597,11 +595,9 @@ function harvest(
         }
         else failwith("TFarm/timelock-is-not-finished");
 
-        (* Update user's info *)
+        (* Update list of operations and user's info *)
+        operations := res.0;
         user := res.1;
-
-        (* Concat claim rewards operations with list of operations *)
-        operations := concat_op_lists(res.0, operations);
 
         (* Update user's earned tokens amount *)
         user.prev_earned := user.staked * farm.rps;

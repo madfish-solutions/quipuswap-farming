@@ -223,16 +223,16 @@
 
 10. `harvest`:
 
-    - should fail if farm not found;
-    - should fail if timelock is not finished (in farms with timelock);
-    - should claim user's rewards;
-    - should transfer FA1.2 reward tokens as reward to rewards receiver;
-    - should transfer FA2 reward tokens as reward to rewards receiver;
-    - should transfer FA1.2 reward tokens as harvest fee to referrer (in case when user have referrer);
-    - should transfer FA2 reward tokens as harvest fee to referrer (in case when user have referrer);
-    - should transfer FA1.2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
-    - should transfer FA2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
-    - should calculate and transfer reward tokens as harvest fee with decimals (like 4.2%).
+    - ✅ should fail if farm not found;
+    - ✅ should fail if timelock is not finished (in farms with timelock);
+    - ✅ should claim user's rewards;
+    - ✅ should transfer FA1.2 reward tokens as reward to rewards receiver;
+    - ✅ should transfer FA2 reward tokens as reward to rewards receiver;
+    - ✅ should transfer FA1.2 reward tokens as harvest fee to referrer (in case when user have referrer);
+    - ✅ should transfer FA2 reward tokens as harvest fee to referrer (in case when user have referrer);
+    - ✅ should transfer FA1.2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
+    - ✅ should transfer FA2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
+    - ✅ should calculate and transfer reward tokens as harvest fee with decimals (like 4.2%).
 
 11. `burn_xtz_rewards`:
 

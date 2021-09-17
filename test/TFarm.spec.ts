@@ -9,7 +9,12 @@ import { QSFA2Factory } from "./helpers/QSFA2Factory";
 
 import { UpdateOperatorParam, UserFA2Info, UserFA2LPInfo } from "./types/FA2";
 import { Farm, NewFarmParams, SetFeeParams, FarmData } from "./types/TFarm";
-import { PauseFarmParam, DepositParams, UserInfoType } from "./types/Common";
+import {
+  PauseFarmParam,
+  DepositParams,
+  HarvestParams,
+  UserInfoType,
+} from "./types/Common";
 import { UserFA12Info } from "./types/FA12";
 import { QSFA12Dex } from "./helpers/QSFA12Dex";
 import { QSFA2Dex } from "./helpers/QSFA2Dex";
@@ -279,6 +284,7 @@ describe("TFarm tests", async () => {
     newFarmParams.stake_params.staked_token = {
       fA2: { token: qsGov.contract.address, id: 0 },
     };
+    newFarmParams.stake_params.qs_pool = qsGovLP.contract.address;
     newFarmParams.reward_token = { fA12: fa12.contract.address };
     newFarmParams.timelock = 10;
     newFarmParams.end_time = String(
@@ -420,7 +426,6 @@ describe("TFarm tests", async () => {
     newFarmParams.fees.harvest_fee = 4.2 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 5 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12.contract.address };
-    newFarmParams.stake_params.is_lp_staked_token = false;
     newFarmParams.stake_params.token = { fA12: fa12.contract.address };
     newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.timelock = 0;
@@ -909,7 +914,6 @@ describe("TFarm tests", async () => {
     newFarmParams.stake_params.staked_token = {
       fA2: { token: fa2.contract.address, id: 0 },
     };
-    newFarmParams.stake_params.is_lp_staked_token = false;
     newFarmParams.stake_params.token = {
       fA2: { token: fa2.contract.address, id: 0 },
     };
@@ -1956,6 +1960,655 @@ describe("TFarm tests", async () => {
     strictEqual(
       +finalFarmBobVotes,
       +initialFarmBobVotes - initialFarmDevRecord.used_votes
+    );
+  });
+
+  it("should fail if farm not found", async () => {
+    const harvestParams: HarvestParams = {
+      fid: 666,
+      rewards_receiver: dev.pkh,
+    };
+
+    await rejects(tFarm.harvest(harvestParams), (err: Error) => {
+      ok(err.message === "TFarm/farm-not-set");
+
+      return true;
+    });
+  });
+
+  it("should claim user's rewards", async () => {
+    const harvestParams: HarvestParams = {
+      fid: 0,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, alice.pkh]],
+      farms: [harvestParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, bob.pkh, tFarm.contract.address],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
+    const initialRewTokAliceRecord: UserFA12Info =
+      fa12.storage.ledger[alice.pkh];
+    const initialRewTokBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
+    const initialRewTokFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+
+    await utils.setProvider(alice.sk);
+    await tFarm.harvest(harvestParams);
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, alice.pkh]],
+      farms: [harvestParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, bob.pkh, tFarm.contract.address],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
+    const finalRewTokAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
+    const finalRewTokBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
+    const finalRewTokFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
+    ok(finalFarm.upd > initialFarm.upd);
+    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
+        res.expectedUserPrevEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
+        res.expectedUserEarnedAfterHarvest
+      )
+    );
+    ok(
+      new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokAliceRecord.balance).plus(
+          res.actualUserEarned
+        )
+      )
+    );
+    ok(
+      new BigNumber(+finalRewTokBobRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokBobRecord.balance).plus(
+          res.referralCommission
+        )
+      )
+    );
+    ok(
+      new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokFarmRecord.balance)
+          .minus(res.referralCommission)
+          .minus(res.actualUserEarned)
+      )
+    );
+  });
+
+  it("should fail if timelock is not finished (in farms with timelock)", async () => {
+    const depositParams: DepositParams = {
+      fid: 0,
+      amt: 100,
+      referrer: undefined,
+      rewards_receiver: alice.pkh,
+      candidate: zeroAddress,
+    };
+    const harvestParams: HarvestParams = {
+      fid: 0,
+      rewards_receiver: alice.pkh,
+    };
+
+    await fa12.approve(tFarm.contract.address, depositParams.amt);
+    await tFarm.deposit(depositParams);
+    await rejects(tFarm.harvest(harvestParams), (err: Error) => {
+      ok(err.message === "TFarm/timelock-is-not-finished");
+
+      return true;
+    });
+  });
+
+  it("should transfer FA1.2 reward tokens as reward to rewards receiver", async () => {
+    const harvestParams: HarvestParams = {
+      fid: 3,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, alice.pkh]],
+      farms: [harvestParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, bob.pkh, tFarm.contract.address],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
+    const initialRewTokAliceRecord: UserFA12Info =
+      fa12.storage.ledger[alice.pkh];
+    const initialRewTokBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
+    const initialRewTokFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+
+    await tFarm.harvest(harvestParams);
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, alice.pkh]],
+      farms: [harvestParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, bob.pkh, tFarm.contract.address],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
+    const finalRewTokAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
+    const finalRewTokBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
+    const finalRewTokFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(
+      new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokAliceRecord.balance).plus(
+          res.actualUserEarned
+        )
+      )
+    );
+    ok(
+      new BigNumber(+finalRewTokBobRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokBobRecord.balance).plus(
+          res.referralCommission
+        )
+      )
+    );
+    ok(
+      new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokFarmRecord.balance)
+          .minus(res.actualUserEarned)
+          .minus(res.referralCommission)
+      )
+    );
+  });
+
+  it("should transfer FA2 reward tokens as reward to rewards receiver", async () => {
+    const harvestParams: HarvestParams = {
+      fid: 5,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, alice.pkh]],
+      farms: [harvestParams.fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, bob.pkh, tFarm.contract.address],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
+    const initialRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const initialRewTokBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+    const initialRewTokFarmRecord: UserFA2Info =
+      qsGov.storage.account_info[tFarm.contract.address];
+
+    await tFarm.harvest(harvestParams);
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, alice.pkh]],
+      farms: [harvestParams.fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, bob.pkh, tFarm.contract.address],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
+    const finalRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const finalRewTokBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+    const finalRewTokFarmRecord: UserFA2Info =
+      qsGov.storage.account_info[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(
+      new BigNumber(
+        +(await finalRewTokAliceRecord.balances.get("0"))
+      ).isEqualTo(
+        new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
+          res.actualUserEarned
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalRewTokBobRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokBobRecord.balances.get("0"))).plus(
+          res.referralCommission
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
+          .minus(res.actualUserEarned)
+          .minus(res.referralCommission)
+      )
+    );
+  });
+
+  it("should transfer FA1.2 reward tokens as harvest fee to referrer (in case when user have referrer)", async () => {
+    const harvestParams: HarvestParams = {
+      fid: 3,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, alice.pkh]],
+      farms: [harvestParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, bob.pkh, tFarm.contract.address],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
+    const initialRewTokAliceRecord: UserFA12Info =
+      fa12.storage.ledger[alice.pkh];
+    const initialRewTokBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
+    const initialRewTokFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+
+    await tFarm.harvest(harvestParams);
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, alice.pkh]],
+      farms: [harvestParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, bob.pkh, tFarm.contract.address],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
+    const finalRewTokAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
+    const finalRewTokBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
+    const finalRewTokFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(
+      new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokAliceRecord.balance).plus(
+          res.actualUserEarned
+        )
+      )
+    );
+    ok(
+      new BigNumber(+finalRewTokBobRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokBobRecord.balance).plus(
+          res.referralCommission
+        )
+      )
+    );
+    ok(
+      new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokFarmRecord.balance)
+          .minus(res.actualUserEarned)
+          .minus(res.referralCommission)
+      )
+    );
+  });
+
+  it("should transfer FA2 reward tokens as harvest fee to referrer (in case when user have referrer)", async () => {
+    const harvestParams: HarvestParams = {
+      fid: 5,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, alice.pkh]],
+      farms: [harvestParams.fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, bob.pkh, tFarm.contract.address],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
+    const initialRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const initialRewTokBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+    const initialRewTokFarmRecord: UserFA2Info =
+      qsGov.storage.account_info[tFarm.contract.address];
+
+    await tFarm.harvest(harvestParams);
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, alice.pkh]],
+      farms: [harvestParams.fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, bob.pkh, tFarm.contract.address],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
+    const finalRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const finalRewTokBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+    const finalRewTokFarmRecord: UserFA2Info =
+      qsGov.storage.account_info[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(
+      new BigNumber(
+        +(await finalRewTokAliceRecord.balances.get("0"))
+      ).isEqualTo(
+        new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
+          res.actualUserEarned
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalRewTokBobRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokBobRecord.balances.get("0"))).plus(
+          res.referralCommission
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
+          .minus(res.actualUserEarned)
+          .minus(res.referralCommission)
+      )
+    );
+  });
+
+  it("should transfer FA1.2 reward tokens as harvest fee to zero address (in case when user does not have referrer)", async () => {
+    const depositParams: DepositParams = {
+      fid: 3,
+      amt: 100,
+      referrer: zeroAddress,
+      rewards_receiver: alice.pkh,
+      candidate: bob.pkh,
+    };
+    const harvestParams: HarvestParams = {
+      fid: 3,
+      rewards_receiver: alice.pkh,
+    };
+
+    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
+    await tFarm.deposit(depositParams);
+    await utils.bakeBlocks(2);
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, alice.pkh]],
+      farms: [harvestParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, zeroAddress, tFarm.contract.address],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
+    const initialRewTokAliceRecord: UserFA12Info =
+      fa12.storage.ledger[alice.pkh];
+    const initialRewTokZeroRecord: UserFA12Info =
+      fa12.storage.ledger[zeroAddress];
+    const initialRewTokFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+
+    await tFarm.harvest(harvestParams);
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, alice.pkh]],
+      farms: [harvestParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, zeroAddress, tFarm.contract.address],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
+    const finalRewTokAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
+    const finalRewTokZeroRecord: UserFA12Info =
+      fa12.storage.ledger[zeroAddress];
+    const finalRewTokFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(
+      new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokAliceRecord.balance).plus(
+          res.actualUserEarned
+        )
+      )
+    );
+    ok(
+      new BigNumber(+finalRewTokZeroRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokZeroRecord.balance).plus(
+          res.referralCommission
+        )
+      )
+    );
+    ok(
+      new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokFarmRecord.balance)
+          .minus(res.actualUserEarned)
+          .minus(res.referralCommission)
+      )
+    );
+  });
+
+  it("should transfer FA2 reward tokens as harvest fee to zero address (in case when user does not have referrer)", async () => {
+    const harvestParams: HarvestParams = {
+      fid: 5,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, alice.pkh]],
+      farms: [harvestParams.fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, zeroAddress, tFarm.contract.address],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
+    const initialRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const initialRewTokZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+    const initialRewTokFarmRecord: UserFA2Info =
+      qsGov.storage.account_info[tFarm.contract.address];
+
+    await tFarm.harvest(harvestParams);
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, alice.pkh]],
+      farms: [harvestParams.fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, zeroAddress, tFarm.contract.address],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
+    const finalRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const finalRewTokZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+    const finalRewTokFarmRecord: UserFA2Info =
+      qsGov.storage.account_info[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(
+      new BigNumber(
+        +(await finalRewTokAliceRecord.balances.get("0"))
+      ).isEqualTo(
+        new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
+          res.actualUserEarned
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalRewTokZeroRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokZeroRecord.balances.get("0"))).plus(
+          res.referralCommission
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
+          .minus(res.actualUserEarned)
+          .minus(res.referralCommission)
+      )
+    );
+  });
+
+  it("should calculate and transfer reward tokens as harvest fee with decimals (like 4.2%)", async () => {
+    const harvestParams: HarvestParams = {
+      fid: 2,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, alice.pkh]],
+      farms: [harvestParams.fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, zeroAddress, tFarm.contract.address],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
+    const initialRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const initialRewTokZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+    const initialRewTokFarmRecord: UserFA2Info =
+      qsGov.storage.account_info[tFarm.contract.address];
+
+    await tFarm.harvest(harvestParams);
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, alice.pkh]],
+      farms: [harvestParams.fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, zeroAddress, tFarm.contract.address],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
+    const finalRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const finalRewTokZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+    const finalRewTokFarmRecord: UserFA2Info =
+      qsGov.storage.account_info[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(
+      new BigNumber(
+        +(await finalRewTokAliceRecord.balances.get("0"))
+      ).isEqualTo(
+        new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
+          res.actualUserEarned
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalRewTokZeroRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokZeroRecord.balances.get("0"))).plus(
+          res.referralCommission
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
+          .minus(res.actualUserEarned)
+          .minus(res.referralCommission)
+      )
     );
   });
 });

@@ -876,7 +876,6 @@ describe("QFarm tests", async () => {
     newFarmParams.stake_params.staked_token = {
       fA2: { token: fa2.contract.address, id: 0 },
     };
-    newFarmParams.stake_params.is_lp_staked_token = false;
     newFarmParams.stake_params.qs_pool = fa2LP.contract.address;
     newFarmParams.qsgov_per_second = 10 * precision;
     newFarmParams.timelock = 0;

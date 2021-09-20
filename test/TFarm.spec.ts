@@ -11,9 +11,11 @@ import { UpdateOperatorParam, UserFA2Info, UserFA2LPInfo } from "./types/FA2";
 import { Farm, NewFarmParams, SetFeeParams, FarmData } from "./types/TFarm";
 import {
   PauseFarmParam,
+  WithdrawParams,
   DepositParams,
   HarvestParams,
   UserInfoType,
+  WithdrawData,
 } from "./types/Common";
 import { UserFA12Info } from "./types/FA12";
 import { QSFA12Dex } from "./helpers/QSFA12Dex";
@@ -2392,7 +2394,7 @@ describe("TFarm tests", async () => {
 
     await fa12LP.approve(tFarm.contract.address, depositParams.amt);
     await tFarm.deposit(depositParams);
-    await utils.bakeBlocks(2);
+    await utils.bakeBlocks(1);
     await tFarm.updateStorage({
       users_info: [[harvestParams.fid, alice.pkh]],
       farms: [harvestParams.fid],
@@ -2610,5 +2612,1406 @@ describe("TFarm tests", async () => {
           .minus(res.referralCommission)
       )
     );
+  });
+
+  it("should fail if farm not found", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 666,
+      amt: 100,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await rejects(tFarm.withdraw(withdrawParams), (err: Error) => {
+      ok(err.message === "TFarm/farm-not-set");
+
+      return true;
+    });
+  });
+
+  it("should fail if staked by user amount is less than amount to withdraw", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 0,
+      amt: 100_000_000,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await rejects(tFarm.withdraw(withdrawParams), (err: Error) => {
+      ok(err.message === "TFarm/balance-too-low");
+
+      return true;
+    });
+  });
+
+  it("should withdraw single FA1.2 token", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 2,
+      amt: 100,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [tFarm.contract.address, alice.pkh],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialTokenAliceRecord: UserFA12Info =
+      fa12.storage.ledger[alice.pkh];
+    const initialTokenFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [tFarm.contract.address, alice.pkh],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalTokenAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
+    const finalTokenFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+
+    strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
+    strictEqual(
+      +finalFarmAliceRecord.staked,
+      +initialFarmAliceRecord.staked - withdrawParams.amt
+    );
+    strictEqual(
+      +finalTokenAliceRecord.balance,
+      +initialTokenAliceRecord.balance + withdrawParams.amt
+    );
+    strictEqual(
+      +finalTokenFarmRecord.balance,
+      +initialTokenFarmRecord.balance - withdrawParams.amt
+    );
+
+    ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
+  });
+
+  it("should withdraw LP FA1.2 token", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 3,
+      amt: 100,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12LP.updateStorage({
+      ledger: [tFarm.contract.address, alice.pkh],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialTokenAliceRecord: UserFA12Info =
+      fa12LP.storage.storage.ledger[alice.pkh];
+    const initialTokenFarmRecord: UserFA12Info =
+      fa12LP.storage.storage.ledger[tFarm.contract.address];
+
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12LP.updateStorage({
+      ledger: [tFarm.contract.address, alice.pkh],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalTokenAliceRecord: UserFA12Info =
+      fa12LP.storage.storage.ledger[alice.pkh];
+    const finalTokenFarmRecord: UserFA12Info =
+      fa12LP.storage.storage.ledger[tFarm.contract.address];
+
+    strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
+    strictEqual(
+      +finalFarmAliceRecord.staked,
+      +initialFarmAliceRecord.staked - withdrawParams.amt
+    );
+    strictEqual(
+      +finalTokenAliceRecord.balance,
+      +initialTokenAliceRecord.balance + withdrawParams.amt
+    );
+    strictEqual(+finalTokenFarmRecord.balance, 0);
+    strictEqual(
+      +finalTokenFarmRecord.frozen_balance,
+      +initialTokenFarmRecord.frozen_balance - withdrawParams.amt
+    );
+  });
+
+  it("should withdraw single FA2 token", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 4,
+      amt: 5,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa2.updateStorage({
+      account_info: [tFarm.contract.address, alice.pkh],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialTokenAliceRecord: UserFA2Info =
+      fa2.storage.account_info[alice.pkh];
+    const initialTokenFarmRecord: UserFA2Info =
+      fa2.storage.account_info[tFarm.contract.address];
+
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa2.updateStorage({
+      account_info: [tFarm.contract.address, alice.pkh],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalTokenAliceRecord: UserFA2Info =
+      fa2.storage.account_info[alice.pkh];
+    const finalTokenFarmRecord: UserFA2Info =
+      fa2.storage.account_info[tFarm.contract.address];
+
+    strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
+    strictEqual(
+      +finalFarmAliceRecord.staked,
+      +initialFarmAliceRecord.staked - withdrawParams.amt
+    );
+    strictEqual(
+      +(await finalTokenAliceRecord.balances.get("0")),
+      +(await initialTokenAliceRecord.balances.get("0")) + withdrawParams.amt
+    );
+    strictEqual(
+      +(await finalTokenFarmRecord.balances.get("0")),
+      +(await initialTokenFarmRecord.balances.get("0")) - withdrawParams.amt
+    );
+  });
+
+  it("should withdraw LP FA2 token", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 5,
+      amt: 50,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa2LP.updateStorage({
+      ledger: [tFarm.contract.address, alice.pkh],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialTokenAliceRecord: UserFA2LPInfo =
+      fa2LP.storage.storage.ledger[alice.pkh];
+    const initialTokenFarmRecord: UserFA2LPInfo =
+      fa2LP.storage.storage.ledger[tFarm.contract.address];
+
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa2LP.updateStorage({
+      ledger: [tFarm.contract.address, alice.pkh],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalTokenAliceRecord: UserFA2LPInfo =
+      fa2LP.storage.storage.ledger[alice.pkh];
+    const finalTokenFarmRecord: UserFA2LPInfo =
+      fa2LP.storage.storage.ledger[tFarm.contract.address];
+
+    strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
+    strictEqual(
+      +finalFarmAliceRecord.staked,
+      +initialFarmAliceRecord.staked - withdrawParams.amt
+    );
+    strictEqual(
+      +finalTokenAliceRecord.balance,
+      +initialTokenAliceRecord.balance + withdrawParams.amt
+    );
+    strictEqual(+finalTokenFarmRecord.balance, 0);
+    strictEqual(
+      +finalTokenFarmRecord.frozen_balance,
+      +initialTokenFarmRecord.frozen_balance - withdrawParams.amt
+    );
+  });
+
+  it("should withdraw tokens to the specified receiver", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 5,
+      amt: 20,
+      receiver: dev.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa2LP.updateStorage({
+      ledger: [tFarm.contract.address],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialTokenFarmRecord: UserFA2LPInfo =
+      fa2LP.storage.storage.ledger[tFarm.contract.address];
+
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa2LP.updateStorage({
+      ledger: [tFarm.contract.address, dev.pkh],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalTokenDevRecord: UserFA2LPInfo =
+      fa2LP.storage.storage.ledger[dev.pkh];
+    const finalTokenFarmRecord: UserFA2LPInfo =
+      fa2LP.storage.storage.ledger[tFarm.contract.address];
+
+    strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
+    strictEqual(
+      +finalFarmAliceRecord.staked,
+      +initialFarmAliceRecord.staked - withdrawParams.amt
+    );
+    strictEqual(+finalTokenDevRecord.balance, withdrawParams.amt);
+    strictEqual(+finalTokenFarmRecord.balance, 0);
+    strictEqual(
+      +finalTokenFarmRecord.frozen_balance,
+      +initialTokenFarmRecord.frozen_balance - withdrawParams.amt
+    );
+  });
+
+  it("should withdraw all with 0 amount parameter passed", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 5,
+      amt: 0,
+      receiver: dev.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      farms: [withdrawParams.fid],
+    });
+    await fa2LP.updateStorage({
+      ledger: [dev.pkh],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const initialTokenDevRecord: UserFA2LPInfo =
+      fa2LP.storage.storage.ledger[dev.pkh];
+
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa2LP.updateStorage({
+      ledger: [tFarm.contract.address, dev.pkh],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalTokenDevRecord: UserFA2LPInfo =
+      fa2LP.storage.storage.ledger[dev.pkh];
+    const finalTokenFarmRecord: UserFA2LPInfo =
+      fa2LP.storage.storage.ledger[tFarm.contract.address];
+
+    strictEqual(+finalFarm.staked, 0);
+    strictEqual(+finalFarmAliceRecord.staked, 0);
+    strictEqual(
+      +finalTokenDevRecord.balance,
+      +initialTokenDevRecord.balance + +initialFarm.staked
+    );
+    strictEqual(+finalTokenFarmRecord.balance, 0);
+    strictEqual(+finalTokenFarmRecord.frozen_balance, 0);
+  });
+
+  it("should claim user's rewards (in farms without timelock)", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 2,
+      amt: 100,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, zeroAddress, tFarm.contract.address],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const initialRewTokZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+    const initialRewTokFarmRecord: UserFA2Info =
+      qsGov.storage.account_info[tFarm.contract.address];
+
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, zeroAddress, tFarm.contract.address],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const finalRewTokZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+    const finalRewTokFarmRecord: UserFA2Info =
+      qsGov.storage.account_info[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
+    ok(finalFarm.upd > initialFarm.upd);
+    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
+        res.expectedUserPrevEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
+        res.expectedUserEarnedAfterHarvest
+      )
+    );
+    ok(
+      new BigNumber(
+        +(await finalRewTokAliceRecord.balances.get("0"))
+      ).isEqualTo(
+        new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
+          res.actualUserEarned
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalRewTokZeroRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokZeroRecord.balances.get("0"))).plus(
+          res.referralCommission
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
+          .minus(res.actualUserEarned)
+          .minus(res.referralCommission)
+      )
+    );
+  });
+
+  it("should claim user's rewards if timelock is finished (in farms with timelock)", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 0,
+      amt: 100,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, zeroAddress],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialQsGovAliceRecord: UserFA12Info =
+      fa12.storage.ledger[alice.pkh];
+    const initialQsGovZeroRecord: UserFA12Info =
+      fa12.storage.ledger[zeroAddress];
+
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, zeroAddress],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalQsGovAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
+    const finalQsGovZeroRecord: UserFA12Info = fa12.storage.ledger[zeroAddress];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
+    ok(finalFarm.upd > initialFarm.upd);
+    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
+        res.expectedUserPrevEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
+        res.expectedUserEarnedAfterHarvest
+      )
+    );
+    ok(
+      new BigNumber(+finalQsGovAliceRecord.balance).isEqualTo(
+        new BigNumber(+initialQsGovAliceRecord.balance).plus(
+          res.actualUserEarned
+        )
+      )
+    );
+    ok(
+      new BigNumber(+finalQsGovZeroRecord.balance).isEqualTo(
+        new BigNumber(+initialQsGovZeroRecord.balance).plus(
+          res.referralCommission
+        )
+      )
+    );
+  });
+
+  it("should transfer FA1.2 user's rewards to admin if timelock is not finished (in farms with timelock)", async () => {
+    const depositParams: DepositParams = {
+      fid: 0,
+      amt: 1000,
+      referrer: bob.pkh,
+      rewards_receiver: alice.pkh,
+      candidate: zeroAddress,
+    };
+    const withdrawParams: WithdrawParams = {
+      fid: 0,
+      amt: 100,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.deposit(depositParams);
+    await utils.bakeBlocks(1);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, bob.pkh],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialQsGovAliceRecord: UserFA12Info =
+      fa12.storage.ledger[alice.pkh];
+    const initialQsGovBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
+
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, bob.pkh],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalQsGovAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
+    const finalQsGovBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
+    ok(finalFarm.upd > initialFarm.upd);
+    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
+        res.expectedUserPrevEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
+        res.expectedUserEarnedAfterHarvest
+      )
+    );
+    ok(
+      new BigNumber(+finalQsGovAliceRecord.balance).isEqualTo(
+        new BigNumber(+initialQsGovAliceRecord.balance)
+      )
+    );
+    ok(
+      new BigNumber(+finalQsGovBobRecord.balance).isEqualTo(
+        new BigNumber(+initialQsGovBobRecord.balance).plus(res.actualUserBurned)
+      )
+    );
+  });
+
+  it("should transfer FA2 user's rewards to admin if timelock is not finished (in farms with timelock)", async () => {
+    let newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
+      utils
+    );
+    const lifetime: number = 300; // 5 minutes
+
+    newFarmParams.fees.harvest_fee = 14 * feePrecision;
+    newFarmParams.fees.withdrawal_fee = 60 * feePrecision;
+    newFarmParams.stake_params.staked_token = { fA12: fa12.contract.address };
+    newFarmParams.stake_params.token = { fA12: fa12.contract.address };
+    newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
+    newFarmParams.timelock = 5;
+    newFarmParams.reward_token = {
+      fA2: { token: qsGov.contract.address, id: 0 },
+    };
+    newFarmParams.end_time = String(
+      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
+        lifetime
+    );
+    newFarmParams.reward_per_second = 3 * precision;
+
+    await utils.setProvider(bob.sk);
+    await tFarm.addNewFarm(newFarmParams);
+    await utils.setProvider(alice.sk);
+
+    const depositParams: DepositParams = {
+      fid: 6,
+      amt: 1000,
+      referrer: bob.pkh,
+      rewards_receiver: alice.pkh,
+      candidate: zeroAddress,
+    };
+    const withdrawParams: WithdrawParams = {
+      fid: 6,
+      amt: 100,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await fa12.approve(tFarm.contract.address, depositParams.amt);
+    await tFarm.deposit(depositParams);
+    await utils.bakeBlocks(1);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, bob.pkh],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialQsGovAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const initialQsGovBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, bob.pkh],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalQsGovAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const finalQsGovBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
+    ok(finalFarm.upd > initialFarm.upd);
+    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
+        res.expectedUserPrevEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
+        res.expectedUserEarnedAfterHarvest
+      )
+    );
+    ok(
+      new BigNumber(+(await finalQsGovAliceRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialQsGovAliceRecord.balances.get("0")))
+      )
+    );
+    ok(
+      new BigNumber(+(await finalQsGovBobRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialQsGovBobRecord.balances.get("0"))).plus(
+          res.actualUserBurned
+        )
+      )
+    );
+  });
+
+  it("should stake withdrawal fee from farm's name", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 6,
+      amt: 200,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [
+        [withdrawParams.fid, alice.pkh],
+        [withdrawParams.fid, tFarm.contract.address],
+      ],
+      farms: [withdrawParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, tFarm.contract.address],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialFarmFarmRecord: UserInfoType =
+      tFarm.storage.storage.users_info[
+        `${withdrawParams.fid},${tFarm.contract.address}`
+      ];
+    const initialTokenAliceRecord: UserFA12Info =
+      fa12.storage.ledger[alice.pkh];
+    const initialTokenFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [
+        [withdrawParams.fid, alice.pkh],
+        [withdrawParams.fid, tFarm.contract.address],
+      ],
+      farms: [withdrawParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, tFarm.contract.address],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalFarmFarmRecord: UserInfoType =
+      tFarm.storage.storage.users_info[
+        `${withdrawParams.fid},${tFarm.contract.address}`
+      ];
+    const finalTokenAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
+    const finalTokenFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+    const res: WithdrawData = TFarmUtils.getWithdrawData(
+      initialFarm,
+      withdrawParams.amt,
+      feePrecision
+    );
+
+    ok(
+      new BigNumber(+finalFarm.staked).isEqualTo(
+        new BigNumber(+initialFarm.staked).minus(res.actualUserWithdraw)
+      )
+    );
+    ok(
+      new BigNumber(finalTokenAliceRecord.balance).isEqualTo(
+        new BigNumber(+initialTokenAliceRecord.balance).plus(
+          res.actualUserWithdraw
+        )
+      )
+    );
+    ok(
+      new BigNumber(+finalTokenFarmRecord.balance).isEqualTo(
+        new BigNumber(+initialTokenFarmRecord.balance).minus(
+          res.actualUserWithdraw
+        )
+      )
+    );
+    ok(finalFarmFarmRecord.last_staked > initialFarmFarmRecord.last_staked);
+    ok(
+      new BigNumber(+finalFarmFarmRecord.staked).isEqualTo(
+        new BigNumber(+initialFarmFarmRecord.staked).plus(
+          res.wirthdrawCommission
+        )
+      )
+    );
+
+    strictEqual(
+      +finalFarmAliceRecord.staked,
+      +initialFarmAliceRecord.staked - withdrawParams.amt
+    );
+  });
+
+  it("should transfer FA1.2 reward tokens as reward to rewards receiver", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 3,
+      amt: 100,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, bob.pkh, tFarm.contract.address],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialRewTokAliceRecord: UserFA12Info =
+      fa12.storage.ledger[alice.pkh];
+    const initialRewTokBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
+    const initialRewTokFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, bob.pkh, tFarm.contract.address],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalRewTokAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
+    const finalRewTokBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
+    const finalRewTokFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(
+      new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokAliceRecord.balance).plus(
+          res.actualUserEarned
+        )
+      )
+    );
+    ok(
+      new BigNumber(+finalRewTokBobRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokBobRecord.balance).plus(
+          res.referralCommission
+        )
+      )
+    );
+    ok(
+      new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokFarmRecord.balance)
+          .minus(res.actualUserEarned)
+          .minus(res.referralCommission)
+      )
+    );
+  });
+
+  it("should transfer FA2 reward tokens as reward to rewards receiver", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 4,
+      amt: 5,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, bob.pkh, tFarm.contract.address],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialRewTokAliceRecord: UserFA12Info =
+      fa12.storage.ledger[alice.pkh];
+    const initialRewTokBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
+    const initialRewTokFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, bob.pkh, tFarm.contract.address],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalRewTokAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
+    const finalRewTokBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
+    const finalRewTokFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(
+      new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokAliceRecord.balance).plus(
+          res.actualUserEarned
+        )
+      )
+    );
+    ok(
+      new BigNumber(+finalRewTokBobRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokBobRecord.balance).plus(
+          res.referralCommission
+        )
+      )
+    );
+    ok(
+      new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokFarmRecord.balance)
+          .minus(res.actualUserEarned)
+          .minus(res.referralCommission)
+      )
+    );
+  });
+
+  it("should transfer FA1.2 reward tokens as harvest fee to referrer (in case when user have referrer)", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 3,
+      amt: 100,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, bob.pkh, tFarm.contract.address],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialRewTokAliceRecord: UserFA12Info =
+      fa12.storage.ledger[alice.pkh];
+    const initialRewTokBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
+    const initialRewTokFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, bob.pkh, tFarm.contract.address],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalRewTokAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
+    const finalRewTokBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
+    const finalRewTokFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(
+      new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokAliceRecord.balance).plus(
+          res.actualUserEarned
+        )
+      )
+    );
+    ok(
+      new BigNumber(+finalRewTokBobRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokBobRecord.balance).plus(
+          res.referralCommission
+        )
+      )
+    );
+    ok(
+      new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokFarmRecord.balance)
+          .minus(res.actualUserEarned)
+          .minus(res.referralCommission)
+      )
+    );
+  });
+
+  it("should transfer FA2 reward tokens as harvest fee to referrer (in case when user have referrer)", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 6,
+      amt: 100,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, bob.pkh, tFarm.contract.address],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const initialRewTokBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+    const initialRewTokFarmRecord: UserFA2Info =
+      qsGov.storage.account_info[tFarm.contract.address];
+
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, bob.pkh, tFarm.contract.address],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const finalRewTokBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+    const finalRewTokFarmRecord: UserFA2Info =
+      qsGov.storage.account_info[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(
+      new BigNumber(
+        +(await finalRewTokAliceRecord.balances.get("0"))
+      ).isEqualTo(
+        new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
+          res.actualUserEarned
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalRewTokBobRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokBobRecord.balances.get("0"))).plus(
+          res.referralCommission
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
+          .minus(res.actualUserEarned)
+          .minus(res.referralCommission)
+      )
+    );
+  });
+
+  it("should transfer FA1.2 reward tokens as harvest fee to zero address (in case when user does not have referrer)", async () => {
+    const depositParams: DepositParams = {
+      fid: 3,
+      amt: 100,
+      referrer: zeroAddress,
+      rewards_receiver: alice.pkh,
+      candidate: bob.pkh,
+    };
+    const withdrawParams: WithdrawParams = {
+      fid: 3,
+      amt: 100,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
+    await tFarm.deposit(depositParams);
+    await utils.bakeBlocks(1);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, zeroAddress, tFarm.contract.address],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialRewTokAliceRecord: UserFA12Info =
+      fa12.storage.ledger[alice.pkh];
+    const initialRewTokZeroRecord: UserFA12Info =
+      fa12.storage.ledger[zeroAddress];
+    const initialRewTokFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, zeroAddress, tFarm.contract.address],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalRewTokAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
+    const finalRewTokZeroRecord: UserFA12Info =
+      fa12.storage.ledger[zeroAddress];
+    const finalRewTokFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(
+      new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokAliceRecord.balance).plus(
+          res.actualUserEarned
+        )
+      )
+    );
+    ok(
+      new BigNumber(+finalRewTokZeroRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokZeroRecord.balance).plus(
+          res.referralCommission
+        )
+      )
+    );
+    ok(
+      new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
+        new BigNumber(+initialRewTokFarmRecord.balance)
+          .minus(res.actualUserEarned)
+          .minus(res.referralCommission)
+      )
+    );
+  });
+
+  it("should transfer FA2 reward tokens as harvest fee to zero address (in case when user does not have referrer)", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 6,
+      amt: 100,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, zeroAddress, tFarm.contract.address],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const initialRewTokZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+    const initialRewTokFarmRecord: UserFA2Info =
+      qsGov.storage.account_info[tFarm.contract.address];
+
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, zeroAddress, tFarm.contract.address],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const finalRewTokZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+    const finalRewTokFarmRecord: UserFA2Info =
+      qsGov.storage.account_info[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(
+      new BigNumber(
+        +(await finalRewTokAliceRecord.balances.get("0"))
+      ).isEqualTo(
+        new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
+          res.actualUserEarned
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalRewTokZeroRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokZeroRecord.balances.get("0"))).plus(
+          res.referralCommission
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
+          .minus(res.actualUserEarned)
+          .minus(res.referralCommission)
+      )
+    );
+  });
+
+  it("should calculate and transfer reward tokens as harvest fee with decimals (like 4.2%)", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 2,
+      amt: 100,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, zeroAddress, tFarm.contract.address],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const initialRewTokZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+    const initialRewTokFarmRecord: UserFA2Info =
+      qsGov.storage.account_info[tFarm.contract.address];
+
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, alice.pkh]],
+      farms: [withdrawParams.fid],
+    });
+    await qsGov.updateStorage({
+      account_info: [alice.pkh, zeroAddress, tFarm.contract.address],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const finalRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const finalRewTokZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+    const finalRewTokFarmRecord: UserFA2Info =
+      qsGov.storage.account_info[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(
+      new BigNumber(
+        +(await finalRewTokAliceRecord.balances.get("0"))
+      ).isEqualTo(
+        new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
+          res.actualUserEarned
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalRewTokZeroRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokZeroRecord.balances.get("0"))).plus(
+          res.referralCommission
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
+          .minus(res.actualUserEarned)
+          .minus(res.referralCommission)
+      )
+    );
+  });
+
+  it("should change current delegated for the next candidate if votes were redistributed", async () => {
+    const withdrawParams: WithdrawParams = {
+      fid: 3,
+      amt: 3000,
+      receiver: alice.pkh,
+      rewards_receiver: alice.pkh,
+    };
+
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, dev.pkh]],
+      votes: [
+        [withdrawParams.fid, alice.pkh],
+        [withdrawParams.fid, bob.pkh],
+      ],
+      farms: [withdrawParams.fid],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarmDevRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${dev.pkh}`];
+    const initialFarmAliceVotes: number =
+      tFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
+    const initialFarmBobVotes: number =
+      tFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
+
+    await utils.setProvider(dev.sk);
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, dev.pkh]],
+      candidates: [[withdrawParams.fid, dev.pkh]],
+      votes: [
+        [withdrawParams.fid, alice.pkh],
+        [withdrawParams.fid, bob.pkh],
+      ],
+      farms: [withdrawParams.fid],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarmDevRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${dev.pkh}`];
+    const finalFarmDevCandidate: string =
+      tFarm.storage.storage.candidates[`${withdrawParams.fid},${dev.pkh}`];
+    const finalFarmAliceVotes: number =
+      tFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
+    const finalFarmBobVotes: number =
+      tFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
+
+    strictEqual(finalFarm.current_delegated, initialFarm.current_candidate);
+    strictEqual(finalFarm.current_candidate, initialFarm.current_delegated);
+    strictEqual(+finalFarmDevRecord.used_votes, 0);
+    strictEqual(finalFarmDevCandidate, finalFarm.current_candidate);
+    strictEqual(
+      +finalFarmAliceVotes,
+      +initialFarmAliceVotes - initialFarmDevRecord.used_votes
+    );
+    strictEqual(+finalFarmBobVotes, +initialFarmBobVotes);
   });
 });

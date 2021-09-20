@@ -488,10 +488,7 @@ function vote(
       }
       else {
         case s.votes[(farm.fid, farm.current_candidate)] of
-          None    -> {
-          (* Prepare Quipuswap LP vote operation *)
-          operations := get_vote_op(farm, farm.current_delegated) # operations;
-        }
+          None    -> skip
         | Some(_) -> {
           if votes2 > votes1
           then {
@@ -500,14 +497,13 @@ function vote(
 
             farm.current_delegated := farm.current_candidate;
             farm.current_candidate := tmp;
-
-            (* Prepare Quipuswap LP vote operation *)
-            operations :=
-              get_vote_op(farm, farm.current_delegated) # operations;
           }
           else skip;
         }
         end;
+
+        (* Prepare Quipuswap LP vote operation *)
+        operations := get_vote_op(farm, farm.current_delegated) # operations;
       };
     }
     end;
@@ -604,10 +600,7 @@ function revote(
       }
       else {
         case s.votes[(farm.fid, farm.current_candidate)] of
-          None    -> {
-          (* Prepare Quipuswap LP vote operation *)
-          operations := get_vote_op(farm, farm.current_delegated) # operations;
-        }
+          None    -> skip
         | Some(_) -> {
           if votes2 > votes1
           then {
@@ -616,14 +609,13 @@ function revote(
 
             farm.current_delegated := farm.current_candidate;
             farm.current_candidate := tmp;
-
-            (* Prepare Quipuswap LP vote operation *)
-            operations :=
-              get_vote_op(farm, farm.current_delegated) # operations;
           }
           else skip;
         }
         end;
+
+        (* Prepare Quipuswap LP vote operation *)
+        operations := get_vote_op(farm, farm.current_delegated) # operations;
       };
     }
     end;

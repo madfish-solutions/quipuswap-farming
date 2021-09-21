@@ -44,30 +44,23 @@ function burn_callback(
     then failwith("Burner/not-QS-GOV-token")
     else skip;
 
-    var operations : list(operation) := no_operations;
-
     const qs_gov_balance : nat = get_fa2_token_balance(
       responses,
       Tezos.self_address,
       s.qsgov.id
     );
+    var operations : list(operation) := no_operations;
 
     if qs_gov_balance > 0n
     then {
-      const dst : transfer_dst_type = record [
-        to_      = zero_address;
-        token_id = s.qsgov.id;
-        amount   = qs_gov_balance;
-      ];
-      const fa2_transfer_param : fa2_send_type = record [
-        from_ = Tezos.self_address;
-        txs   = list [dst];
-      ];
-
-      operations := Tezos.transaction(
-        FA2_transfer_type(list [fa2_transfer_param]),
-        0mutez,
-        get_fa2_token_transfer_entrypoint(s.qsgov.token)
+      operations := transfer(
+        Tezos.self_address,
+        zero_address,
+        qs_gov_balance,
+        FA2(record [
+          token = s.qsgov.token;
+          id = s.qsgov.id;
+        ])
       ) # operations;
     }
     else skip;

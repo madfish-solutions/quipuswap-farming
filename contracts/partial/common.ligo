@@ -150,3 +150,65 @@ function get_fa2_token_balance(
       ]
     );
   } with tmp.balance
+
+function wrap_fa12_transfer_trx(
+  const from_           : address;
+  const to_             : address;
+  const amt             : nat)
+                        : fa12_transfer_type is
+  FA12_transfer_type(from_, (to_, amt))
+
+function wrap_fa2_transfer_trx(
+  const from_           : address;
+  const to_             : address;
+  const amt             : nat;
+  const id              : nat)
+                        : fa2_transfer_type is
+  FA2_transfer_type(list [
+    record [
+      from_ = from_;
+      txs = list [
+        record [
+          to_ = to_;
+          token_id = id;
+          amount = amt;
+        ]
+      ]
+    ]
+  ])
+
+function transfer_fa12(
+  const from_           : address;
+  const to_             : address;
+  const amt             : nat;
+  const token           : address)
+                        : operation is
+  Tezos.transaction(
+    wrap_fa12_transfer_trx(from_, to_, amt),
+    0mutez,
+    get_fa12_token_transfer_entrypoint(token)
+  )
+
+function transfer_fa2(
+  const from_           : address;
+  const to_             : address;
+  const amt             : nat;
+  const token           : address;
+  const id              : nat)
+                        : operation is
+  Tezos.transaction(
+    wrap_fa2_transfer_trx(from_, to_, amt, id),
+    0mutez,
+    get_fa2_token_transfer_entrypoint(token)
+  );
+
+function transfer(
+  const from_           : address;
+  const to_             : address;
+  const amt             : nat;
+  const token           : token_type)
+                        : operation is
+  case token of
+    FA12(token) -> transfer_fa12(from_, to_, amt, token)
+  | FA2(token)  -> transfer_fa2(from_, to_, amt, token.token, token.id)
+  end

@@ -156,30 +156,22 @@ function deposit(
 
           case farm.stake_params.staked_token of
             FA12(token_address) -> {
-            operations := Tezos.transaction(
-              FA12_transfer_type(
-                Tezos.sender,
-                (Tezos.self_address, params.amt)
-              ),
-              0mutez,
-              get_fa12_token_transfer_entrypoint(token_address)
+            operations := transfer(
+              Tezos.sender,
+              Tezos.self_address,
+              params.amt,
+              FA12(token_address)
             ) # operations;
           }
           | FA2(token_info)     -> {
-            const dst : transfer_dst_type = record [
-              to_      = Tezos.self_address;
-              token_id = token_info.id;
-              amount   = params.amt;
-            ];
-            const fa2_transfer_param : fa2_send_type = record [
-              from_ = Tezos.sender;
-              txs   = list [dst];
-            ];
-
-            operations := Tezos.transaction(
-              FA2_transfer_type(list [fa2_transfer_param]),
-              0mutez,
-              get_fa2_token_transfer_entrypoint(token_info.token)
+            operations := transfer(
+              Tezos.sender,
+              Tezos.self_address,
+              params.amt,
+              FA2(record [
+                token = token_info.token;
+                id = token_info.id;
+              ])
             ) # operations;
           }
           end;
@@ -232,8 +224,7 @@ function withdraw(
           res := burn_rewards(user, farm, False, s);
 
           actual_value := value *
-            abs(100n * fee_precision - farm.fees.withdrawal_fee) /
-            100n / fee_precision;
+            abs(fee_precision - farm.fees.withdrawal_fee) / fee_precision;
 
           const withdrawal_fee : nat = abs(value - actual_value);
 
@@ -266,30 +257,22 @@ function withdraw(
 
         case farm.stake_params.staked_token of
           FA12(token_address) -> {
-          operations := Tezos.transaction(
-            FA12_transfer_type(
-              Tezos.self_address,
-              (params.receiver, actual_value)
-            ),
-            0mutez,
-            get_fa12_token_transfer_entrypoint(token_address)
+          operations := transfer(
+            Tezos.self_address,
+            params.receiver,
+            actual_value,
+            FA12(token_address)
           ) # operations;
         }
         | FA2(token_info)     -> {
-          const dst : transfer_dst_type = record [
-            to_      = params.receiver;
-            token_id = token_info.id;
-            amount   = actual_value;
-          ];
-          const fa2_transfer_param : fa2_send_type = record [
-            from_ = Tezos.self_address;
-            txs   = list [dst];
-          ];
-
-          operations := Tezos.transaction(
-            FA2_transfer_type(list [fa2_transfer_param]),
-            0mutez,
-            get_fa2_token_transfer_entrypoint(token_info.token)
+          operations := transfer(
+            Tezos.self_address,
+            params.receiver,
+            actual_value,
+            FA2(record [
+              token = token_info.token;
+              id = token_info.id;
+            ])
           ) # operations;
         }
         end;

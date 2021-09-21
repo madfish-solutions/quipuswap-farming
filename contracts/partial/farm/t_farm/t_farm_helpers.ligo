@@ -14,8 +14,7 @@ function claim_rewards(
       user.earned := abs(user.earned - earned * precision);
 
       const actual_earned : nat = earned *
-        abs(100n * fee_precision - farm.fees.harvest_fee) /
-        100n / fee_precision;
+        abs(fee_precision - farm.fees.harvest_fee) / fee_precision;
       const harvest_fee : nat = abs(earned - actual_earned);
       const fee_receiver : address = case s.referrers[Tezos.sender] of
         None           -> zero_address
@@ -26,21 +25,20 @@ function claim_rewards(
         FA12(token_address) -> {
         if harvest_fee > 0n
         then {
-          operations := Tezos.transaction(
-            FA12_transfer_type(
-              Tezos.self_address,
-              (fee_receiver, harvest_fee)
-            ),
-            0mutez,
-            get_fa12_token_transfer_entrypoint(token_address)
+          operations := transfer(
+            Tezos.self_address,
+            fee_receiver,
+            harvest_fee,
+            FA12(token_address)
           ) # operations;
         }
         else skip;
 
-        operations := Tezos.transaction(
-          FA12_transfer_type(Tezos.self_address, (receiver, actual_earned)),
-          0mutez,
-          get_fa12_token_transfer_entrypoint(token_address)
+        operations := transfer(
+          Tezos.self_address,
+          receiver,
+          actual_earned,
+          FA12(token_address)
         ) # operations;
       }
       | FA2(token_info)     -> {
@@ -97,27 +95,22 @@ function transfer_rewards_to_admin(
 
       case reward_token of
         FA12(token_address) -> {
-        operations := Tezos.transaction(
-          FA12_transfer_type(Tezos.self_address, (admin, earned)),
-          0mutez,
-          get_fa12_token_transfer_entrypoint(token_address)
+        operations := transfer(
+          Tezos.self_address,
+          admin,
+          earned,
+          FA12(token_address)
         ) # operations;
       }
       | FA2(token_info)     -> {
-        const dst : transfer_dst_type = record [
-          to_      = admin;
-          token_id = token_info.id;
-          amount   = earned;
-        ];
-        var fa2_transfer_param : fa2_send_type := record [
-          from_ = Tezos.self_address;
-          txs   = list [dst];
-        ];
-
-        operations := Tezos.transaction(
-          FA2_transfer_type(list [fa2_transfer_param]),
-          0mutez,
-          get_fa2_token_transfer_entrypoint(token_info.token)
+        operations := transfer(
+          Tezos.self_address,
+          admin,
+          earned,
+          FA2(record [
+            token = token_info.token;
+            id = token_info.id;
+          ])
         ) # operations;
       }
       end;

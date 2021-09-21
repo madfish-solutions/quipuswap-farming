@@ -28,8 +28,7 @@ function claim_rewards(
       user.earned := abs(user.earned - earned * precision);
 
       const actual_earned : nat = earned *
-        abs(100n * fee_precision - farm.fees.harvest_fee) /
-        100n / fee_precision;
+        abs(fee_precision - farm.fees.harvest_fee) / fee_precision;
       const harvest_fee : nat = abs(earned - actual_earned);
       var mint_data : mint_gov_toks_type := list [
         record [
@@ -83,8 +82,7 @@ function burn_rewards(
       if pay_burn_reward
       then {
         const burn_amount : nat = earned *
-          abs(100n * fee_precision - farm.fees.burn_reward) /
-          100n / fee_precision;
+          abs(fee_precision - farm.fees.burn_reward) / fee_precision;
         const reward : nat = abs(earned - burn_amount);
         const dst1 : mint_gov_tok_type = record [
           receiver = zero_address;
@@ -205,8 +203,15 @@ function swap(
     ];
 
     case s.temp.token of
-      FA12(_)         -> skip
-    | FA2(token_info) -> {
+      FA12(token_address) -> {
+      (* Approve operation *)
+      operations := Tezos.transaction(
+        FA12_approve_type(s.temp.qs_pool, 0n),
+        0mutez,
+        get_fa12_token_approve_entrypoint(token_address)
+      ) # operations;
+    }
+    | FA2(token_info)     -> {
       (* Remove operator operation *)
       operations := Tezos.transaction(
         FA2_approve_type(list [

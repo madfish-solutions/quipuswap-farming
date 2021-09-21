@@ -39,20 +39,14 @@ function withdraw_tokens(
 
     if amt > 0n
     then {
-      const dst : transfer_dst_type = record [
-        to_      = s.admin;
-        token_id = s.qsgov.id;
-        amount   = amt;
-      ];
-      const fa2_transfer_param : fa2_send_type = record [
-        from_ = Tezos.self_address;
-        txs   = list [dst];
-      ];
-
-      operations := Tezos.transaction(
-        FA2_transfer_type(list [fa2_transfer_param]),
-        0mutez,
-        get_fa2_token_transfer_entrypoint(s.qsgov.token)
+      operations := transfer(
+        Tezos.self_address,
+        s.admin,
+        amt,
+        FA2(record [
+          token = s.qsgov.token;
+          id = s.qsgov.id;
+        ])
       ) # operations;
     }
     else skip;

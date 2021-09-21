@@ -210,7 +210,7 @@ function withdraw(
         then failwith("QFarm/balance-too-low")
         else skip;
 
-        var actual_value : nat := value;
+        var value_without_fee : nat := value;
 
         user.earned := user.earned +
           abs(user.staked * farm.rps - user.prev_earned);
@@ -223,10 +223,10 @@ function withdraw(
         else {
           res := burn_rewards(user, farm, False, s);
 
-          actual_value := value *
+          value_without_fee := value *
             abs(fee_precision - farm.fees.withdrawal_fee) / fee_precision;
 
-          const withdrawal_fee : nat = abs(value - actual_value);
+          const withdrawal_fee : nat = abs(value - value_without_fee);
 
           if withdrawal_fee = 0n
           then skip
@@ -251,7 +251,7 @@ function withdraw(
 
         s.users_info[(farm.fid, Tezos.sender)] := user;
 
-        farm.staked := abs(farm.staked - actual_value);
+        farm.staked := abs(farm.staked - value_without_fee);
 
         s.farms[farm.fid] := farm;
 
@@ -260,7 +260,7 @@ function withdraw(
           operations := transfer(
             Tezos.self_address,
             params.receiver,
-            actual_value,
+            value_without_fee,
             FA12(token_address)
           ) # operations;
         }
@@ -268,7 +268,7 @@ function withdraw(
           operations := transfer(
             Tezos.self_address,
             params.receiver,
-            actual_value,
+            value_without_fee,
             FA2(record [
               token = token_info.token;
               id = token_info.id;

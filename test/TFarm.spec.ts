@@ -522,7 +522,7 @@ describe("TFarm tests", async () => {
 
     await utils.setProvider(bob.sk);
     await rejects(tFarm.setFees(fees), (err: Error) => {
-      ok(err.message === "TFarm/farm-not-set");
+      ok(err.message === "QSystem/farm-not-set");
 
       return true;
     });
@@ -608,7 +608,7 @@ describe("TFarm tests", async () => {
 
     await utils.setProvider(bob.sk);
     await rejects(tFarm.pauseFarms(pauseFarmParams), (err: Error) => {
-      ok(err.message === "TFarm/farm-not-set");
+      ok(err.message === "QSystem/farm-not-set");
 
       return true;
     });
@@ -700,7 +700,7 @@ describe("TFarm tests", async () => {
     };
 
     await rejects(tFarm.deposit(depositParams), (err: Error) => {
-      ok(err.message === "TFarm/farm-not-set");
+      ok(err.message === "QSystem/farm-not-set");
 
       return true;
     });
@@ -1980,7 +1980,7 @@ describe("TFarm tests", async () => {
     };
 
     await rejects(tFarm.harvest(harvestParams), (err: Error) => {
-      ok(err.message === "TFarm/farm-not-set");
+      ok(err.message === "QSystem/farm-not-set");
 
       return true;
     });
@@ -2631,7 +2631,7 @@ describe("TFarm tests", async () => {
     };
 
     await rejects(tFarm.withdraw(withdrawParams), (err: Error) => {
-      ok(err.message === "TFarm/farm-not-set");
+      ok(err.message === "QSystem/farm-not-set");
 
       return true;
     });
@@ -3988,7 +3988,7 @@ describe("TFarm tests", async () => {
   it("should fail if farm not found", async () => {
     await utils.setProvider(bob.sk);
     await rejects(tFarm.burnXTZRewards(666), (err: Error) => {
-      ok(err.message === "TFarm/farm-not-set");
+      ok(err.message === "QSystem/farm-not-set");
 
       return true;
     });
@@ -3996,7 +3996,7 @@ describe("TFarm tests", async () => {
 
   it("should fail if not LP token is staked on the farm", async () => {
     await rejects(tFarm.burnXTZRewards(0), (err: Error) => {
-      ok(err.message === "TFarm/not-LP-farm");
+      ok(err.message === "QSystem/not-LP-farm");
 
       return true;
     });
@@ -4059,7 +4059,7 @@ describe("TFarm tests", async () => {
   it("should fail if farm not found", async () => {
     await utils.setProvider(bob.sk);
     await rejects(tFarm.claimFarmRewards(666), (err: Error) => {
-      ok(err.message === "TFarm/farm-not-set");
+      ok(err.message === "QSystem/farm-not-set");
 
       return true;
     });
@@ -4207,7 +4207,7 @@ describe("TFarm tests", async () => {
 
     await utils.setProvider(bob.sk);
     await rejects(tFarm.withdrawFarmDepo(withdrawParams), (err: Error) => {
-      ok(err.message === "TFarm/farm-not-set");
+      ok(err.message === "QSystem/farm-not-set");
 
       return true;
     });

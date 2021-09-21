@@ -1,215 +1,275 @@
-(* Util to get farm from storage by farm ID *)
-function get_farm(
-  const fid             : fid_type;
-  const s               : storage_type)
-                        : farm_type is
-  (* Get farm info *)
-  case s.farms[fid] of
-    None       -> (failwith("TFarm/farm-not-set") : farm_type)
-  | Some(farm) -> farm
+function get_proxy_minter_mint_entrypoint(
+  const proxy_minter    : address)
+                        : contract(mint_gov_toks_type) is
+  case (
+    Tezos.get_entrypoint_opt("%mint_tokens", proxy_minter)
+                        : option(contract(mint_gov_toks_type))
+  ) of
+    Some(contr) -> contr
+  | None        -> (
+    failwith("QFarm/proxy-minter-mint-tokens-entrypoint-404")
+                        : contract(mint_gov_toks_type)
+  )
   end
 
-(* Util to get user info related to specific farm *)
-function get_user_info(
-  const fid             : fid_type;
-  const user            : address;
-  const s               : storage_type)
-                        : user_info_type is
-    (* Get user info *)
-    case s.users_info[(fid, user)] of
-      Some(info) -> info
-    | None       -> record [
-      last_staked = (0 : timestamp);
-      staked      = 0n;
-      earned      = 0n;
-      prev_earned = 0n;
-      used_votes  = 0n;
-    ]
-    end
-
-(* Util to update rewards of the specified farm *)
-function update_farm_rewards(
-  var _farm             : farm_type;
-  var s                 : storage_type)
-                        : storage_type * farm_type is
-  block {
-    (* Check if farm is already started *)
-    if Tezos.now < _farm.start_time
-    then skip
-    else {
-      (* Check if some tokens is already staked *)
-      if _farm.staked =/= 0n
-      then {
-        (* Calculate timedelta in seconds *)
-        const time_diff : nat = abs(Tezos.now - _farm.upd);
-
-        (* Calculate new reward *)
-        const reward : nat = time_diff * _farm.reward_per_second;
-
-        (* Update farm's reward per share *)
-        _farm.rps := _farm.rps + reward / _farm.staked;
-      }
-      else skip;
-
-      (* Update farm's update timestamp *)
-      _farm.upd := Tezos.now;
-
-      (* Save the farm to the storage *)
-      s.farms[_farm.fid] := _farm;
-    };
-  } with (s, _farm)
-
-(* Util to claim sender's rewards *)
 function claim_rewards(
   var user              : user_info_type;
-  var operations        : list(operation);
   const farm            : farm_type;
   const receiver        : address;
   const s               : storage_type)
-                        : (list(operation) * user_info_type) is
+                        : (option(operation) * user_info_type) is
   block {
-    (* Calculate user's real reward *)
     const earned : nat = user.earned / precision;
+    var op : option(operation) := (None : option(operation));
 
-    (* Ensure sufficient reward *)
     if earned = 0n
     then skip
     else {
-      (* Decrement pending reward *)
       user.earned := abs(user.earned - earned * precision);
 
-      (* Calculate actual reward including harvest fee *)
       const actual_earned : nat = earned *
         abs(100n * fee_precision - farm.fees.harvest_fee) /
         100n / fee_precision;
-
-      (* Calculate harvest fee *)
       const harvest_fee : nat = abs(earned - actual_earned);
-
-      (* Get sender's referrer *)
-      const fee_receiver : address = case s.referrers[Tezos.sender] of
-        None           -> zero_address
-      | Some(referrer) -> referrer
-      end;
-
-      (* Check reward token standard *)
-      case farm.reward_token of
-        FA12(token_address) -> {
-        (* Ensure harvest fee is greater than 0 *)
-        if harvest_fee > 0n
-        then {
-          (* Prepare FA1.2 transfer operation for harvest fee tokens *)
-          operations := Tezos.transaction(
-            FA12_transfer_type(
-              Tezos.self_address,
-              (fee_receiver, harvest_fee)
-            ),
-            0mutez,
-            get_fa12_token_transfer_entrypoint(token_address)
-          ) # operations;
-        }
-        else skip;
-
-        (* Prepare FA1.2 transfer operation for earned tokens *)
-        operations := Tezos.transaction(
-          FA12_transfer_type(Tezos.self_address, (receiver, actual_earned)),
-          0mutez,
-          get_fa12_token_transfer_entrypoint(token_address)
-        ) # operations;
-      }
-      | FA2(token_info)     -> {
-        (* Prepare FA2 token transfer params *)
-        const dst1 : transfer_dst_type = record [
-          to_      = receiver;
-          token_id = token_info.id;
+      var mint_data : mint_gov_toks_type := list [
+        record [
+          receiver = receiver;
           amount   = actual_earned;
+        ]
+      ];
+
+      if harvest_fee > 0n
+      then {
+        const fee_receiver : address = case s.referrers[Tezos.sender] of
+          None           -> zero_address
+        | Some(referrer) -> referrer
+        end;
+        const harvest_fee_mint_data : mint_gov_tok_type = record [
+          receiver = fee_receiver;
+          amount   = harvest_fee;
         ];
-        var fa2_transfer_param : fa2_send_type := record [
-          from_ = Tezos.self_address;
-          txs   = (list [] : list(transfer_dst_type));
-        ];
-        var txs : list(transfer_dst_type) := list [];
 
-        (* Ensure harvest fee is greater than 0 *)
-        if harvest_fee > 0n
-        then {
-          const dst2 : transfer_dst_type = record [
-            to_      = fee_receiver;
-            token_id = token_info.id;
-            amount   = harvest_fee;
-          ];
-
-          txs := dst2 # txs;
-        }
-        else skip;
-
-        txs := dst1 # txs;
-
-        fa2_transfer_param.txs := txs;
-
-        (* Prepare FA2 transfer operation for earned tokens *)
-        operations := Tezos.transaction(
-          FA2_transfer_type(list [fa2_transfer_param]),
-          0mutez,
-          get_fa2_token_transfer_entrypoint(token_info.token)
-        ) # operations;
+        mint_data := harvest_fee_mint_data # mint_data;
       }
-      end;
+      else skip;
+
+      op := Some(
+        Tezos.transaction(
+          mint_data,
+          0mutez,
+          get_proxy_minter_mint_entrypoint(s.proxy_minter)
+        )
+      );
     };
-  } with (operations, user)
+  } with (op, user)
 
-(* Util to transfer earned user's rewards to admin *)
-function transfer_rewards_to_admin(
+function burn_rewards(
   var user              : user_info_type;
-  var operations        : list(operation);
-  const reward_token    : token_type;
-  const admin           : address)
-                        : (list(operation) * user_info_type) is
+  const farm            : farm_type;
+  const pay_burn_reward : bool;
+  const s               : storage_type)
+                        : (option(operation) * user_info_type) is
   block {
-    (* Calculate user's real reward *)
     const earned : nat = user.earned / precision;
+    var op : option(operation) := (None : option(operation));
 
-    (* Ensure sufficient reward *)
     if earned = 0n
     then skip
     else {
-      (* Decrement pending reward *)
       user.earned := abs(user.earned - earned * precision);
 
-      (* Check reward token standard *)
-      case reward_token of
-        FA12(token_address) -> {
-        (* Prepare FA1.2 transfer operation for earned tokens *)
-        operations := Tezos.transaction(
-          FA12_transfer_type(Tezos.self_address, (admin, earned)),
-          0mutez,
-          get_fa12_token_transfer_entrypoint(token_address)
-        ) # operations;
+      var mint_data : mint_gov_toks_type := list [];
+
+      if pay_burn_reward
+      then {
+        const burn_amount : nat = earned *
+          abs(100n * fee_precision - farm.fees.burn_reward) /
+          100n / fee_precision;
+        const reward : nat = abs(earned - burn_amount);
+        const dst1 : mint_gov_tok_type = record [
+          receiver = zero_address;
+          amount   = burn_amount;
+        ];
+
+        mint_data := dst1 # mint_data;
+
+        if reward > 0n
+        then {
+          const dst2 : mint_gov_tok_type = record [
+            receiver = Tezos.sender;
+            amount   = reward;
+          ];
+
+          mint_data := dst2 # mint_data;
+        }
+        else skip;
       }
-      | FA2(token_info)     -> {
-        (* Prepare FA2 token transfer params *)
-        const dst : transfer_dst_type = record [
-          to_      = admin;
-          token_id = token_info.id;
+      else {
+        const dst : mint_gov_tok_type = record [
+          receiver = zero_address;
           amount   = earned;
         ];
-        var fa2_transfer_param : fa2_send_type := record [
-          from_ = Tezos.self_address;
-          txs   = list [dst];
-        ];
 
-        (* Prepare FA2 transfer operation for earned tokens *)
-        operations := Tezos.transaction(
-          FA2_transfer_type(list [fa2_transfer_param]),
+        mint_data := dst # mint_data;
+      };
+
+      op := Some(
+        Tezos.transaction(
+          mint_data,
           0mutez,
-          get_fa2_token_transfer_entrypoint(token_info.token)
-        ) # operations;
-      }
-      end;
+          get_proxy_minter_mint_entrypoint(s.proxy_minter)
+        )
+      );
     };
-  } with (operations, user)
+  } with (op, user)
 
-(* Util to get baker registry's %validate entrypoint *)
+function get_fa12_tok_bal_callback_entrypoint(
+  const this            : address)
+                        : contract(nat) is
+  case (
+    Tezos.get_entrypoint_opt("%fa12_tok_bal_callback", this)
+                        : option(contract(nat))
+  ) of
+    Some(contr) -> contr
+  | None        -> (
+    failwith("QFarm/fa12-bal-tok-callback-entrypoint-404")
+                        : contract(nat)
+  )
+  end
+
+function get_fa2_tok_bal_callback_entrypoint(
+  const this            : address)
+                        : contract(list(bal_response_type)) is
+  case (
+    Tezos.get_entrypoint_opt("%fa2_tok_bal_callback", this)
+                        : option(contract(list(bal_response_type)))
+  ) of
+    Some(contr) -> contr
+  | None        -> (
+    failwith("QFarm/fa2-tok-bal-callback-entrypoint-404")
+                        : contract(list(bal_response_type))
+  )
+  end
+
+function get_burn_callback_entrypoint(
+  const burner          : address)
+                        : contract(list(bal_response_type)) is
+  case (
+    Tezos.get_entrypoint_opt("%burn_callback", burner)
+                        : option(contract(list(bal_response_type)))
+  ) of
+    Some(contr) -> contr
+  | None        -> (
+    failwith("QFarm/burner-burn-callback-entrypoint-404")
+                        : contract(list(bal_response_type))
+  )
+  end
+
+(*
+  Swap tokens to XTZ. XTZ swap for QS GOV tokens and burn all of them.
+
+  !DEV! order of operations creating is fully reverted cause of Ligo's
+  features: items can only be added to the beginning of the list
+*)
+function swap(
+  const bal             : nat;
+  const s               : storage_type)
+                        : return_type is
+  block {
+    const balance_of_params : balance_of_type = record [
+      requests = list [
+        record [
+          owner    = Tezos.self_address;
+          token_id = s.qsgov.id;
+        ]
+      ];
+      callback = get_burn_callback_entrypoint(s.burner)
+    ];
+
+    var operations : list(operation) := list [
+      (* Swap all XTZ to QS GOV tokens operation *)
+      Tezos.transaction(
+        TezToTokenPayment(record [
+          min_out  = s.temp.min_qs_gov_output;
+          receiver = Tezos.self_address;
+        ]),
+        0mutez,
+        get_quipuswap_use_entrypoint(s.qsgov_lp)
+      );
+      (* Get balance of output QS GOV tokens to burn them *)
+      Tezos.transaction(
+        balance_of_params,
+        0mutez,
+        get_fa2_token_balance_of_entrypoint(s.qsgov.token)
+      )
+    ];
+
+    case s.temp.token of
+      FA12(_)         -> skip
+    | FA2(token_info) -> {
+      (* Remove operator operation *)
+      operations := Tezos.transaction(
+        FA2_approve_type(list [
+          Remove_operator(record [
+            owner    = Tezos.self_address;
+            operator = s.temp.qs_pool;
+            token_id = token_info.id;
+          ])
+        ]),
+        0mutez,
+        get_fa2_token_approve_entrypoint(token_info.token)
+      ) # operations;
+    }
+    end;
+
+    (* Swap all tokens to XTZ operation *)
+    operations := Tezos.transaction(
+      TokenToTezPayment(record [
+        amount   = bal;
+        min_out  = 1n;
+        receiver = Tezos.self_address;
+      ]),
+      0mutez,
+      get_quipuswap_use_entrypoint(s.temp.qs_pool)
+    ) # operations;
+
+    case s.temp.token of
+      FA12(token_address) -> {
+      (* Approve operation *)
+      operations := Tezos.transaction(
+        FA12_approve_type(s.temp.qs_pool, bal),
+        0mutez,
+        get_fa12_token_approve_entrypoint(token_address)
+      ) # operations;
+    }
+    | FA2(token_info)     -> {
+      (* Add operator operation *)
+      operations := Tezos.transaction(
+        FA2_approve_type(list [
+          Add_operator(record [
+            owner    = Tezos.self_address;
+            operator = s.temp.qs_pool;
+            token_id = token_info.id;
+          ])
+        ]),
+        0mutez,
+        get_fa2_token_approve_entrypoint(token_info.token)
+      ) # operations;
+    }
+    end;
+  } with (operations, s)
+
+function reset_temp(
+  var s                 : storage_type)
+                        : storage_type is
+  block {
+    s.temp := record [
+      min_qs_gov_output = 0n;
+      qs_pool           = zero_address;
+      token             = FA12(zero_address);
+    ];
+  } with s
+
 function get_baker_registry_validate_entrypoint(
   const baker_registry  : address)
                         : contract(key_hash) is
@@ -219,12 +279,11 @@ function get_baker_registry_validate_entrypoint(
   ) of
     Some(contr) -> contr
   | None        -> (
-    failwith("TFarm/baker-registry-validate-entrypoint-404")
+    failwith("QFarm/baker-registry-validate-entrypoint-404")
                         : contract(key_hash)
   )
   end
 
-(* Util to get votes count for the specified candidate *)
 function get_votes(
   const fid             : fid_type;
   const candidate       : key_hash;
@@ -235,7 +294,6 @@ function get_votes(
   | Some(amt) -> amt
   end
 
-(* Util to get vote operation *)
 function get_vote_op(
   const farm            : farm_type;
   const candidate       : key_hash)
@@ -301,11 +359,10 @@ function vote(
     (* Check if farm already voted for the baker *)
     case s.votes[(farm.fid, farm.current_delegated)] of
       None    -> {
-        (* Update the baker who was voted for by the majority *)
-        farm.current_delegated := depo.candidate;
+      (* Update the baker who was voted for by the majority *)
+      farm.current_delegated := depo.candidate;
 
-        (* Prepare Quipuswap LP vote operation *)
-        operations := get_vote_op(farm, depo.candidate) # operations;
+      operations := get_vote_op(farm, depo.candidate) # operations;
     }
     | Some(_) -> {
       if votes1 =/= votes3
@@ -316,7 +373,6 @@ function vote(
           farm.current_candidate := farm.current_delegated;
           farm.current_delegated := depo.candidate;
 
-          (* Prepare Quipuswap LP vote operation *)
           operations :=  get_vote_op(farm, depo.candidate) # operations;
         }
         else {
@@ -330,7 +386,6 @@ function vote(
           }
           end;
 
-          (* Prepare Quipuswap LP vote operation *)
           operations := get_vote_op(farm, farm.current_delegated) # operations;
         };
       }
@@ -350,16 +405,13 @@ function vote(
         }
         end;
 
-        (* Prepare Quipuswap LP vote operation *)
         operations := get_vote_op(farm, farm.current_delegated) # operations;
       };
     }
     end;
 
-    (* Update farm in the storage *)
     s.farms[farm.fid] := farm;
 
-    (* Validate candidate for voting operation *)
     operations := Tezos.transaction(
       depo.candidate,
       0mutez,
@@ -413,11 +465,10 @@ function revote(
     (* Check if farm already voted for the baker *)
     case s.votes[(farm.fid, farm.current_delegated)] of
       None    -> {
-        (* Update the baker who was voted for by the majority *)
-        farm.current_delegated := users_candidate;
+      (* Update the baker who was voted for by the majority *)
+      farm.current_delegated := users_candidate;
 
-        (* Prepare Quipuswap LP vote operation *)
-        operations := get_vote_op(farm, users_candidate) # operations;
+      operations := get_vote_op(farm, users_candidate) # operations;
     }
     | Some(_) -> {
       if votes1 =/= votes3
@@ -428,7 +479,6 @@ function revote(
           farm.current_candidate := farm.current_delegated;
           farm.current_delegated := users_candidate;
 
-          (* Prepare Quipuswap LP vote operation *)
           operations :=  get_vote_op(farm, users_candidate) # operations;
         }
         else {
@@ -442,7 +492,6 @@ function revote(
           }
           end;
 
-          (* Prepare Quipuswap LP vote operation *)
           operations := get_vote_op(farm, farm.current_delegated) # operations;
         };
       }
@@ -462,12 +511,10 @@ function revote(
         }
         end;
 
-        (* Prepare Quipuswap LP vote operation *)
         operations := get_vote_op(farm, farm.current_delegated) # operations;
       };
     }
     end;
 
-    (* Update farm in the storage *)
     s.farms[farm.fid] := farm;
   } with(operations, s)

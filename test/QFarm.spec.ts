@@ -201,7 +201,7 @@ describe("QFarm tests", async () => {
   });
 
   it("should fail if not admin is trying to set reward per second", async () => {
-    const params: RPS[] = [{ fid: 0, rps: 100 * precision }];
+    const params: RPS[] = [{ fid: 0, reward_per_second: 100 * precision }];
 
     await utils.setProvider(alice.sk);
     await rejects(qFarm.setRewardPerSecond(params), (err: Error) => {
@@ -212,11 +212,11 @@ describe("QFarm tests", async () => {
   });
 
   it("should fail if one farm from list of farms not found", async () => {
-    const params: RPS[] = [{ fid: 0, rps: 100 * precision }];
+    const params: RPS[] = [{ fid: 0, reward_per_second: 100 * precision }];
 
     await utils.setProvider(bob.sk);
     await rejects(qFarm.setRewardPerSecond(params), (err: Error) => {
-      ok(err.message === "QFarm/farm-not-set");
+      ok(err.message === "QSystem/farm-not-set");
 
       return true;
     });
@@ -323,7 +323,7 @@ describe("QFarm tests", async () => {
     newFarmParams.fees.burn_reward = 23 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12.contract.address };
     newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
-    newFarmParams.qsgov_per_second = 100 * precision;
+    newFarmParams.reward_per_second = 100 * precision;
     newFarmParams.timelock = 10;
 
     await utils.setProvider(bob.sk);
@@ -373,8 +373,8 @@ describe("QFarm tests", async () => {
     strictEqual(qFarm.storage.storage.farms[0].current_candidate, zeroAddress);
     strictEqual(qFarm.storage.storage.farms[0].paused, newFarmParams.paused);
     strictEqual(
-      +qFarm.storage.storage.farms[0].qsgov_per_second,
-      newFarmParams.qsgov_per_second
+      +qFarm.storage.storage.farms[0].reward_per_second,
+      newFarmParams.reward_per_second
     );
     strictEqual(+qFarm.storage.storage.farms[0].rps, 0);
     strictEqual(+qFarm.storage.storage.farms[0].staked, 0);
@@ -432,7 +432,7 @@ describe("QFarm tests", async () => {
 
     await utils.setProvider(bob.sk);
     await rejects(qFarm.setFees(fees), (err: Error) => {
-      ok(err.message === "QFarm/farm-not-set");
+      ok(err.message === "QSystem/farm-not-set");
 
       return true;
     });
@@ -532,7 +532,7 @@ describe("QFarm tests", async () => {
 
     await utils.setProvider(bob.sk);
     await rejects(qFarm.pauseFarms(pauseFarmParams), (err: Error) => {
-      ok(err.message === "QFarm/farm-not-set");
+      ok(err.message === "QSystem/farm-not-set");
 
       return true;
     });
@@ -615,22 +615,22 @@ describe("QFarm tests", async () => {
   });
 
   it("should set reward per second for one farm", async () => {
-    const params: RPS[] = [{ fid: 0, rps: 100 * precision }];
+    const params: RPS[] = [{ fid: 0, reward_per_second: 100 * precision }];
 
     await qFarm.setRewardPerSecond(params);
     await qFarm.updateStorage({ farms: [0] });
 
     strictEqual(
-      +qFarm.storage.storage.farms[0].qsgov_per_second,
-      params[0].rps
+      +qFarm.storage.storage.farms[0].reward_per_second,
+      params[0].reward_per_second
     );
   });
 
   it("should set reward per second for group of farms", async () => {
     const params: RPS[] = [
-      { fid: 0, rps: 100 * precision },
-      { fid: 1, rps: 50 * precision },
-      { fid: 2, rps: 250 * precision },
+      { fid: 0, reward_per_second: 100 * precision },
+      { fid: 1, reward_per_second: 50 * precision },
+      { fid: 2, reward_per_second: 250 * precision },
     ];
 
     await qFarm.setRewardPerSecond(params);
@@ -638,8 +638,8 @@ describe("QFarm tests", async () => {
 
     for (let i = 0; i < params.length; ++i) {
       strictEqual(
-        +qFarm.storage.storage.farms[params[0].fid].qsgov_per_second,
-        params[0].rps
+        +qFarm.storage.storage.farms[params[0].fid].reward_per_second,
+        params[0].reward_per_second
       );
     }
   });
@@ -654,7 +654,7 @@ describe("QFarm tests", async () => {
     };
 
     await rejects(qFarm.deposit(depositParams), (err: Error) => {
-      ok(err.message === "QFarm/farm-not-set");
+      ok(err.message === "QSystem/farm-not-set");
 
       return true;
     });
@@ -815,7 +815,7 @@ describe("QFarm tests", async () => {
     newFarmParams.stake_params.is_lp_staked_token = true;
     newFarmParams.stake_params.token = { fA12: fa12.contract.address };
     newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
-    newFarmParams.qsgov_per_second = 200 * precision;
+    newFarmParams.reward_per_second = 200 * precision;
     newFarmParams.timelock = 0;
 
     await utils.setProvider(bob.sk);
@@ -877,7 +877,7 @@ describe("QFarm tests", async () => {
       fA2: { token: fa2.contract.address, id: 0 },
     };
     newFarmParams.stake_params.qs_pool = fa2LP.contract.address;
-    newFarmParams.qsgov_per_second = 10 * precision;
+    newFarmParams.reward_per_second = 10 * precision;
     newFarmParams.timelock = 0;
 
     await utils.setProvider(bob.sk);
@@ -1583,7 +1583,7 @@ describe("QFarm tests", async () => {
     };
 
     await rejects(qFarm.harvest(harvestParams), (err: Error) => {
-      ok(err.message === "QFarm/farm-not-set");
+      ok(err.message === "QSystem/farm-not-set");
 
       return true;
     });
@@ -1958,7 +1958,7 @@ describe("QFarm tests", async () => {
     };
 
     await rejects(qFarm.withdraw(withdrawParams), (err: Error) => {
-      ok(err.message === "QFarm/farm-not-set");
+      ok(err.message === "QSystem/farm-not-set");
 
       return true;
     });
@@ -2931,7 +2931,7 @@ describe("QFarm tests", async () => {
   it("should fail if farm not found", async () => {
     await utils.setProvider(bob.sk);
     await rejects(qFarm.burnXTZRewards(666), (err: Error) => {
-      ok(err.message === "QFarm/farm-not-set");
+      ok(err.message === "QSystem/farm-not-set");
 
       return true;
     });
@@ -2939,7 +2939,7 @@ describe("QFarm tests", async () => {
 
   it("should fail if not LP token is staked on the farm", async () => {
     await rejects(qFarm.burnXTZRewards(0), (err: Error) => {
-      ok(err.message === "QFarm/not-LP-farm");
+      ok(err.message === "QSystem/not-LP-farm");
 
       return true;
     });
@@ -2995,7 +2995,7 @@ describe("QFarm tests", async () => {
 
   it("should fail if farm not found", async () => {
     await rejects(qFarm.burnFarmRewards(666), (err: Error) => {
-      ok(err.message === "QFarm/farm-not-set");
+      ok(err.message === "QSystem/farm-not-set");
 
       return true;
     });

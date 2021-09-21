@@ -1,4 +1,3 @@
-(* Util to get QS GOV token %mint_gov_token entrypoint *)
 function get_mint_qsgov_tokens_entrypoint(
   const token           : address)
                         : contract(mint_gov_toks_type) is

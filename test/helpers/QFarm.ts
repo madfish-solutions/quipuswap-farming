@@ -312,7 +312,7 @@ export class QFarmUtils {
       fees: fees,
       stake_params: stakeParams,
       paused: false,
-      qsgov_per_second: 0,
+      reward_per_second: 0,
       timelock: 0,
       start_time: String(
         Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000
@@ -333,7 +333,7 @@ export class QFarmUtils {
     const timeLeft: number =
       (Date.parse(finalFarm.upd) - Date.parse(initialFarm.upd)) / 1000;
     const newReward: BigNumber = new BigNumber(
-      timeLeft * finalFarm.qsgov_per_second
+      timeLeft * finalFarm.reward_per_second
     );
     const expectedShareReward: BigNumber = new BigNumber(initialFarm.rps).plus(
       newReward.div(initialFarm.staked).integerValue(BigNumber.ROUND_DOWN)

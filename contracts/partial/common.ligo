@@ -1,4 +1,3 @@
-(* Util to check if transaction sender has admin access *)
 function only_admin(
   const admin           : address)
                         : unit is
@@ -8,7 +7,6 @@ function only_admin(
     else skip;
   } with unit
 
-(* Util to check if transaction sender has pending admin access *)
 function only_pending_admin(
   const pending_admin   : address)
                         : unit is
@@ -18,7 +16,6 @@ function only_pending_admin(
     else skip;
   } with unit
 
-(* Util to get FA1.2 token %transfer entrypoint *)
 function get_fa12_token_transfer_entrypoint(
   const token           : address)
                         : contract(fa12_transfer_type) is
@@ -33,7 +30,6 @@ function get_fa12_token_transfer_entrypoint(
   )
   end
 
-(* Util to get FA2 token %transfer entrypoint *)
 function get_fa2_token_transfer_entrypoint(
   const token           : address)
                         : contract(fa2_transfer_type) is
@@ -48,7 +44,6 @@ function get_fa2_token_transfer_entrypoint(
   )
   end
 
-(* Util to get FA1.2 token %approve entrypoint *)
 function get_fa12_token_approve_entrypoint(
   const token           : address)
                         : contract(fa12_approve_type) is
@@ -63,7 +58,6 @@ function get_fa12_token_approve_entrypoint(
   )
   end
 
-(* Util to get FA2 token %update_operators entrypoint *)
 function get_fa2_token_approve_entrypoint(
   const token           : address)
                         : contract(fa2_approve_type) is
@@ -78,7 +72,6 @@ function get_fa2_token_approve_entrypoint(
   )
   end
 
-(* Util to get FA1.2 token %getBalance entrypoint *)
 function get_fa12_token_balance_of_entrypoint(
   const token           : address)
                         : contract(fa12_balance_type) is
@@ -93,7 +86,6 @@ function get_fa12_token_balance_of_entrypoint(
   )
   end
 
-(* Util to get FA2 token %balance_of entrypoint *)
 function get_fa2_token_balance_of_entrypoint(
   const token           : address)
                         : contract(balance_of_type) is
@@ -108,7 +100,6 @@ function get_fa2_token_balance_of_entrypoint(
   )
   end
 
-(* Util to get Quipuswap %use entrypoint *)
 function get_quipuswap_use_entrypoint(
   const pool            : address)
                         : contract(use_type) is
@@ -119,21 +110,6 @@ function get_quipuswap_use_entrypoint(
   | None        -> (
     failwith("QSystem/quipuswap-use-entrypoint-404")
                         : contract(use_type)
-  )
-  end
-
-(* Util to get burner's %burn_callback entrypoint *)
-function get_burn_callback_entrypoint(
-  const burner          : address)
-                        : contract(list(bal_response_type)) is
-  case (
-    Tezos.get_entrypoint_opt("%burn_callback", burner)
-                        : option(contract(list(bal_response_type)))
-  ) of
-    Some(contr) -> contr
-  | None        -> (
-    failwith("QSystem/burner-burn-callback-entrypoint-404")
-                        : contract(list(bal_response_type))
   )
   end
 
@@ -150,7 +126,6 @@ function get_fa2_token_balance(
       const v           : bal_response_type)
                         : get_balance_type is
       block {
-        (* Prepare data to compare with response *)
         const request : bal_request_type = record [
           token_id = token_id;
           owner    = owner;

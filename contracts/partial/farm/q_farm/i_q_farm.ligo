@@ -1,5 +1,3 @@
-type fid_type           is nat (* Farm ID *)
-
 type fees_type          is [@layout:comb] record [
   (* % in earned tokens *)
   harvest_fee             : nat;
@@ -7,30 +5,6 @@ type fees_type          is [@layout:comb] record [
   withdrawal_fee          : nat;
   (* % from burn amount (farm rewards) *)
   burn_reward          : nat;
-]
-
-type user_info_type     is [@layout:comb] record [
-  (* Last time when user staked tokens *)
-  last_staked             : timestamp;
-  (* Total amount of tokens staked by user *)
-  staked                  : nat;
-  (* Earned amount of tokens by user *)
-  earned                  : nat;
-  (* Previous earned amount of tokens by user *)
-  prev_earned             : nat;
-  (* Amount of used votes for the preferred baker *)
-  used_votes              : nat;
-]
-
-type stake_params_type  is [@layout:comb] record [
-  (* Token to stake *)
-  staked_token            : token_type;
-  (* Flag: LP token staked or not *)
-  is_lp_staked_token      : bool;
-  (* If LP token staked - non zero address + ID, else - zero address + 0 ID *)
-  token                   : token_type;
-  (* Quipuswap liquidity pool for staked or divested token *)
-  qs_pool                 : address;
 ]
 
 type farm_type          is [@layout:comb] record [
@@ -50,8 +24,8 @@ type farm_type          is [@layout:comb] record [
   current_candidate       : key_hash;
   (* Falg: farm paused or not *)
   paused                  : bool;
-  (* QS GOV tokens (reward) per second *)
-  qsgov_per_second        : nat;
+  (* QS GOV tokens per second *)
+  reward_per_second       : nat;
   (* Reward per share *)
   rps                     : nat;
   (* Total count of staked tokens in the farm *)
@@ -102,10 +76,6 @@ type storage_type       is [@layout:comb] record [
   farms_count             : nat;
 ]
 
-type set_admin_type     is address (* New admin address *)
-
-type confirm_admin_type is unit
-
 type set_fee_type       is [@layout:comb] record [
   (* Farm ID *)
   fid                     : fid_type;
@@ -118,17 +88,13 @@ type set_fees_type      is list(set_fee_type)
 type rps_type           is [@layout:comb] record [
   (* Farm ID *)
   fid                     : fid_type;
-  (* QS GOV tokens (reward) per second *)
-  rps                    : nat;
+  (* QS GOV tokens per second *)
+  reward_per_second       : nat;
 ]
 
 type set_rps_type       is list(rps_type)
 
-type set_burner_type    is address (* New burner contract address *)
-
 type set_proxy_type     is address (* New proxy minter contract address *)
-
-type set_registry_type  is address (* New baker registry contract address *)
 
 type add_new_farm_type  is [@layout:comb] record [
   (* Fees data *)
@@ -137,55 +103,13 @@ type add_new_farm_type  is [@layout:comb] record [
   stake_params            : stake_params_type;
   (* Flag: paused or not at the beginning *)
   paused                  : bool;
-  (* QS GOV tokens (reward) per second *)
-  qsgov_per_second        : nat;
+  (* QS GOV tokens per second *)
+  reward_per_second       : nat;
   (* Timelock in seconds, 0 for farms without timelock *)
   timelock                : nat;
   (* Farm start timestamp *)
   start_time              : timestamp;
 ]
-
-type pause_farm_type    is [@layout:comb] record [
-  (* Farm ID *)
-  fid                     : fid_type;
-  (* Flag: pause or unpause *)
-  pause                   : bool;
-]
-
-type pause_farms_type   is list(pause_farm_type)
-
-type deposit_type       is [@layout:comb] record [
-  (* Farm ID *)
-  fid                     : fid_type;
-  (* Amount of tokens to deposit *)
-  amt                     : nat;
-  (* User's referrer *)
-  referrer                : option(address);
-  (* Receiver of earned tokens *)
-  rewards_receiver        : address;
-  (* The baker for voting *)
-  candidate               : key_hash;
-]
-
-type withdraw_type      is [@layout:comb] record [
-  (* Farm ID *)
-  fid                     : fid_type;
-  (* Amount of tokens to withdraw *)
-  amt                     : nat;
-  (* Receiver of unstaked tokens *)
-  receiver                : address;
-  (* Receiver of earned tokens *)
-  rewards_receiver        : address;
-]
-
-type harvest_type       is [@layout:comb] record [
-  (* Farm ID *)
-  fid                     : fid_type;
-  (* Receiver of earned tokens *)
-  rewards_receiver        : address;
-]
-
-type burn_xtz_rew_type  is nat (* Farm ID *)
 
 type burn_farm_rew_type is nat (* Farm ID *)
 

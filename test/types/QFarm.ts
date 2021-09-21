@@ -6,7 +6,7 @@ import { StakeParams, Token, FA2Token } from "./Common";
 
 export type RPS = {
   fid: number;
-  rps: number;
+  reward_per_second: number;
 };
 
 export type QFees = {
@@ -24,7 +24,7 @@ export type NewFarmParams = {
   fees: QFees;
   stake_params: StakeParams;
   paused: boolean;
-  qsgov_per_second: number;
+  reward_per_second: number;
   timelock: number;
   start_time: string;
 };
@@ -50,7 +50,7 @@ export type Farm = {
   current_delegated: string;
   current_candidate: string;
   paused: boolean;
-  qsgov_per_second: number;
+  reward_per_second: number;
   rps: number;
   staked: number;
   start_time: string;

@@ -3,7 +3,6 @@ function burn(
   const s             : storage_type)
                       : return_type is
   block {
-    (* Prepare params for %balance_of transaction *)
     const balance_of_params : balance_of_type = record [
       requests = list [
         record [
@@ -11,10 +10,11 @@ function burn(
           token_id = s.qsgov.id;
         ]
       ];
-      callback = get_burn_callback_entrypoint(Tezos.self_address)
+      callback = (
+        Tezos.self("%burn_callback") : contract(list(bal_response_type))
+      )
     ];
 
-    (* Operations to be performed *)
     const operations : list(operation) = list [
       (* Swap all XTZ from burner to QS GOV tokens *)
       Tezos.transaction(
@@ -40,36 +40,30 @@ function burn_callback(
   var s                 : storage_type)
                         : return_type is
   block {
-    (* Check if transaction sender is QS GOV token *)
     if Tezos.sender =/= s.qsgov.token
     then failwith("Burner/not-QS-GOV-token")
     else skip;
 
-    (* Operations to be performed *)
     var operations : list(operation) := no_operations;
 
-    (* Get burner's QS GOV token balance *)
-    const bal : nat = get_fa2_token_balance(
+    const qs_gov_balance : nat = get_fa2_token_balance(
       responses,
       Tezos.self_address,
       s.qsgov.id
     );
 
-    (* Burn QS GOV tokens only if balance greater than 0 *)
-    if bal > 0n
+    if qs_gov_balance > 0n
     then {
-      (* Create params to burn QS GOV tokens *)
       const dst : transfer_dst_type = record [
         to_      = zero_address;
         token_id = s.qsgov.id;
-        amount   = bal;
+        amount   = qs_gov_balance;
       ];
       const fa2_transfer_param : fa2_send_type = record [
         from_ = Tezos.self_address;
         txs   = list [dst];
       ];
 
-      (* Add transfer QS GOV token operation to operations list *)
       operations := Tezos.transaction(
         FA2_transfer_type(list [fa2_transfer_param]),
         0mutez,

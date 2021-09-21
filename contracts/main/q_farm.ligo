@@ -6,10 +6,16 @@
 #include "../partial/i_common.ligo"
 #include "../partial/common.ligo"
 
-#include "../partial/q_farm/i_q_farm.ligo"
-#include "../partial/q_farm/q_farm_helpers.ligo"
-#include "../partial/q_farm/q_farm_methods.ligo"
-#include "../partial/q_farm/q_farm_lambdas.ligo"
+#include "../partial/farm/i_common.ligo"
+
+#include "../partial/farm/q_farm/i_q_farm.ligo"
+#include "../partial/farm/q_farm/q_farm_helpers.ligo"
+
+#include "../partial/farm/common_helpers.ligo"
+#include "../partial/farm/common_lambdas.ligo"
+
+#include "../partial/farm/q_farm/q_farm_methods.ligo"
+#include "../partial/farm/q_farm/q_farm_lambdas.ligo"
 
 function main(
   const action          : full_action_type;

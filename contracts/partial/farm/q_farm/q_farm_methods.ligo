@@ -1,10 +1,8 @@
-(* Call q_farm lambda function *)
 [@inline] function call_q_farm(
   const action          : action_type;
   var s                 : full_storage_type)
                         : full_return_type is
   block {
-    (* Get lambda function index by action *)
     const id : nat = case action of
       Set_admin(_)             -> 0n
     | Confirm_admin(_)         -> 1n
@@ -25,28 +23,23 @@
     | Fa2_tok_bal_callback(_)  -> 16n
     end;
 
-    (* Call lambda function *)
     const res : return_type = case s.q_farm_lambdas[id] of
       Some(f) -> f(action, s.storage)
     | None    -> (failwith("QFarm/func-not-set") : return_type)
     end;
 
-    (* Update q_farm storage *)
     s.storage := res.1;
   } with (res.0, s)
 
-(* Setup lambda function by index for q_farm contract *)
 [@inline] function setup_func(
   const params          : setup_func_type;
   var s                 : full_storage_type)
                         : full_return_type is
   block {
-    (* Check lambda's index *)
     if params.index > q_farm_methods_max_index
     then failwith("QFarm/wrong-index")
     else skip;
 
-    (* Setup lambda function *)
     case s.q_farm_lambdas[params.index] of
       Some(_) -> failwith("QFarm/func-set")
     | None    -> s.q_farm_lambdas[params.index] := params.func

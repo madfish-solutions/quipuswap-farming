@@ -2258,52 +2258,6 @@ describe("QFarm tests", async () => {
     );
   });
 
-  it("should withdraw all with 0 amount parameter passed", async () => {
-    const withdrawParams: WithdrawParams = {
-      fid: 6,
-      amt: 0,
-      receiver: dev.pkh,
-      rewards_receiver: alice.pkh,
-    };
-
-    await qFarm.updateStorage({
-      farms: [withdrawParams.fid],
-    });
-    await fa2LP.updateStorage({
-      ledger: [dev.pkh],
-    });
-
-    const initialFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
-    const initialTokenDevRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[dev.pkh];
-
-    await qFarm.withdraw(withdrawParams);
-    await qFarm.updateStorage({
-      users_info: [[withdrawParams.fid, alice.pkh]],
-      farms: [withdrawParams.fid],
-    });
-    await fa2LP.updateStorage({
-      ledger: [qFarm.contract.address, dev.pkh],
-    });
-
-    const finalFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
-    const finalFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
-    const finalTokenDevRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[dev.pkh];
-    const finalTokenFarmRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[qFarm.contract.address];
-
-    strictEqual(+finalFarm.staked, 0);
-    strictEqual(+finalFarmAliceRecord.staked, 0);
-    strictEqual(
-      +finalTokenDevRecord.balance,
-      +initialTokenDevRecord.balance + +initialFarm.staked
-    );
-    strictEqual(+finalTokenFarmRecord.balance, 0);
-    strictEqual(+finalTokenFarmRecord.frozen_balance, 0);
-  });
-
   it("should claim user's rewards (in farms without timelock)", async () => {
     const withdrawParams: WithdrawParams = {
       fid: 5,
@@ -3024,8 +2978,8 @@ describe("QFarm tests", async () => {
     });
 
     await confirmOperation(utils.tezos, operation.hash);
-    await utils.bakeBlocks(2);
-    await qFarm.burnXTZRewards(4);
+    await utils.bakeBlocks(1);
+    await qFarm.burnXTZRewards(depositParams.fid);
     await qsGov.updateStorage({
       account_info: [zeroAddress],
     });

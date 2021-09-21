@@ -413,11 +413,6 @@ function withdraw(
         (* Value for withdrawal (without calculated withdrawal fee) *)
         var value : nat := params.amt;
 
-        (* Process "withdraw all" *)
-        if value = 0n
-        then value := user.staked
-        else skip;
-
         (* Check the correct withdrawal quantity *)
         if value > user.staked
         then failwith("QFarm/balance-too-low")
@@ -809,11 +804,6 @@ function buyback(
 
         (* Value for withdrawal *)
         var value : nat := params.amt;
-
-        (* Process "withdraw all" *)
-        if value = 0n
-        then value := user.staked
-        else skip;
 
         (* Check the correct withdrawal quantity *)
         if value > user.staked

@@ -94,7 +94,6 @@
     - ✅ should withdraw single FA2 token;
     - ✅ should withdraw LP FA2 token;
     - ✅ should withdraw tokens to the specified receiver;
-    - ✅ should withdraw all with 0 amount parameter passed;
     - ✅ should change current delegated for the next candidate if votes were redistributed.
 
 12. `harvest`:
@@ -219,7 +218,6 @@
    - ✅ should withdraw single FA2 token;
    - ✅ should withdraw LP FA2 token;
    - ✅ should withdraw tokens to the specified receiver;
-   - ✅ should withdraw all with 0 amount parameter passed;
    - ✅ should change current delegated for the next candidate if votes were redistributed.
 
 10. `harvest`:
@@ -237,25 +235,30 @@
 
 11. `burn_xtz_rewards`:
 
-    - should fail if not admin is trying to burn XTZ rewards;
-    - should fail if farm not found;
-    - should fail if not LP token is staked on the farm;
-    - should withdraw bakers rewards in XTZ from the QS pool, swap for QS GOV tokens and burn them.
+    - ✅ should fail if not admin is trying to burn XTZ rewards;
+    - ✅ should fail if farm not found;
+    - ✅ should fail if not LP token is staked on the farm;
+    - ✅ should withdraw bakers rewards in XTZ from the QS pool, swap for QS GOV tokens and burn them.
 
 12. `claim_farm_rewards`:
 
-    - should fail if not admin is trying to claim farm rewards;
-    - should fail if farm not found;
-    - should transfer FA1.2 reward tokens to the admin;
-    - should transfer FA2 reward tokens to the admin.
+    - ✅ should fail if not admin is trying to claim farm rewards;
+    - ✅ should fail if farm not found;
+    - ✅ should transfer FA1.2 reward tokens to the admin;
+    - ✅ should transfer FA2 reward tokens to the admin.
 
 13. `withdraw_farm_depo`:
 
-    - should fail if not admit is trying to withdraw farm depo;
-    - should fail if farm not found;
-    -
-    -
-    -
+    - ✅ should fail if not admit is trying to withdraw farm depo;
+    - ✅ should fail if farm not found;
+    - ✅ should fail if staked by farm amount is less than amount to withdraw;
+    - ✅ should withdraw single FA1.2 token;
+    - ✅ should withdraw LP FA1.2 token;
+    - ✅ should withdraw single FA2 token;
+    - should withdraw LP FA2 token;
+    - should change current delegated for the next candidate if votes were redistributed;
+    - should transfer FA1.2 reward tokens to the admin;
+    - should transfer FA2 reward tokens to the admin.
 
 ## Burner
 

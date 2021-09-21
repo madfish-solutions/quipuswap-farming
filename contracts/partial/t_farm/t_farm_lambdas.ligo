@@ -404,11 +404,6 @@ function withdraw(
         (* Value for withdrawal (without calculated withdrawal fee) *)
         var value : nat := params.amt;
 
-        (* Process "withdraw all" *)
-        if value = 0n
-        then value := user.staked
-        else skip;
-
         (* Check the correct withdrawal quantity *)
         if value > user.staked
         then failwith("TFarm/balance-too-low")
@@ -438,8 +433,8 @@ function withdraw(
             s
           )
         }
-        else { (* Burn reward and stake withdrawal fee from farm's name *)
-          (* Burn reward tokens *)
+        else { (* Transfer rewards and stake withdrawal fee from farm's name *)
+          (* Transfer reward tokens to admin *)
           res := transfer_rewards_to_admin(
             user,
             operations,
@@ -479,7 +474,7 @@ function withdraw(
           };
         };
 
-        (* Update list of operations and user's info *)
+        (* Update user's info and list of operations *)
         operations := res.0;
         user := res.1;
 
@@ -693,11 +688,9 @@ function claim_farm_rewards(
             s.admin
           );
 
-        (* Update user's info *)
-        user := res.1;
-
-        (* Concat burn reward tokens operation with list of operations *)
+        (* Update user's info and list of operations *)
         operations := res.0;
+        user := res.1;
 
         (* Update user's earned tokens amount *)
         user.prev_earned := user.staked * farm.rps;
@@ -744,11 +737,6 @@ function withdraw_farm_depo(
         (* Value for withdrawal *)
         var value : nat := params.amt;
 
-        (* Process "withdraw all" *)
-        if value = 0n
-        then value := user.staked
-        else skip;
-
         (* Check the correct withdrawal quantity *)
         if value > user.staked
         then failwith("TFarm/balance-too-low")
@@ -757,6 +745,19 @@ function withdraw_farm_depo(
         (* Update users's reward *)
         user.earned := user.earned +
           abs(user.staked * farm.rps - user.prev_earned);
+
+        (* Claim reward tokens (farm's rewards) and transfer them to admin *)
+        var res : (list(operation) * user_info_type) :=
+          transfer_rewards_to_admin(
+            user,
+            operations,
+            farm.reward_token,
+            s.admin
+          );
+
+        (* Update user's info and list of operations *)
+        operations := res.0;
+        user := res.1;
 
         (* Update user's staked and earned tokens amount *)
         user.staked := abs(user.staked - value);
@@ -768,6 +769,55 @@ function withdraw_farm_depo(
 
         (* Save farm to the storage *)
         s.farms[farm.fid] := farm;
+
+        (* Check the staked token standard *)
+        case farm.stake_params.staked_token of
+          FA12(token_address) -> {
+          (* Prepare FA1.2 transfer operation for staked token *)
+          operations := Tezos.transaction(
+            FA12_transfer_type(Tezos.self_address, (s.admin, value)),
+            0mutez,
+            get_fa12_token_transfer_entrypoint(token_address)
+          ) # operations;
+        }
+        | FA2(token_info)     -> {
+          (* Prepare FA2 token transfer params *)
+          const dst : transfer_dst_type = record [
+            to_      = s.admin;
+            token_id = token_info.id;
+            amount   = value;
+          ];
+          const fa2_transfer_param : fa2_send_type = record [
+            from_ = Tezos.self_address;
+            txs   = list [dst];
+          ];
+
+          (* Prepare FA2 transfer operation for staked token *)
+          operations := Tezos.transaction(
+            FA2_transfer_type(list [fa2_transfer_param]),
+            0mutez,
+            get_fa2_token_transfer_entrypoint(token_info.token)
+          ) # operations;
+        }
+        end;
+
+        (* Check staked token type (LP or not) *)
+        if farm.stake_params.is_lp_staked_token
+        then {
+          (* Revote *)
+          const revote_res : (list(operation) * storage_type) = revote(
+            operations,
+            user,
+            farm,
+            s,
+            value
+          );
+
+          (* Update the farm and list of operations to be performed *)
+          operations := revote_res.0;
+          s := revote_res.1;
+        }
+        else skip;
       }
     | _                                 -> skip
     end

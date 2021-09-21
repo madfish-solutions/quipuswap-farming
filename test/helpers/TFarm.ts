@@ -272,7 +272,7 @@ export class TFarm {
     params: WithdrawFarmDepoParams
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
-      .withdraw_farm_depo(params)
+      .withdraw_farm_depo(...Utils.destructObj(params))
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

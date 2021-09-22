@@ -154,24 +154,12 @@ function deposit(
           }
           else skip;
 
-          case farm.stake_params.staked_token of
-            FA12(token_address) -> {
-            operations := transfer(
-              Tezos.sender,
-              Tezos.self_address,
-              params.amt,
-              FA12(token_address)
-            ) # operations;
-          }
-          | FA2(_)              -> {
-            operations := transfer(
+          operations := transfer(
               Tezos.sender,
               Tezos.self_address,
               params.amt,
               farm.stake_params.staked_token
             ) # operations;
-          }
-          end;
         }
         else skip;
 

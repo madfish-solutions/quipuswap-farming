@@ -26,8 +26,8 @@ type farm_type          is [@layout:comb] record [
   paused                  : bool;
   (* QS GOV tokens per second *)
   reward_per_second       : nat;
-  (* Reward per share *)
-  rps                     : nat;
+  (* Reward per 1 staked token *)
+  reward_per_share        : nat;
   (* Total count of staked tokens in the farm *)
   staked                  : nat;
   (* Farm start timestamp *)
@@ -85,14 +85,14 @@ type set_fee_type       is [@layout:comb] record [
 
 type set_fees_type      is list(set_fee_type)
 
-type rps_type           is [@layout:comb] record [
+type rew_per_sec_type   is [@layout:comb] record [
   (* Farm ID *)
   fid                     : fid_type;
   (* QS GOV tokens per second *)
   reward_per_second       : nat;
 ]
 
-type set_rps_type       is list(rps_type)
+type set_rew_p_sec_type is list(rew_per_sec_type)
 
 type set_proxy_type     is address (* New proxy minter contract address *)
 
@@ -130,7 +130,7 @@ type action_type        is
   Set_admin               of set_admin_type
 | Confirm_admin           of confirm_admin_type
 | Set_fees                of set_fees_type
-| Set_reward_per_second   of set_rps_type
+| Set_reward_per_second   of set_rew_p_sec_type
 | Set_burner              of set_burner_type
 | Set_proxy_minter        of set_proxy_type
 | Set_baker_registry      of set_registry_type

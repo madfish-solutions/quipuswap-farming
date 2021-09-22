@@ -9,7 +9,7 @@ function set_reward_per_second(
 
         function update_reward_per_second(
           var s           : storage_type;
-          const params    : rps_type)
+          const params    : rew_per_sec_type)
                           : storage_type is
           block {
             var farm : farm_type := get_farm(params.fid, s);
@@ -68,7 +68,7 @@ function add_new_farm(
           current_candidate = zero_key_hash;
           paused            = params.paused;
           reward_per_second = params.reward_per_second;
-          rps               = 0n;
+          reward_per_share  = 0n;
           staked            = 0n;
           start_time        = start_time;
           fid               = s.farms_count;
@@ -104,7 +104,7 @@ function deposit(
         var user : user_info_type := get_user_info(farm.fid, Tezos.sender, s);
 
         user.earned := user.earned +
-          abs(user.staked * farm.rps - user.prev_earned);
+          abs(user.staked * farm.reward_per_share - user.prev_earned);
 
         var res : (option(operation) * user_info_type) :=
           ((None : option(operation)), user);
@@ -125,7 +125,7 @@ function deposit(
         end;
 
         user.staked := user.staked + params.amt;
-        user.prev_earned := user.staked * farm.rps;
+        user.prev_earned := user.staked * farm.reward_per_share;
 
         if params.amt > 0n
         then user.last_staked := Tezos.now;
@@ -163,15 +163,12 @@ function deposit(
               FA12(token_address)
             ) # operations;
           }
-          | FA2(token_info)     -> {
+          | FA2(_)              -> {
             operations := transfer(
               Tezos.sender,
               Tezos.self_address,
               params.amt,
-              FA2(record [
-                token = token_info.token;
-                id = token_info.id;
-              ])
+              farm.stake_params.staked_token
             ) # operations;
           }
           end;
@@ -213,7 +210,7 @@ function withdraw(
         var value_without_fee : nat := value;
 
         user.earned := user.earned +
-          abs(user.staked * farm.rps - user.prev_earned);
+          abs(user.staked * farm.reward_per_share - user.prev_earned);
 
         var res : (option(operation) * user_info_type) :=
           ((None : option(operation)), user);
@@ -235,9 +232,10 @@ function withdraw(
               get_user_info(farm.fid, Tezos.self_address, s);
 
             farm_user.earned := farm_user.earned +
-              abs(farm_user.staked * farm.rps - farm_user.prev_earned);
+              abs(farm_user.staked * farm.reward_per_share -
+                farm_user.prev_earned);
             farm_user.staked := farm_user.staked + withdrawal_fee;
-            farm_user.prev_earned := farm_user.staked * farm.rps;
+            farm_user.prev_earned := farm_user.staked * farm.reward_per_share;
             farm_user.last_staked := Tezos.now;
 
             s.users_info[(farm.fid, Tezos.self_address)] := farm_user;
@@ -247,7 +245,7 @@ function withdraw(
         user := res.1;
 
         user.staked := abs(user.staked - value);
-        user.prev_earned := user.staked * farm.rps;
+        user.prev_earned := user.staked * farm.reward_per_share;
 
         s.users_info[(farm.fid, Tezos.sender)] := user;
 
@@ -264,15 +262,12 @@ function withdraw(
             FA12(token_address)
           ) # operations;
         }
-        | FA2(token_info)     -> {
+        | FA2(_)              -> {
           operations := transfer(
             Tezos.self_address,
             params.receiver,
             value_without_fee,
-            FA2(record [
-              token = token_info.token;
-              id = token_info.id;
-            ])
+            farm.stake_params.staked_token
           ) # operations;
         }
         end;
@@ -320,7 +315,7 @@ function harvest(
         var user : user_info_type := get_user_info(farm.fid, Tezos.sender, s);
 
         user.earned := user.earned +
-          abs(user.staked * farm.rps - user.prev_earned);
+          abs(user.staked * farm.reward_per_share - user.prev_earned);
 
         var res : (option(operation) * user_info_type) :=
           ((None : option(operation)), user);
@@ -336,7 +331,7 @@ function harvest(
         | None     -> skip
         end;
 
-        user.prev_earned := user.staked * farm.rps;
+        user.prev_earned := user.staked * farm.reward_per_share;
 
         s.users_info[(farm.fid, Tezos.sender)] := user;
         s.farms[farm.fid] := farm;
@@ -365,7 +360,7 @@ function burn_farm_rewards(
           get_user_info(farm.fid, Tezos.self_address, s);
 
         user.earned := user.earned +
-          abs(user.staked * farm.rps - user.prev_earned);
+          abs(user.staked * farm.reward_per_share - user.prev_earned);
 
         var res : (option(operation) * user_info_type) :=
           burn_rewards(user, farm, True, s);
@@ -377,7 +372,7 @@ function burn_farm_rewards(
         | None     -> skip
         end;
 
-        user.prev_earned := user.staked * farm.rps;
+        user.prev_earned := user.staked * farm.reward_per_share;
 
         s.users_info[(farm.fid, Tezos.self_address)] := user;
         s.farms[farm.fid] := farm;
@@ -476,9 +471,9 @@ function buyback(
         else skip;
 
         user.earned := user.earned +
-          abs(user.staked * farm.rps - user.prev_earned);
+          abs(user.staked * farm.reward_per_share - user.prev_earned);
         user.staked := abs(user.staked - value);
-        user.prev_earned := user.staked * farm.rps;
+        user.prev_earned := user.staked * farm.reward_per_share;
 
         s.users_info[(farm.fid, Tezos.self_address)] := user;
 

@@ -4,7 +4,7 @@ import { BigNumber } from "bignumber.js";
 
 import { StakeParams, Token, FA2Token } from "./Common";
 
-export type RPS = {
+export type NewRewardPerSecond = {
   fid: number;
   reward_per_second: number;
 };
@@ -51,7 +51,7 @@ export type Farm = {
   current_candidate: string;
   paused: boolean;
   reward_per_second: number;
-  rps: number;
+  reward_per_share: number;
   staked: number;
   start_time: string;
   fid: number;

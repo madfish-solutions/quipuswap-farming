@@ -33,13 +33,13 @@ import {
   StakeParams,
 } from "../types/Common";
 import {
+  NewRewardPerSecond,
   NewFarmParams,
   QFarmStorage,
   SetFeeParams,
   FarmData,
   QFees,
   Farm,
-  RPS,
 } from "../types/QFarm";
 import { Utils, zeroAddress } from "./Utils";
 
@@ -169,7 +169,9 @@ export class QFarm {
     return operation;
   }
 
-  async setRewardPerSecond(params: RPS[]): Promise<TransactionOperation> {
+  async setRewardPerSecond(
+    params: NewRewardPerSecond[]
+  ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .set_reward_per_second(params)
       .send();
@@ -335,7 +337,9 @@ export class QFarmUtils {
     const newReward: BigNumber = new BigNumber(
       timeLeft * finalFarm.reward_per_second
     );
-    const expectedShareReward: BigNumber = new BigNumber(initialFarm.rps).plus(
+    const expectedShareReward: BigNumber = new BigNumber(
+      initialFarm.reward_per_share
+    ).plus(
       newReward.div(initialFarm.staked).integerValue(BigNumber.ROUND_DOWN)
     );
     const expectedUserPrevEarned: BigNumber = expectedShareReward.multipliedBy(

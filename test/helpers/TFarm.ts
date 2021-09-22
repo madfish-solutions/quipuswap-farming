@@ -329,7 +329,9 @@ export class TFarmUtils {
     const newReward: BigNumber = new BigNumber(
       timeLeft * finalFarm.reward_per_second
     );
-    const expectedShareReward: BigNumber = new BigNumber(initialFarm.rps).plus(
+    const expectedShareReward: BigNumber = new BigNumber(
+      initialFarm.reward_per_share
+    ).plus(
       newReward.div(initialFarm.staked).integerValue(BigNumber.ROUND_DOWN)
     );
     const expectedUserPrevEarned: BigNumber = expectedShareReward.multipliedBy(

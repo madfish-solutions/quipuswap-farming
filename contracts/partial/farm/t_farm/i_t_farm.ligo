@@ -24,8 +24,8 @@ type farm_type          is [@layout:comb] record [
   paused                  : bool;
   (* Reward per second *)
   reward_per_second       : nat;
-  (* Reward per share *)
-  rps                     : nat;
+  (* Reward per 1 staked token *)
+  reward_per_share        : nat;
   (* Total count of staked tokens in the farm *)
   staked                  : nat;
   (* Farm start timestamp *)

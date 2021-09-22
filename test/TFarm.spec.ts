@@ -355,7 +355,7 @@ describe("TFarm tests", async () => {
       +tFarm.storage.storage.farms[0].reward_per_second,
       newFarmParams.reward_per_second
     );
-    strictEqual(+tFarm.storage.storage.farms[0].rps, 0);
+    strictEqual(+tFarm.storage.storage.farms[0].reward_per_share, 0);
     strictEqual(+tFarm.storage.storage.farms[0].staked, 0);
     strictEqual(+tFarm.storage.storage.farms[0].fid, 0);
 
@@ -1137,7 +1137,11 @@ describe("TFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked > initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        res.expectedShareReward
+      )
+    );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
         res.expectedUserPrevEarned
@@ -1226,7 +1230,11 @@ describe("TFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked > initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        res.expectedShareReward
+      )
+    );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
         res.expectedUserPrevEarned
@@ -1313,7 +1321,11 @@ describe("TFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked > initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        res.expectedShareReward
+      )
+    );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
         res.expectedUserPrevEarned
@@ -2037,7 +2049,11 @@ describe("TFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        res.expectedShareReward
+      )
+    );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
         res.expectedUserPrevEarned
@@ -2986,7 +3002,11 @@ describe("TFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        res.expectedShareReward
+      )
+    );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
         res.expectedUserPrevEarned
@@ -3071,7 +3091,11 @@ describe("TFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        res.expectedShareReward
+      )
+    );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
         res.expectedUserPrevEarned
@@ -3155,7 +3179,11 @@ describe("TFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        res.expectedShareReward
+      )
+    );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
         res.expectedUserPrevEarned
@@ -3263,7 +3291,11 @@ describe("TFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        res.expectedShareReward
+      )
+    );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
         res.expectedUserPrevEarned
@@ -4105,7 +4137,11 @@ describe("TFarm tests", async () => {
 
     ok(finalFarmFarmRecord.last_staked === initialFarmFarmRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        res.expectedShareReward
+      )
+    );
     ok(
       new BigNumber(finalFarmFarmRecord.prev_earned).isEqualTo(
         res.expectedUserPrevEarned
@@ -4169,7 +4205,11 @@ describe("TFarm tests", async () => {
 
     ok(finalFarmFarmRecord.last_staked === initialFarmFarmRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        res.expectedShareReward
+      )
+    );
     ok(
       new BigNumber(finalFarmFarmRecord.prev_earned).isEqualTo(
         res.expectedUserPrevEarned

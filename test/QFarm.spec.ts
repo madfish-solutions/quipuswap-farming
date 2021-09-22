@@ -19,11 +19,11 @@ import {
   UserInfoType,
 } from "./types/Common";
 import {
+  NewRewardPerSecond,
   NewFarmParams,
   SetFeeParams,
   FarmData,
   Farm,
-  RPS,
 } from "./types/QFarm";
 import { UserFA12Info } from "./types/FA12";
 import { UpdateOperatorParam, UserFA2Info, UserFA2LPInfo } from "./types/FA2";
@@ -201,7 +201,9 @@ describe("QFarm tests", async () => {
   });
 
   it("should fail if not admin is trying to set reward per second", async () => {
-    const params: RPS[] = [{ fid: 0, reward_per_second: 100 * precision }];
+    const params: NewRewardPerSecond[] = [
+      { fid: 0, reward_per_second: 100 * precision },
+    ];
 
     await utils.setProvider(alice.sk);
     await rejects(qFarm.setRewardPerSecond(params), (err: Error) => {
@@ -212,7 +214,9 @@ describe("QFarm tests", async () => {
   });
 
   it("should fail if one farm from list of farms not found", async () => {
-    const params: RPS[] = [{ fid: 0, reward_per_second: 100 * precision }];
+    const params: NewRewardPerSecond[] = [
+      { fid: 0, reward_per_second: 100 * precision },
+    ];
 
     await utils.setProvider(bob.sk);
     await rejects(qFarm.setRewardPerSecond(params), (err: Error) => {
@@ -376,7 +380,7 @@ describe("QFarm tests", async () => {
       +qFarm.storage.storage.farms[0].reward_per_second,
       newFarmParams.reward_per_second
     );
-    strictEqual(+qFarm.storage.storage.farms[0].rps, 0);
+    strictEqual(+qFarm.storage.storage.farms[0].reward_per_share, 0);
     strictEqual(+qFarm.storage.storage.farms[0].staked, 0);
     strictEqual(+qFarm.storage.storage.farms[0].fid, 0);
 
@@ -615,7 +619,9 @@ describe("QFarm tests", async () => {
   });
 
   it("should set reward per second for one farm", async () => {
-    const params: RPS[] = [{ fid: 0, reward_per_second: 100 * precision }];
+    const params: NewRewardPerSecond[] = [
+      { fid: 0, reward_per_second: 100 * precision },
+    ];
 
     await qFarm.setRewardPerSecond(params);
     await qFarm.updateStorage({ farms: [0] });
@@ -627,7 +633,7 @@ describe("QFarm tests", async () => {
   });
 
   it("should set reward per second for group of farms", async () => {
-    const params: RPS[] = [
+    const params: NewRewardPerSecond[] = [
       { fid: 0, reward_per_second: 100 * precision },
       { fid: 1, reward_per_second: 50 * precision },
       { fid: 2, reward_per_second: 250 * precision },
@@ -1064,7 +1070,11 @@ describe("QFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked > initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        res.expectedShareReward
+      )
+    );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
         res.expectedUserPrevEarned
@@ -1140,7 +1150,11 @@ describe("QFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked > initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        res.expectedShareReward
+      )
+    );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
         res.expectedUserPrevEarned
@@ -1212,7 +1226,11 @@ describe("QFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked > initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        res.expectedShareReward
+      )
+    );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
         res.expectedUserPrevEarned
@@ -1639,7 +1657,11 @@ describe("QFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        res.expectedShareReward
+      )
+    );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
         res.expectedUserPrevEarned
@@ -2309,7 +2331,11 @@ describe("QFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        res.expectedShareReward
+      )
+    );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
         res.expectedUserPrevEarned
@@ -2387,7 +2413,11 @@ describe("QFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        res.expectedShareReward
+      )
+    );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
         res.expectedUserPrevEarned
@@ -2744,7 +2774,11 @@ describe("QFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        res.expectedShareReward
+      )
+    );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
         res.expectedUserPrevEarned
@@ -3048,7 +3082,11 @@ describe("QFarm tests", async () => {
 
     ok(finalFarmFarmRecord.last_staked === initialFarmFarmRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        res.expectedShareReward
+      )
+    );
     ok(
       new BigNumber(finalFarmFarmRecord.prev_earned).isEqualTo(
         res.expectedUserPrevEarned
@@ -3123,7 +3161,11 @@ describe("QFarm tests", async () => {
 
     ok(finalFarmFarmRecord.last_staked === initialFarmFarmRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
-    ok(new BigNumber(finalFarm.rps).isEqualTo(res.expectedShareReward));
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        res.expectedShareReward
+      )
+    );
     ok(
       new BigNumber(finalFarmFarmRecord.prev_earned).isEqualTo(
         res.expectedUserPrevEarned

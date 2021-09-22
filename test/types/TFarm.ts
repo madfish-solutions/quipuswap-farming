@@ -50,7 +50,7 @@ export type Farm = {
   current_candidate: string;
   paused: boolean;
   reward_per_second: number;
-  rps: number;
+  reward_per_share: number;
   staked: number;
   start_time: string;
   end_time: string;

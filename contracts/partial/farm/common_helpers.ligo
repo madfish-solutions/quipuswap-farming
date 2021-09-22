@@ -36,7 +36,8 @@ function update_farm_rewards(
         const time_diff : nat = abs(Tezos.now - _farm.upd);
         const reward : nat = time_diff * _farm.reward_per_second;
 
-        _farm.rps := _farm.rps + reward / _farm.staked;
+        _farm.reward_per_share :=
+          _farm.reward_per_share + reward / _farm.staked;
       }
       else skip;
 

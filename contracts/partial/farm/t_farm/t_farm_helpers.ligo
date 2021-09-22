@@ -42,32 +42,30 @@ function claim_rewards(
         ) # operations;
       }
       | FA2(token_info)     -> {
-        const dst1 : transfer_dst_type = record [
-          to_      = receiver;
-          token_id = token_info.id;
-          amount   = actual_earned;
+        var txs : list(transfer_dst_type) := list [
+          record [
+            to_      = receiver;
+            token_id = token_info.id;
+            amount   = actual_earned;
+          ]
         ];
-        var fa2_transfer_param : fa2_send_type := record [
-          from_ = Tezos.self_address;
-          txs   = (list [] : list(transfer_dst_type));
-        ];
-        var txs : list(transfer_dst_type) := list [];
 
         if harvest_fee > 0n
         then {
-          const dst2 : transfer_dst_type = record [
+          const fee_dst : transfer_dst_type = record [
             to_      = fee_receiver;
             token_id = token_info.id;
             amount   = harvest_fee;
           ];
 
-          txs := dst2 # txs;
+          txs := fee_dst # txs;
         }
         else skip;
 
-        txs := dst1 # txs;
-
-        fa2_transfer_param.txs := txs;
+        const fa2_transfer_param : fa2_send_type = record [
+          from_ = Tezos.self_address;
+          txs   = txs;
+        ];
 
         operations := Tezos.transaction(
           FA2_transfer_type(list [fa2_transfer_param]),
@@ -102,15 +100,12 @@ function transfer_rewards_to_admin(
           FA12(token_address)
         ) # operations;
       }
-      | FA2(token_info)     -> {
+      | FA2(_)              -> {
         operations := transfer(
           Tezos.self_address,
           admin,
           earned,
-          FA2(record [
-            token = token_info.token;
-            id = token_info.id;
-          ])
+          reward_token
         ) # operations;
       }
       end;

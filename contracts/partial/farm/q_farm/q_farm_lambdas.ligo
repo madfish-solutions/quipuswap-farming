@@ -154,24 +154,12 @@ function deposit(
           }
           else skip;
 
-          case farm.stake_params.staked_token of
-            FA12(token_address) -> {
-            operations := transfer(
-              Tezos.sender,
-              Tezos.self_address,
-              params.amt,
-              FA12(token_address)
-            ) # operations;
-          }
-          | FA2(_)              -> {
-            operations := transfer(
-              Tezos.sender,
-              Tezos.self_address,
-              params.amt,
-              farm.stake_params.staked_token
-            ) # operations;
-          }
-          end;
+          operations := transfer(
+            Tezos.sender,
+            Tezos.self_address,
+            params.amt,
+            farm.stake_params.staked_token
+          ) # operations;
         }
         else skip;
 
@@ -253,24 +241,12 @@ function withdraw(
 
         s.farms[farm.fid] := farm;
 
-        case farm.stake_params.staked_token of
-          FA12(token_address) -> {
-          operations := transfer(
-            Tezos.self_address,
-            params.receiver,
-            value_without_fee,
-            FA12(token_address)
-          ) # operations;
-        }
-        | FA2(_)              -> {
-          operations := transfer(
-            Tezos.self_address,
-            params.receiver,
-            value_without_fee,
-            farm.stake_params.staked_token
-          ) # operations;
-        }
-        end;
+        operations := transfer(
+          Tezos.self_address,
+          params.receiver,
+          value_without_fee,
+          farm.stake_params.staked_token
+        ) # operations;
 
         if farm.stake_params.is_lp_staked_token
         then {
@@ -551,26 +527,21 @@ function buyback(
           }
           end;
 
-          if not farm.stake_params.is_lp_staked_token
-          then skip
-          else {
-            const divest_liquidity_params : divest_liq_type = record [
-              min_tez    = 1n;
-              min_tokens = 1n;
-              shares     = value;
-            ];
+          const divest_liquidity_params : divest_liq_type = record [
+            min_tez    = 1n;
+            min_tokens = 1n;
+            shares     = value;
+          ];
+          const lp_token : address = case farm.stake_params.staked_token of
+            FA12(token_address) -> token_address
+          | FA2(token_info)     -> token_info.token
+          end;
 
-            const lp_token : address = case farm.stake_params.staked_token of
-              FA12(token_address) -> token_address
-            | FA2(token_info)     -> token_info.token
-            end;
-
-            operations := Tezos.transaction(
-              DivestLiquidity(divest_liquidity_params),
-              0mutez,
-              get_quipuswap_use_entrypoint(lp_token)
-            ) # operations;
-          };
+          operations := Tezos.transaction(
+            DivestLiquidity(divest_liquidity_params),
+            0mutez,
+            get_quipuswap_use_entrypoint(lp_token)
+          ) # operations;
         };
       }
     | _                                 -> skip

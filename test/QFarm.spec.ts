@@ -21,6 +21,7 @@ import {
 import {
   NewRewardPerSecond,
   NewFarmParams,
+  BuybackParams,
   SetFeeParams,
   FarmData,
   Farm,
@@ -3190,5 +3191,49 @@ describe("QFarm tests", async () => {
         )
       )
     );
+  });
+
+  it("should fail if not admin is trying to do buyback", async () => {
+    const params: BuybackParams = {
+      fid: 0,
+      amt: 10,
+      min_qs_gov_output: 21,
+    };
+
+    await utils.setProvider(alice.sk);
+    await rejects(qFarm.buyback(params), (err: Error) => {
+      ok(err.message === "Not-admin");
+
+      return true;
+    });
+  });
+
+  it("should fail if farm not found", async () => {
+    const params: BuybackParams = {
+      fid: 666,
+      amt: 10,
+      min_qs_gov_output: 21,
+    };
+
+    await utils.setProvider(bob.sk);
+    await rejects(qFarm.buyback(params), (err: Error) => {
+      ok(err.message === "QSystem/farm-not-set");
+
+      return true;
+    });
+  });
+
+  it("should fail if staked by user amount is less than amount to withdraw", async () => {
+    const params: BuybackParams = {
+      fid: 0,
+      amt: 100_000_000,
+      min_qs_gov_output: 21,
+    };
+
+    await rejects(qFarm.buyback(params), (err: Error) => {
+      ok(err.message === "QFarm/balance-too-low");
+
+      return true;
+    });
   });
 });

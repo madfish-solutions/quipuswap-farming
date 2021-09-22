@@ -35,6 +35,7 @@ import {
 import {
   NewRewardPerSecond,
   NewFarmParams,
+  BuybackParams,
   QFarmStorage,
   SetFeeParams,
   FarmData,
@@ -282,6 +283,16 @@ export class QFarm {
   async burnFarmRewards(fid: number): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .burn_farm_rewards(fid)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async buyback(params: BuybackParams): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .buyback(...Utils.destructObj(params))
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

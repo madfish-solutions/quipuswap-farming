@@ -20,6 +20,12 @@ export type SetFeeParams = {
   fees: QFees;
 };
 
+export type BuybackParams = {
+  fid: number;
+  amt: number;
+  min_qs_gov_output: number;
+};
+
 export type NewFarmParams = {
   fees: QFees;
   stake_params: StakeParams;

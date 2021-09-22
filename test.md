@@ -121,9 +121,18 @@
 
 15. `fa12_tok_bal_callback`:
 
+    -
+
 16. `fa2_tok_bal_callback`:
 
+    -
+
 17. `buyback`:
+
+    - ✅ should fail if not admin is trying to do buyback;
+    - ✅ should fail if farm not found;
+    - ✅ should fail if staked by user amount is less than amount to withdraw;
+    - should buyback single FA1.2 staked token;
 
 ## TFarm
 

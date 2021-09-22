@@ -22,14 +22,14 @@ function claim_rewards(
       end;
 
       case farm.reward_token of
-        FA12(token_address) -> {
+        FA12(_)         -> {
         if harvest_fee > 0n
         then {
           operations := transfer(
             Tezos.self_address,
             fee_receiver,
             harvest_fee,
-            FA12(token_address)
+            farm.reward_token
           ) # operations;
         }
         else skip;
@@ -38,10 +38,10 @@ function claim_rewards(
           Tezos.self_address,
           receiver,
           actual_earned,
-          FA12(token_address)
+          farm.reward_token
         ) # operations;
       }
-      | FA2(token_info)     -> {
+      | FA2(token_info) -> {
         var txs : list(transfer_dst_type) := list [
           record [
             to_      = receiver;
@@ -91,24 +91,12 @@ function transfer_rewards_to_admin(
     else {
       user.earned := abs(user.earned - earned * precision);
 
-      case reward_token of
-        FA12(token_address) -> {
-        operations := transfer(
-          Tezos.self_address,
-          admin,
-          earned,
-          FA12(token_address)
-        ) # operations;
-      }
-      | FA2(_)              -> {
-        operations := transfer(
-          Tezos.self_address,
-          admin,
-          earned,
-          reward_token
-        ) # operations;
-      }
-      end;
+      operations := transfer(
+        Tezos.self_address,
+        admin,
+        earned,
+        reward_token
+      ) # operations;
     };
   } with (operations, user)
 

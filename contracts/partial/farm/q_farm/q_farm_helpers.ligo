@@ -191,7 +191,7 @@ function swap(
           min_out  = s.temp.min_qs_gov_output;
           receiver = Tezos.self_address;
         ]),
-        0mutez,
+        Tezos.amount,
         get_quipuswap_use_entrypoint(s.qsgov_lp)
       );
       (* Get balance of output QS GOV tokens to burn them *)

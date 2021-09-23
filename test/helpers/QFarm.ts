@@ -24,6 +24,7 @@ import { getLigo } from "../../scripts/helpers";
 import qFarmFunctions from "../../storage/json/QFarmFunctions.json";
 
 import {
+  WithdrawFarmDepoParams,
   PauseFarmParam,
   WithdrawParams,
   DepositParams,
@@ -35,14 +36,12 @@ import {
 import {
   NewRewardPerSecond,
   NewFarmParams,
-  BuybackParams,
   QFarmStorage,
   SetFeeParams,
   FarmData,
   QFees,
   Farm,
 } from "../types/QFarm";
-import { BalanceResponse } from "test/types/FA2";
 
 import { Utils, zeroAddress } from "./Utils";
 
@@ -292,41 +291,11 @@ export class QFarm {
     return operation;
   }
 
-  async fa12TokBalCallback(balance: number): Promise<TransactionOperation> {
-    const operation: TransactionOperation = await this.contract.methods
-      .fa12_tok_bal_callback(balance)
-      .send();
-
-    await confirmOperation(this.tezos, operation.hash);
-
-    return operation;
-  }
-
-  async fa2TokBalCallback(
-    balanceResponse: BalanceResponse[]
+  async withdrawFarmDepo(
+    params: WithdrawFarmDepoParams
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
-      .fa2_tok_bal_callback(balanceResponse)
-      .send();
-
-    await confirmOperation(this.tezos, operation.hash);
-
-    return operation;
-  }
-
-  async swapCallback(): Promise<TransactionOperation> {
-    const operation: TransactionOperation = await this.contract.methods
-      .swap_callback([])
-      .send();
-
-    await confirmOperation(this.tezos, operation.hash);
-
-    return operation;
-  }
-
-  async buyback(params: BuybackParams): Promise<TransactionOperation> {
-    const operation: TransactionOperation = await this.contract.methods
-      .buyback(...Utils.destructObj(params))
+      .withdraw_farm_depo(...Utils.destructObj(params))
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

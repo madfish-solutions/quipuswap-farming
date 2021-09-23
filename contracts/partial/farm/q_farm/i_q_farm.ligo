@@ -36,15 +36,6 @@ type farm_type          is [@layout:comb] record [
   fid                     : fid_type;
 ]
 
-type temp_type          is [@layout:comb] record [
-  (* Min amount of QS GOV swapped tokens *)
-  min_qs_gov_output       : nat;
-  (* Token that will be swapped for XTZ *)
-  token                   : token_type;
-  (* Quipuswap liquidity pool for tokens exchange *)
-  qs_pool                 : address;
-]
-
 type storage_type       is [@layout:comb] record [
   (* Farms data *)
   farms                   : big_map(fid_type, farm_type);
@@ -56,8 +47,6 @@ type storage_type       is [@layout:comb] record [
   votes                   : big_map((fid_type * key_hash), nat);
   (* User and choosen candidate *)
   candidates              : big_map((fid_type * address), key_hash);
-  (* Temp data that stores data between inter contract calls and callbacks *)
-  temp                    : temp_type;
   (* QS GOV token *)
   qsgov                   : fa2_type;
   (* QS GOV token LP on Quipuswap DEX *)
@@ -113,21 +102,6 @@ type add_new_farm_type  is [@layout:comb] record [
 
 type burn_farm_rew_type is nat (* Farm ID *)
 
-type buyback_type       is [@layout:comb] record [
-  (* Farm ID *)
-  fid                     : fid_type;
-  (* Amount of tokens to withdraw *)
-  amt                     : nat;
-  (* Min amount of QS GOV tokens from swap *)
-  min_qs_gov_output       : nat;
-]
-
-type swap_callback_type is unit
-
-type fa12_bal_type      is nat
-
-type fa2_bal_type       is list(bal_response_type)
-
 type action_type        is
   Set_admin               of set_admin_type
 | Confirm_admin           of confirm_admin_type
@@ -143,10 +117,7 @@ type action_type        is
 | Harvest                 of harvest_type
 | Burn_xtz_rewards        of burn_xtz_rew_type
 | Burn_farm_rewards       of burn_farm_rew_type
-| Buyback                 of buyback_type
-| Swap_callback           of swap_callback_type
-| Fa12_tok_bal_callback   of fa12_bal_type
-| Fa2_tok_bal_callback    of fa2_bal_type
+| Withdraw_farm_depo      of withdraw_farm_type
 
 type return_type        is (list(operation) * storage_type)
 
@@ -175,4 +146,4 @@ type full_action_type   is
 | Setup_func              of setup_func_type
 | Default                 of unit
 
-[@inline] const q_farm_methods_max_index : nat = 18n;
+[@inline] const q_farm_methods_max_index : nat = 15n;

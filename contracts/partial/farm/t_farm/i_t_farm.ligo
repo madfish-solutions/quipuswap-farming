@@ -93,13 +93,6 @@ type add_new_farm_type  is [@layout:comb] record [
 
 type claim_farm_type    is nat (* Farm ID *)
 
-type withdraw_farm_type is [@layout:comb] record [
-  (* Farm ID *)
-  fid                     : fid_type;
-  (* Amount of tokens to withdraw *)
-  amt                     : nat;
-]
-
 type action_type        is
   Set_admin               of set_admin_type
 | Confirm_admin           of confirm_admin_type

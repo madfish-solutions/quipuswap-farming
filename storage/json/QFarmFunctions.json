@@ -57,18 +57,6 @@
   },
   {
     "index": 14,
-    "name": "buyback"
-  },
-  {
-    "index": 15,
-    "name": "swap_callback"
-  },
-  {
-    "index": 16,
-    "name": "fa12_tok_bal_callback"
-  },
-  {
-    "index": 17,
-    "name": "fa2_tok_bal_callback"
+    "name": "withdraw_farm_depo"
   }
 ]

@@ -53,3 +53,8 @@ export type WithdrawData = {
   actualUserWithdraw: BigNumber;
   wirthdrawCommission: BigNumber;
 };
+
+export type WithdrawFarmDepoParams = {
+  fid: number;
+  amt: number;
+};

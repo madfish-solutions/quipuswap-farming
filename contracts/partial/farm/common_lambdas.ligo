@@ -150,3 +150,51 @@ function burn_xtz_rewards(
     | _                                 -> skip
     end
   } with (operations, s)
+
+function withdraw_farm_depo(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    var operations : list(operation) := no_operations;
+
+    case action of
+      Withdraw_farm_depo(params)        -> {
+        only_admin(s.admin);
+
+        var farm : farm_type := get_farm(params.fid, s);
+        const upd_res : (storage_type * farm_type) =
+          update_farm_rewards(farm, s);
+
+        s := upd_res.0;
+        farm := upd_res.1;
+
+        var user : user_info_type :=
+          get_user_info(farm.fid, Tezos.self_address, s);
+        var value : nat := params.amt;
+
+        if value > user.staked
+        then failwith("QSystem/balance-too-low")
+        else skip;
+
+        user.earned := user.earned +
+          abs(user.staked * farm.reward_per_share - user.prev_earned);
+        user.staked := abs(user.staked - value);
+        user.prev_earned := user.staked * farm.reward_per_share;
+
+        s.users_info[(farm.fid, Tezos.self_address)] := user;
+
+        farm.staked := abs(farm.staked - value);
+
+        s.farms[farm.fid] := farm;
+
+        operations := transfer(
+          Tezos.self_address,
+          s.admin,
+          value,
+          farm.stake_params.staked_token
+        ) # operations;
+      }
+    | _                                 -> skip
+    end
+  } with (operations, s)

@@ -14,11 +14,6 @@ export type SetFeeParams = {
   fees: TFees;
 };
 
-export type WithdrawFarmDepoParams = {
-  fid: number;
-  amt: number;
-};
-
 export type NewFarmParams = {
   fees: TFees;
   stake_params: StakeParams;

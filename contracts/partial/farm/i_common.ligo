@@ -73,3 +73,10 @@ type harvest_type       is [@layout:comb] record [
 ]
 
 type burn_xtz_rew_type  is nat (* Farm ID *)
+
+type withdraw_farm_type is [@layout:comb] record [
+  (* Farm ID *)
+  fid                     : fid_type;
+  (* Amount of tokens to withdraw *)
+  amt                     : nat;
+]

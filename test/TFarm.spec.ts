@@ -8,14 +8,9 @@ import { QSFA12Factory } from "./helpers/QSFA12Factory";
 import { QSFA2Factory } from "./helpers/QSFA2Factory";
 
 import { UpdateOperatorParam, UserFA2Info, UserFA2LPInfo } from "./types/FA2";
+import { NewFarmParams, SetFeeParams, FarmData, Farm } from "./types/TFarm";
 import {
   WithdrawFarmDepoParams,
-  NewFarmParams,
-  SetFeeParams,
-  FarmData,
-  Farm,
-} from "./types/TFarm";
-import {
   PauseFarmParam,
   WithdrawParams,
   DepositParams,
@@ -4260,7 +4255,7 @@ describe("TFarm tests", async () => {
     };
 
     await rejects(tFarm.withdrawFarmDepo(withdrawParams), (err: Error) => {
-      ok(err.message === "TFarm/balance-too-low");
+      ok(err.message === "QSystem/balance-too-low");
 
       return true;
     });

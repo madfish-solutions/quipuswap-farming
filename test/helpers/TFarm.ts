@@ -24,6 +24,7 @@ import { getLigo } from "../../scripts/helpers";
 import tFarmFunctions from "../../storage/json/TFarmFunctions.json";
 
 import {
+  WithdrawFarmDepoParams,
   PauseFarmParam,
   WithdrawParams,
   DepositParams,
@@ -33,7 +34,6 @@ import {
   StakeParams,
 } from "../types/Common";
 import {
-  WithdrawFarmDepoParams,
   NewFarmParams,
   SetFeeParams,
   TFarmStorage,

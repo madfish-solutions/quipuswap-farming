@@ -20,12 +20,6 @@ export type SetFeeParams = {
   fees: QFees;
 };
 
-export type BuybackParams = {
-  fid: number;
-  amt: number;
-  min_qs_gov_output: number;
-};
-
 export type NewFarmParams = {
   fees: QFees;
   stake_params: StakeParams;
@@ -70,11 +64,6 @@ export type QFarmStorage = {
     users_info: MichelsonMap<MichelsonMapKey, unknown>;
     votes: MichelsonMap<MichelsonMapKey, unknown>;
     candidates: MichelsonMap<MichelsonMapKey, unknown>;
-    temp: {
-      min_qs_gov_output: number;
-      token: Token;
-      qs_pool: string;
-    };
     qsgov: FA2Token;
     qsgov_lp: string;
     admin: string;

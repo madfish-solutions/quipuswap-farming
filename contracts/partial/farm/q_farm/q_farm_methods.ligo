@@ -11,14 +11,15 @@
     | Set_burner(_)            -> 4n
     | Set_proxy_minter(_)      -> 5n
     | Set_baker_registry(_)    -> 6n
-    | Add_new_farm(_)          -> 7n
-    | Pause_farms(_)           -> 8n
-    | Deposit(_)               -> 9n
-    | Withdraw(_)              -> 10n
-    | Harvest(_)               -> 11n
-    | Burn_xtz_rewards(_)      -> 12n
-    | Burn_farm_rewards(_)     -> 13n
-    | Withdraw_farm_depo(_)    -> 14n
+    | Ban_bakers(_)            -> 7n
+    | Add_new_farm(_)          -> 8n
+    | Pause_farms(_)           -> 9n
+    | Deposit(_)               -> 10n
+    | Withdraw(_)              -> 11n
+    | Harvest(_)               -> 12n
+    | Burn_xtz_rewards(_)      -> 13n
+    | Burn_farm_rewards(_)     -> 14n
+    | Withdraw_farm_depo(_)    -> 15n
     end;
 
     const res : return_type = case s.q_farm_lambdas[id] of

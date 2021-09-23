@@ -11,16 +11,7 @@ export const qFarmStorage: QFarmStorage = {
     users_info: MichelsonMap.fromLiteral({}),
     votes: MichelsonMap.fromLiteral({}),
     candidates: MichelsonMap.fromLiteral({}),
-    temp: {
-      min_qs_gov_output: 0,
-      token: {
-        fA2: {
-          token: zeroAddress,
-          id: 0,
-        },
-      },
-      qs_pool: zeroAddress,
-    },
+    banned_bakers: MichelsonMap.fromLiteral({}),
     qsgov: {
       token: null,
       id: 0,

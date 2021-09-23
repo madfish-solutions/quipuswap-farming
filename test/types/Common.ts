@@ -57,3 +57,8 @@ export type WithdrawFarmDepoParams = {
   fid: number;
   amt: number;
 };
+
+export type BanBakerParam = {
+  baker: string;
+  period: number;
+};

@@ -30,7 +30,7 @@ type farm_type          is [@layout:comb] record [
   reward_per_share        : nat;
   (* Total count of staked tokens in the farm *)
   staked                  : nat;
-  (* Farm start timestamp *)
+  (* Farm start time *)
   start_time              : timestamp;
   (* Farm ID *)
   fid                     : fid_type;
@@ -47,6 +47,8 @@ type storage_type       is [@layout:comb] record [
   votes                   : big_map((fid_type * key_hash), nat);
   (* User and choosen candidate *)
   candidates              : big_map((fid_type * address), key_hash);
+  (* Banned baker => banned baker info *)
+  banned_bakers           : big_map(key_hash, banned_baker_type);
   (* QS GOV token *)
   qsgov                   : fa2_type;
   (* QS GOV token LP on Quipuswap DEX *)
@@ -96,7 +98,7 @@ type add_new_farm_type  is [@layout:comb] record [
   reward_per_second       : nat;
   (* Timelock in seconds, 0 for farms without timelock *)
   timelock                : nat;
-  (* Farm start timestamp *)
+  (* Farm start time *)
   start_time              : timestamp;
 ]
 
@@ -110,6 +112,7 @@ type action_type        is
 | Set_burner              of set_burner_type
 | Set_proxy_minter        of set_proxy_type
 | Set_baker_registry      of set_registry_type
+| Ban_bakers              of ban_bakers_type
 | Add_new_farm            of add_new_farm_type
 | Pause_farms             of pause_farms_type
 | Deposit                 of deposit_type
@@ -146,4 +149,4 @@ type full_action_type   is
 | Setup_func              of setup_func_type
 | Default                 of unit
 
-[@inline] const q_farm_methods_max_index : nat = 15n;
+[@inline] const q_farm_methods_max_index : nat = 16n;

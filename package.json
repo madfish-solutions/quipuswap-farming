@@ -11,7 +11,7 @@
     "migrate": "yarn compile && ts-node scripts/cli.js migrate",
     "migrate-granadanet": "yarn compile && ts-node scripts/cli.js migrate -n granadanet",
     "migrate-mainnet": "yarn compile && ts-node scripts/cli.js migrate -n mainnet",
-    "test": "ts-mocha --paths test/*.spec.ts"
+    "test": "ts-mocha --paths test/*.spec.ts --bail"
   },
   "repository": {
     "type": "git",

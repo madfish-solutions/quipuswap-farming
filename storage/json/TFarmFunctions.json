@@ -21,34 +21,38 @@
   },
   {
     "index": 5,
-    "name": "add_new_farm"
+    "name": "ban_bakers"
   },
   {
     "index": 6,
-    "name": "pause_farms"
+    "name": "add_new_farm"
   },
   {
     "index": 7,
-    "name": "deposit"
+    "name": "pause_farms"
   },
   {
     "index": 8,
-    "name": "withdraw"
+    "name": "deposit"
   },
   {
     "index": 9,
-    "name": "harvest"
+    "name": "withdraw"
   },
   {
     "index": 10,
-    "name": "burn_xtz_rewards"
+    "name": "harvest"
   },
   {
     "index": 11,
-    "name": "claim_farm_rewards"
+    "name": "burn_xtz_rewards"
   },
   {
     "index": 12,
+    "name": "claim_farm_rewards"
+  },
+  {
+    "index": 13,
     "name": "withdraw_farm_depo"
   }
 ]

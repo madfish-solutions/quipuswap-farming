@@ -23,6 +23,18 @@ function get_user_info(
     ]
     end
 
+function get_banned_baker_info(
+  const baker           : key_hash;
+  const s               : storage_type)
+                        : banned_baker_type is
+    case s.banned_bakers[baker] of
+      Some(info) -> info
+    | None       -> record [
+      period = 0n;
+      start  = (0 : timestamp);
+    ]
+    end
+
 function update_farm_rewards(
   var _farm             : farm_type;
   var s                 : storage_type)

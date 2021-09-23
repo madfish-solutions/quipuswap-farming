@@ -30,6 +30,22 @@ type set_burner_type    is address (* New burner contract address *)
 
 type set_registry_type  is address (* New baker registry contract address *)
 
+type banned_baker_type  is [@layout:comb] record [
+  (* Period during which baker will be banned (in seconds)*)
+  period                  : nat;
+  (* Banning start time *)
+  start                   : timestamp;
+]
+
+type ban_baker_type     is [@layout:comb] record [
+  (* Baker to ban or unban *)
+  baker                   : key_hash;
+  (* Period during which baker will be banned (in seconds). 0 for unban *)
+  period                  : nat;
+]
+
+type ban_bakers_type    is list(ban_baker_type)
+
 type pause_farm_type    is [@layout:comb] record [
   (* Farm ID *)
   fid                     : fid_type;

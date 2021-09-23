@@ -8,7 +8,7 @@ type fees_type          is [@layout:comb] record [
 type farm_type          is [@layout:comb] record [
   (* Fees data *)
   fees                    : fees_type;
-  (* Last farm updated timestamp *)
+  (* Last farm updated time *)
   upd                     : timestamp;
   (* Staking params *)
   stake_params            : stake_params_type;
@@ -28,9 +28,9 @@ type farm_type          is [@layout:comb] record [
   reward_per_share        : nat;
   (* Total count of staked tokens in the farm *)
   staked                  : nat;
-  (* Farm start timestamp *)
+  (* Farm start time *)
   start_time              : timestamp;
-  (* Farm end timestamp *)
+  (* Farm end time *)
   end_time                : timestamp;
   (* Farm ID *)
   fid                     : fid_type;
@@ -47,6 +47,8 @@ type storage_type       is [@layout:comb] record [
   votes                   : big_map((fid_type * key_hash), nat);
   (* User and choosen candidate *)
   candidates              : big_map((fid_type * address), key_hash);
+  (* Banned baker => banned baker info *)
+  banned_bakers           : big_map(key_hash, banned_baker_type);
   (* QS GOV token *)
   qsgov                   : fa2_type;
   (* QS GOV token LP on Quipuswap DEX *)
@@ -83,9 +85,9 @@ type add_new_farm_type  is [@layout:comb] record [
   paused                  : bool;
   (* Timelock in seconds, 0 for farms without timelock *)
   timelock                : nat;
-  (* Farm start timestamp *)
+  (* Farm start time *)
   start_time              : timestamp;
-  (* Farm end timestamp *)
+  (* Farm end time *)
   end_time                : timestamp;
   (* Reward per second *)
   reward_per_second       : nat;
@@ -99,6 +101,7 @@ type action_type        is
 | Set_fees                of set_fees_type
 | Set_burner              of set_burner_type
 | Set_baker_registry      of set_registry_type
+| Ban_bakers              of ban_bakers_type
 | Add_new_farm            of add_new_farm_type
 | Pause_farms             of pause_farms_type
 | Deposit                 of deposit_type
@@ -132,4 +135,4 @@ type full_action_type   is
   Use                     of action_type
 | Setup_func              of setup_func_type
 
-[@inline] const t_farm_methods_max_index : nat = 12n;
+[@inline] const t_farm_methods_max_index : nat = 13n;

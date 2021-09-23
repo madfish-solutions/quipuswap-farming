@@ -29,6 +29,7 @@ import {
   WithdrawParams,
   DepositParams,
   HarvestParams,
+  BanBakerParam,
   UserInfoType,
   WithdrawData,
   StakeParams,
@@ -185,6 +186,16 @@ export class TFarm {
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .set_baker_registry(newBakerRegistry)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async banBakers(params: BanBakerParam[]): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .ban_bakers(params)
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

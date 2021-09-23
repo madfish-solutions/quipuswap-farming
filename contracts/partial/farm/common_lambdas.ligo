@@ -86,6 +86,36 @@ function set_baker_registry(
     end
   } with (no_operations, s)
 
+function ban_bakers(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    case action of
+      Ban_bakers(params)                -> {
+        only_admin(s.admin);
+
+        (* Ban or unban the specified baker *)
+        function ban_baker(
+          var s           : storage_type;
+          const params    : ban_baker_type)
+                          : storage_type is
+          block {
+            var baker_info : banned_baker_type :=
+              get_banned_baker_info(params.baker, s);
+
+            baker_info.period := params.period;
+            baker_info.start := Tezos.now;
+
+            s.banned_bakers[params.baker] := baker_info;
+          } with s;
+
+        s := List.fold(ban_baker, params, s);
+      }
+    | _                                 -> skip
+    end
+  } with (no_operations, s)
+
 function pause_farms(
   const action          : action_type;
   var s                 : storage_type)

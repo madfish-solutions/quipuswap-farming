@@ -41,22 +41,31 @@
    - ✅ should fail if not admin is trying to set baker registry;
    - ✅ should change baker registry by admin.
 
-8. `add_new_farm`:
+8. `ban_bakers`:
+
+   - ✅ should fail if not admin is trying to ban baker;
+   - ✅ should ban one baker;
+   - ✅ should unban one baker;
+   - ✅ should ban group of bakers;
+   - ✅ should unban group of bakers;
+   - ✅ should ban/unban group of bakers.
+
+9. `add_new_farm`:
 
    - ✅ should fail if not admin is trying to add new farm;
    - ✅ should add new farm by admin and set all farm's fields correctly.
 
-9. `pause_farms`:
+10. `pause_farms`:
 
-   - ✅ should fail if not admin is trying to pause farm;
-   - ✅ should fail if one farm from list of farms not found;
-   - ✅ should pause one farm;
-   - ✅ should unpause one farm;
-   - ✅ should pause group of farms;
-   - ✅ should unpause group of farms;
-   - ✅ should pause/unpause group of farms.
+    - ✅ should fail if not admin is trying to pause farm;
+    - ✅ should fail if one farm from list of farms not found;
+    - ✅ should pause one farm;
+    - ✅ should unpause one farm;
+    - ✅ should pause group of farms;
+    - ✅ should unpause group of farms;
+    - ✅ should pause/unpause group of farms.
 
-10. `deposit`:
+11. `deposit`:
 
     - ✅ should fail if farm not found;
     - ✅ should fail if farm is paused;
@@ -77,7 +86,7 @@
     - ✅ should vote for the baker if LP token is deposited;
     - ✅ should change current delegated for the next candidate if votes were redistributed.
 
-11. `withdraw`:
+12. `withdraw`:
 
     - ✅ should fail if farm not found;
     - ✅ should fail if staked by user amount is less than amount to withdraw;
@@ -96,7 +105,7 @@
     - ✅ should withdraw tokens to the specified receiver;
     - ✅ should change current delegated for the next candidate if votes were redistributed.
 
-12. `harvest`:
+13. `harvest`:
 
     - ✅ should fail if farm not found;
     - ✅ should fail if timelock is not finished (in farms with timelock);
@@ -106,20 +115,20 @@
     - ✅ should mint QS GOV tokens as harvest fee to zero address (in case when user does not have referrer);
     - ✅ should calculate and mint QS GOV tokens as harvest fee with decimals (like 4.2%).
 
-13. `burn_xtz_rewards`:
+14. `burn_xtz_rewards`:
 
     - ✅ should fail if not admin is trying to burn XTZ rewards;
     - ✅ should fail if farm not found;
     - ✅ should fail if not LP token is staked on the farm;
     - ✅ should withdraw bakers rewards in XTZ from the QS pool, swap for QS GOV tokens and burn them.
 
-14. `burn_farm_rewards`:
+15. `burn_farm_rewards`:
 
     - ✅ should fail if farm not found;
     - ✅ should burn farm rewards;
     - ✅ should pay burn reward to the transaction sender.
 
-15. `withdraw_farm_depo`:
+16. `withdraw_farm_depo`:
 
     - ✅ should fail if not admit is trying to withdraw farm depo;
     - ✅ should fail if farm not found;
@@ -158,7 +167,16 @@
    - ✅ should fail if not admin is trying to set baker registry;
    - ✅ should change baker registry by admin.
 
-6. `add_new_farm`:
+6. `ban_bakers`:
+
+   - ✅ should fail if not admin is trying to ban baker;
+   - ✅ should ban one baker;
+   - ✅ should unban one baker;
+   - ✅ should ban group of bakers;
+   - ✅ should unban group of bakers;
+   - ✅ should ban/unban group of bakers.
+
+7. `add_new_farm`:
 
    - ✅ should fail if not admin is trying to add new farm;
    - ✅ should fail if end time is less or equal to start time;
@@ -167,7 +185,7 @@
    - ✅ should transfer correct amount of FA1.2 tokens to the contract as the rewards for users;
    - ✅ should transfer correct amount of FA2 tokens to the contract as the rewards for users.
 
-7. `pause_farms`:
+8. `pause_farms`:
 
    - ✅ should fail if not admin is trying to pause farm;
    - ✅ should fail if one farm from list of farms not found;
@@ -177,7 +195,7 @@
    - ✅ should unpause group of farms;
    - ✅ should pause/unpause group of farms.
 
-8. `deposit`:
+9. `deposit`:
 
    - ✅ should fail if farm not found;
    - ✅ should fail if farm is paused;
@@ -201,30 +219,30 @@
    - ✅ should vote for the baker if LP token is deposited;
    - ✅ should change current delegated for the next candidate if votes were redistributed.
 
-9. `withdraw`:
+10. `withdraw`:
 
-   - ✅ should fail if farm not found;
-   - ✅ should fail if staked by user amount is less than amount to withdraw;
-   - ✅ should claim user's rewards (in farms without timelock);
-   - ✅ should claim user's rewards if timelock is finished (in farms with timelock);
-   - ✅ should transfer FA1.2 user's rewards to admin if timelock is not finished (in farms with timelock);
-   - ✅ should transfer FA2 user's rewards to admin if timelock is not finished (in farms with timelock);
-   - ✅ should stake withdrawal fee from farm's name;
-   - ✅ should transfer FA1.2 reward tokens as reward to rewards receiver;
-   - ✅ should transfer FA2 reward tokens as reward to rewards receiver;
-   - ✅ should transfer FA1.2 reward tokens as harvest fee to referrer (in case when user have referrer);
-   - ✅ should transfer FA2 reward tokens as harvest fee to referrer (in case when user have referrer);
-   - ✅ should transfer FA1.2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
-   - ✅ should transfer FA2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
-   - ✅ should calculate and transfer reward tokens as harvest fee with decimals (like 4.2%);
-   - ✅ should withdraw single FA1.2 token;
-   - ✅ should withdraw LP FA1.2 token;
-   - ✅ should withdraw single FA2 token;
-   - ✅ should withdraw LP FA2 token;
-   - ✅ should withdraw tokens to the specified receiver;
-   - ✅ should change current delegated for the next candidate if votes were redistributed.
+    - ✅ should fail if farm not found;
+    - ✅ should fail if staked by user amount is less than amount to withdraw;
+    - ✅ should claim user's rewards (in farms without timelock);
+    - ✅ should claim user's rewards if timelock is finished (in farms with timelock);
+    - ✅ should transfer FA1.2 user's rewards to admin if timelock is not finished (in farms with timelock);
+    - ✅ should transfer FA2 user's rewards to admin if timelock is not finished (in farms with timelock);
+    - ✅ should stake withdrawal fee from farm's name;
+    - ✅ should transfer FA1.2 reward tokens as reward to rewards receiver;
+    - ✅ should transfer FA2 reward tokens as reward to rewards receiver;
+    - ✅ should transfer FA1.2 reward tokens as harvest fee to referrer (in case when user have referrer);
+    - ✅ should transfer FA2 reward tokens as harvest fee to referrer (in case when user have referrer);
+    - ✅ should transfer FA1.2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
+    - ✅ should transfer FA2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
+    - ✅ should calculate and transfer reward tokens as harvest fee with decimals (like 4.2%);
+    - ✅ should withdraw single FA1.2 token;
+    - ✅ should withdraw LP FA1.2 token;
+    - ✅ should withdraw single FA2 token;
+    - ✅ should withdraw LP FA2 token;
+    - ✅ should withdraw tokens to the specified receiver;
+    - ✅ should change current delegated for the next candidate if votes were redistributed.
 
-10. `harvest`:
+11. `harvest`:
 
     - ✅ should fail if farm not found;
     - ✅ should fail if timelock is not finished (in farms with timelock);
@@ -237,21 +255,21 @@
     - ✅ should transfer FA2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
     - ✅ should calculate and transfer reward tokens as harvest fee with decimals (like 4.2%).
 
-11. `burn_xtz_rewards`:
+12. `burn_xtz_rewards`:
 
     - ✅ should fail if not admin is trying to burn XTZ rewards;
     - ✅ should fail if farm not found;
     - ✅ should fail if not LP token is staked on the farm;
     - ✅ should withdraw bakers rewards in XTZ from the QS pool, swap for QS GOV tokens and burn them.
 
-12. `claim_farm_rewards`:
+13. `claim_farm_rewards`:
 
     - ✅ should fail if not admin is trying to claim farm rewards;
     - ✅ should fail if farm not found;
     - ✅ should transfer FA1.2 reward tokens to the admin;
     - ✅ should transfer FA2 reward tokens to the admin.
 
-13. `withdraw_farm_depo`:
+14. `withdraw_farm_depo`:
 
     - ✅ should fail if not admit is trying to withdraw farm depo;
     - ✅ should fail if farm not found;

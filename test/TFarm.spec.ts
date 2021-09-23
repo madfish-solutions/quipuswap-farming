@@ -15,6 +15,7 @@ import {
   WithdrawParams,
   DepositParams,
   HarvestParams,
+  BanBakerParam,
   UserInfoType,
   WithdrawData,
 } from "./types/Common";
@@ -26,7 +27,7 @@ import { ok, rejects, strictEqual } from "assert";
 
 import { BigNumber } from "bignumber.js";
 
-import { alice, bob, dev } from "../scripts/sandbox/accounts";
+import { alice, bob, carol, dev } from "../scripts/sandbox/accounts";
 
 import { confirmOperation } from "../scripts/confirmation";
 
@@ -231,6 +232,126 @@ describe("TFarm tests", async () => {
     await tFarm.updateStorage();
 
     strictEqual(tFarm.storage.storage.baker_registry, bakerRegistryAddress);
+  });
+
+  it("should fail if not admin is trying to ban baker", async () => {
+    const banParams: BanBakerParam[] = [{ baker: alice.pkh, period: 60 }];
+
+    await utils.setProvider(alice.sk);
+    await rejects(tFarm.banBakers(banParams), (err: Error) => {
+      ok(err.message === "Not-admin");
+
+      return true;
+    });
+  });
+
+  it("should ban one baker", async () => {
+    const banParams: BanBakerParam[] = [{ baker: alice.pkh, period: 60 }];
+
+    await utils.setProvider(bob.sk);
+    await tFarm.banBakers(banParams);
+    await tFarm.updateStorage({ banned_bakers: [alice.pkh] });
+
+    strictEqual(
+      +tFarm.storage.storage.banned_bakers[alice.pkh].period,
+      banParams[0].period
+    );
+    strictEqual(
+      Date.parse(tFarm.storage.storage.banned_bakers[alice.pkh].start),
+      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
+    );
+  });
+
+  it("should unban one baker", async () => {
+    const banParams: BanBakerParam[] = [{ baker: alice.pkh, period: 0 }];
+
+    await tFarm.banBakers(banParams);
+    await tFarm.updateStorage({ banned_bakers: [alice.pkh] });
+
+    strictEqual(+tFarm.storage.storage.banned_bakers[alice.pkh].period, 0);
+    strictEqual(
+      Date.parse(tFarm.storage.storage.banned_bakers[alice.pkh].start),
+      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
+    );
+  });
+
+  it("should ban group of bakers", async () => {
+    const banParams: BanBakerParam[] = [
+      { baker: alice.pkh, period: 120 },
+      { baker: bob.pkh, period: 60 },
+    ];
+
+    await tFarm.banBakers(banParams);
+    await tFarm.updateStorage({ banned_bakers: [alice.pkh, bob.pkh] });
+
+    for (let i = 0; i < banParams.length; ++i) {
+      strictEqual(
+        +tFarm.storage.storage.banned_bakers[banParams[i].baker].period,
+        banParams[i].period
+      );
+      strictEqual(
+        Date.parse(
+          tFarm.storage.storage.banned_bakers[banParams[i].baker].start
+        ),
+        Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
+      );
+    }
+  });
+
+  it("should unban group of bakers", async () => {
+    const banParams: BanBakerParam[] = [
+      { baker: alice.pkh, period: 0 },
+      { baker: bob.pkh, period: 0 },
+    ];
+
+    await tFarm.banBakers(banParams);
+    await tFarm.updateStorage({ banned_bakers: [alice.pkh, bob.pkh] });
+
+    for (let i = 0; i < banParams.length; ++i) {
+      strictEqual(
+        +tFarm.storage.storage.banned_bakers[banParams[i].baker].period,
+        0
+      );
+      strictEqual(
+        Date.parse(
+          tFarm.storage.storage.banned_bakers[banParams[i].baker].start
+        ),
+        Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
+      );
+    }
+  });
+
+  it("should ban/unban group of bakers", async () => {
+    const banParams: BanBakerParam[] = [
+      { baker: alice.pkh, period: 5 },
+      { baker: bob.pkh, period: 5 },
+      { baker: carol.pkh, period: 120 },
+      { baker: alice.pkh, period: 0 },
+    ];
+
+    await tFarm.banBakers(banParams);
+    await tFarm.updateStorage({
+      banned_bakers: [alice.pkh, bob.pkh, carol.pkh],
+    });
+
+    for (let i = 1; i < banParams.length - 1; ++i) {
+      strictEqual(
+        +tFarm.storage.storage.banned_bakers[banParams[i].baker].period,
+        banParams[i].period
+      );
+      strictEqual(
+        Date.parse(
+          tFarm.storage.storage.banned_bakers[banParams[i].baker].start
+        ),
+        Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
+      );
+    }
+
+    strictEqual(+tFarm.storage.storage.banned_bakers[alice.pkh].period, 0);
+    strictEqual(
+      Date.parse(tFarm.storage.storage.banned_bakers[alice.pkh].start),
+      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
+    );
   });
 
   it("should fail if not admin is trying to add new farm", async () => {

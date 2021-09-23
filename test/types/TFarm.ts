@@ -59,6 +59,7 @@ export type TFarmStorage = {
     users_info: MichelsonMap<MichelsonMapKey, unknown>;
     votes: MichelsonMap<MichelsonMapKey, unknown>;
     candidates: MichelsonMap<MichelsonMapKey, unknown>;
+    banned_bakers: MichelsonMap<MichelsonMapKey, unknown>;
     qsgov: FA2Token;
     qsgov_lp: string;
     admin: string;

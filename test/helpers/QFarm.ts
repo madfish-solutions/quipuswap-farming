@@ -42,6 +42,8 @@ import {
   QFees,
   Farm,
 } from "../types/QFarm";
+import { BalanceResponse } from "test/types/FA2";
+
 import { Utils, zeroAddress } from "./Utils";
 
 export class QFarm {
@@ -125,7 +127,7 @@ export class QFarm {
         amount: 0,
         parameter: {
           entrypoint: "setup_func",
-          value: JSON.parse(stdout.toString()).args[0],
+          value: JSON.parse(stdout.toString()).args[0].args[0],
         },
       });
 
@@ -283,6 +285,38 @@ export class QFarm {
   async burnFarmRewards(fid: number): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .burn_farm_rewards(fid)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async fa12TokBalCallback(balance: number): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .fa12_tok_bal_callback(balance)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async fa2TokBalCallback(
+    balanceResponse: BalanceResponse[]
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .fa2_tok_bal_callback(balanceResponse)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async swapCallback(): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .swap_callback([])
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

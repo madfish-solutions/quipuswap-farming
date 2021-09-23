@@ -379,18 +379,6 @@ function withdraw_farm_depo(
 
         user.earned := user.earned +
           abs(user.staked * farm.reward_per_share - user.prev_earned);
-
-        var res : (list(operation) * user_info_type) :=
-          transfer_rewards_to_admin(
-            user,
-            operations,
-            farm.reward_token,
-            s.admin
-          );
-
-        operations := res.0;
-        user := res.1;
-
         user.staked := abs(user.staked - value);
         user.prev_earned := user.staked * farm.reward_per_share;
 
@@ -406,21 +394,6 @@ function withdraw_farm_depo(
           value,
           farm.stake_params.staked_token
         ) # operations;
-
-        if farm.stake_params.is_lp_staked_token
-        then {
-          const revote_res : (list(operation) * storage_type) = revote(
-            operations,
-            user,
-            farm,
-            s,
-            value
-          );
-
-          operations := revote_res.0;
-          s := revote_res.1;
-        }
-        else skip;
       }
     | _                                 -> skip
     end

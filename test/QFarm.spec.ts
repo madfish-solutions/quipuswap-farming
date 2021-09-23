@@ -27,7 +27,13 @@ import {
   Farm,
 } from "./types/QFarm";
 import { UserFA12Info } from "./types/FA12";
-import { UpdateOperatorParam, UserFA2Info, UserFA2LPInfo } from "./types/FA2";
+import {
+  UpdateOperatorParam,
+  BalanceResponse,
+  BalanceRequest,
+  UserFA2LPInfo,
+  UserFA2Info,
+} from "./types/FA2";
 
 import { rejects, ok, strictEqual } from "assert";
 
@@ -1161,7 +1167,11 @@ describe("QFarm tests", async () => {
         res.expectedUserPrevEarned
       )
     );
-    ok(new BigNumber(finalFarmAliceRecord.earned).isEqualTo(0));
+    ok(
+      new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
+        res.expectedUserEarnedAfterHarvest
+      )
+    );
     ok(
       new BigNumber(+(await finalQsGovAliceRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialQsGovAliceRecord.balances.get("0"))).plus(
@@ -2981,16 +2991,13 @@ describe("QFarm tests", async () => {
   });
 
   it("should withdraw bakers rewards in XTZ from the QS pool, swap for QS GOV tokens and burn them", async () => {
-    await fa12LP.updateStorage({
-      ledger: [alice.pkh],
-    });
     await qsGov.updateStorage({
       account_info: [zeroAddress],
     });
 
     const depositParams: DepositParams = {
       fid: 4,
-      amt: +fa12LP.storage.storage.ledger[alice.pkh].balance,
+      amt: 100,
       referrer: bob.pkh,
       rewards_receiver: alice.pkh,
       candidate: alice.pkh,
@@ -2999,10 +3006,7 @@ describe("QFarm tests", async () => {
       qsGov.storage.account_info[zeroAddress];
 
     await utils.setProvider(alice.sk);
-    await fa12LP.approve(
-      qFarm.contract.address,
-      +fa12LP.storage.storage.ledger[alice.pkh].balance
-    );
+    await fa12LP.approve(qFarm.contract.address, 100);
     await qFarm.deposit(depositParams);
     await utils.setProvider(bob.sk);
 
@@ -3193,6 +3197,37 @@ describe("QFarm tests", async () => {
     );
   });
 
+  it("should fail if not current contract or token from temp record is trying to call entrypoint", async () => {
+    await utils.setProvider(alice.sk);
+    await rejects(qFarm.fa12TokBalCallback(666), (err: Error) => {
+      ok(err.message === "QFarm/wrong-caller");
+
+      return true;
+    });
+  });
+
+  it("should fail if not current contract or token from temp record is trying to call entrypoint", async () => {
+    const balanceRequest: BalanceRequest = { owner: alice.pkh, token_id: 0 };
+    const balanceResponse: BalanceResponse[] = [
+      { request: balanceRequest, balance: 666 },
+    ];
+
+    await rejects(qFarm.fa2TokBalCallback(balanceResponse), (err: Error) => {
+      ok(err.message === "QFarm/wrong-caller");
+
+      return true;
+    });
+    await utils.setProvider(bob.sk);
+  });
+
+  it("should fail if not current contract is trying to call entrypoint", async () => {
+    await rejects(qFarm.swapCallback(), (err: Error) => {
+      ok(err.message === "QFarm/wrong-caller");
+
+      return true;
+    });
+  });
+
   it("should fail if not admin is trying to do buyback", async () => {
     const params: BuybackParams = {
       fid: 0,
@@ -3236,4 +3271,197 @@ describe("QFarm tests", async () => {
       return true;
     });
   });
+
+  it("should fail if expected QS GOV tokens amount is too high", async () => {
+    const params: BuybackParams = {
+      fid: 0,
+      amt: 210,
+      min_qs_gov_output: 100_000_000,
+    };
+
+    await rejects(qFarm.buyback(params), (err: Error) => {
+      ok(err.message === "Dex/wrong-min-out");
+
+      return true;
+    });
+  });
+
+  it("should buyback single FA1.2 staked token", async () => {
+    await qsGov.updateStorage({
+      account_info: [zeroAddress],
+    });
+
+    const initialQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+    const params: BuybackParams = {
+      fid: 0,
+      amt: 210,
+      min_qs_gov_output: 100,
+    };
+
+    await qFarm.buyback(params);
+    await qsGov.updateStorage({
+      account_info: [zeroAddress],
+    });
+    await qFarm.updateStorage();
+
+    const finalQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+
+    ok(
+      new BigNumber(
+        +(await finalQsGovZeroRecord.balances.get("0"))
+      ).isGreaterThan(
+        new BigNumber(+(await initialQsGovZeroRecord.balances.get("0")))
+      )
+    );
+
+    strictEqual(+qFarm.storage.storage.temp.min_qs_gov_output, 0);
+    strictEqual(qFarm.storage.storage.temp.qs_pool, zeroAddress);
+    strictEqual(qFarm.storage.storage.temp.token.fA12, zeroAddress);
+  });
+
+  it("should buyback single FA2 staked token", async () => {
+    let newFarmParams: NewFarmParams = await QFarmUtils.getMockNewFarmParams(
+      utils
+    );
+
+    newFarmParams.fees.harvest_fee = 12 * feePrecision;
+    newFarmParams.fees.withdrawal_fee = 70 * feePrecision;
+    newFarmParams.fees.burn_reward = 18 * feePrecision;
+    newFarmParams.stake_params.staked_token = {
+      fA2: { token: fa2.contract.address, id: 0 },
+    };
+    newFarmParams.stake_params.qs_pool = fa2LP.contract.address;
+    newFarmParams.reward_per_second = 10 * precision;
+    newFarmParams.timelock = 10;
+
+    await qFarm.addNewFarm(newFarmParams);
+
+    const updateOperatorParam: UpdateOperatorParam = {
+      add_operator: {
+        owner: bob.pkh,
+        operator: qFarm.contract.address,
+        token_id: 0,
+      },
+    };
+    const depositParams: DepositParams = {
+      fid: 7,
+      amt: 1000,
+      referrer: alice.pkh,
+      rewards_receiver: bob.pkh,
+      candidate: zeroAddress,
+    };
+    const withdrawParams: WithdrawParams = {
+      fid: depositParams.fid,
+      amt: depositParams.amt,
+      receiver: bob.pkh,
+      rewards_receiver: bob.pkh,
+    };
+
+    await fa2.updateOperators([updateOperatorParam]);
+    await qFarm.deposit(depositParams);
+    await qFarm.withdraw(withdrawParams);
+    await qsGov.updateStorage({
+      account_info: [zeroAddress],
+    });
+
+    const initialQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+    const params: BuybackParams = {
+      fid: depositParams.fid,
+      amt: 100,
+      min_qs_gov_output: 80,
+    };
+
+    await qFarm.buyback(params);
+    await qsGov.updateStorage({
+      account_info: [zeroAddress],
+    });
+    await qFarm.updateStorage();
+
+    const finalQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+
+    ok(
+      new BigNumber(
+        +(await finalQsGovZeroRecord.balances.get("0"))
+      ).isGreaterThan(
+        new BigNumber(+(await initialQsGovZeroRecord.balances.get("0")))
+      )
+    );
+
+    strictEqual(+qFarm.storage.storage.temp.min_qs_gov_output, 0);
+    strictEqual(qFarm.storage.storage.temp.qs_pool, zeroAddress);
+    strictEqual(qFarm.storage.storage.temp.token.fA12, zeroAddress);
+  });
+
+  // it("should divest liquidity and buyback LP FA1.2 staked token", async () => {
+  //   let newFarmParams: NewFarmParams = await QFarmUtils.getMockNewFarmParams(
+  //     utils
+  //   );
+
+  //   newFarmParams.fees.harvest_fee = 15 * feePrecision;
+  //   newFarmParams.fees.withdrawal_fee = 95 * feePrecision;
+  //   newFarmParams.fees.burn_reward = 20 * feePrecision;
+  //   newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
+  //   newFarmParams.stake_params.token = { fA12: fa12.contract.address };
+  //   newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
+  //   newFarmParams.reward_per_second = 21 * precision;
+  //   newFarmParams.timelock = 10;
+
+  //   await qFarm.addNewFarm(newFarmParams);
+
+  //   const depositParams: DepositParams = {
+  //     fid: 8,
+  //     amt: 1000,
+  //     referrer: bob.pkh,
+  //     rewards_receiver: alice.pkh,
+  //     candidate: zeroAddress,
+  //   };
+  //   const withdrawParams: WithdrawParams = {
+  //     fid: depositParams.fid,
+  //     amt: depositParams.amt,
+  //     receiver: alice.pkh,
+  //     rewards_receiver: alice.pkh,
+  //   };
+
+  //   await utils.setProvider(alice.sk);
+  //   await fa12LP.approve(qFarm.contract.address, depositParams.amt);
+  //   await qFarm.deposit(depositParams);
+  //   await qFarm.withdraw(withdrawParams);
+  //   await utils.setProvider(bob.sk);
+  //   await qsGov.updateStorage({
+  //     account_info: [zeroAddress],
+  //   });
+
+  //   const initialQsGovZeroRecord: UserFA2Info =
+  //     qsGov.storage.account_info[zeroAddress];
+  //   const params: BuybackParams = {
+  //     fid: depositParams.fid,
+  //     amt: 800,
+  //     min_qs_gov_output: 500,
+  //   };
+
+  //   await qFarm.buyback(params);
+  //   await qsGov.updateStorage({
+  //     account_info: [zeroAddress],
+  //   });
+  //   await qFarm.updateStorage();
+
+  //   const finalQsGovZeroRecord: UserFA2Info =
+  //     qsGov.storage.account_info[zeroAddress];
+
+  //   ok(
+  //     new BigNumber(
+  //       +(await finalQsGovZeroRecord.balances.get("0"))
+  //     ).isGreaterThan(
+  //       new BigNumber(+(await initialQsGovZeroRecord.balances.get("0")))
+  //     )
+  //   );
+
+  //   strictEqual(+qFarm.storage.storage.temp.min_qs_gov_output, 0);
+  //   strictEqual(qFarm.storage.storage.temp.qs_pool, zeroAddress);
+  //   strictEqual(qFarm.storage.storage.temp.token.fA12, zeroAddress);
+  // });
 });

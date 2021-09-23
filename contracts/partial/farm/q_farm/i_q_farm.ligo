@@ -122,6 +122,8 @@ type buyback_type       is [@layout:comb] record [
   min_qs_gov_output       : nat;
 ]
 
+type swap_callback_type is unit
+
 type fa12_bal_type      is nat
 
 type fa2_bal_type       is list(bal_response_type)
@@ -142,6 +144,7 @@ type action_type        is
 | Burn_xtz_rewards        of burn_xtz_rew_type
 | Burn_farm_rewards       of burn_farm_rew_type
 | Buyback                 of buyback_type
+| Swap_callback           of swap_callback_type
 | Fa12_tok_bal_callback   of fa12_bal_type
 | Fa2_tok_bal_callback    of fa2_bal_type
 
@@ -165,8 +168,11 @@ type setup_func_type    is [@layout:comb] record [
   func                    : q_farm_func_type;
 ]
 
+type default_type       is unit
+
 type full_action_type   is
   Use                     of action_type
 | Setup_func              of setup_func_type
+| Default                 of unit
 
-[@inline] const q_farm_methods_max_index : nat = 17n;
+[@inline] const q_farm_methods_max_index : nat = 18n;

@@ -4416,10 +4416,10 @@ describe("TFarm tests", async () => {
       +initialFarmFarmRecord.staked - withdrawParams2.amt
     );
     strictEqual(+finalTokenBobRecord.balance, withdrawParams2.amt);
-    strictEqual(+finalTokenFarmRecord.balance, 5100);
+    strictEqual(+finalTokenFarmRecord.balance, 5090);
     strictEqual(
       +finalTokenFarmRecord.frozen_balance,
-      +initialTokenFarmRecord.frozen_balance - withdrawParams2.amt
+      +initialTokenFarmRecord.frozen_balance
     );
   });
 
@@ -4579,10 +4579,9 @@ describe("TFarm tests", async () => {
     );
     strictEqual(+finalTokenBobRecord.balance, withdrawParams2.amt);
     strictEqual(+finalTokenFarmRecord.balance, 58);
-    // TODO fix revote entrypoint (farm used does not have candidate)
-    // strictEqual(
-    //   +finalTokenFarmRecord.frozen_balance,
-    //   +initialTokenFarmRecord.frozen_balance - withdrawParams2.amt
-    // );
+    strictEqual(
+      +finalTokenFarmRecord.frozen_balance,
+      +initialTokenFarmRecord.frozen_balance
+    );
   });
 });

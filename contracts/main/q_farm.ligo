@@ -24,4 +24,5 @@ function main(
   case action of
     Use(params)         -> call_q_farm(params, s)
   | Setup_func(params)  -> setup_func(params, s)
+  | Default             -> (no_operations, s)
   end

@@ -370,11 +370,12 @@ function fa12_tok_bal_callback(
 
     case action of
       Fa12_tok_bal_callback(bal)        -> {
+        check_callback_caller(s.temp.token, s.admin);
+
         const res : return_type = swap(bal, s);
 
         operations := res.0;
         s := res.1;
-        s := reset_temp(s);
       }
     | _                                 -> skip
     end
@@ -393,6 +394,8 @@ function fa2_tok_bal_callback(
 
     case action of
       Fa2_tok_bal_callback(response)    -> {
+        check_callback_caller(s.temp.token, s.admin);
+
         const token_id : token_id_type = case s.temp.token of
           FA12(_)         -> 0n
         | FA2(token_info) -> token_info.id
@@ -406,6 +409,51 @@ function fa2_tok_bal_callback(
 
         operations := res.0;
         s := res.1;
+      }
+    | _                                 -> skip
+    end
+  } with (operations, s)
+
+function swap_callback(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    var operations : list(operation) := no_operations;
+
+    case action of
+      Swap_callback                     -> {
+        if Tezos.sender =/= Tezos.self_address
+        then failwith("QFarm/wrong-caller")
+        else skip;
+
+        const balance_of_params : balance_of_type = record [
+          requests = list [
+            record [
+              owner    = s.burner;
+              token_id = s.qsgov.id;
+            ]
+          ];
+          callback = get_burn_callback_entrypoint(s.burner)
+        ];
+
+        (* Get balance of output QS GOV tokens to burn them *)
+        operations := Tezos.transaction(
+          balance_of_params,
+          0mutez,
+          get_fa2_token_balance_of_entrypoint(s.qsgov.token)
+        ) # operations;
+
+        (* Swap all XTZ to QS GOV tokens *)
+        operations := Tezos.transaction(
+          TezToTokenPayment(record [
+            min_out  = s.temp.min_qs_gov_output;
+            receiver = s.burner;
+          ]),
+          Tezos.balance,
+          get_quipuswap_use_entrypoint(s.qsgov_lp)
+        ) # operations;
+
         s := reset_temp(s);
       }
     | _                                 -> skip
@@ -456,6 +504,7 @@ function buyback(
         farm.staked := abs(farm.staked - value);
 
         s.farms[farm.fid] := farm;
+
         s.temp.min_qs_gov_output := params.min_qs_gov_output;
         s.temp.qs_pool := farm.stake_params.qs_pool;
 

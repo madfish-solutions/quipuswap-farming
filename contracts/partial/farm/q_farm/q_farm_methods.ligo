@@ -19,8 +19,9 @@
     | Burn_xtz_rewards(_)      -> 12n
     | Burn_farm_rewards(_)     -> 13n
     | Buyback(_)               -> 14n
-    | Fa12_tok_bal_callback(_) -> 15n
-    | Fa2_tok_bal_callback(_)  -> 16n
+    | Swap_callback(_)         -> 15n
+    | Fa12_tok_bal_callback(_) -> 16n
+    | Fa2_tok_bal_callback(_)  -> 17n
     end;
 
     const res : return_type = case s.q_farm_lambdas[id] of

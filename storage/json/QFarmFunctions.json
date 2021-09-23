@@ -61,10 +61,14 @@
   },
   {
     "index": 15,
-    "name": "fa12_tok_bal_callback"
+    "name": "swap_callback"
   },
   {
     "index": 16,
+    "name": "fa12_tok_bal_callback"
+  },
+  {
+    "index": 17,
     "name": "fa2_tok_bal_callback"
   }
 ]

@@ -15,8 +15,6 @@ const { alice, dev } = require("../scripts/sandbox/accounts");
 const { qFarmStorage } = require("../storage/QFarm");
 const qFarmFunctions = require("../storage/json/QFarmFunctions.json");
 
-const { zeroAddress } = require("../test/helpers/Utils");
-
 const env = require("../env");
 
 module.exports = async (tezos) => {
@@ -32,9 +30,9 @@ module.exports = async (tezos) => {
     signer: await InMemorySigner.fromSecretKey(secretKey),
   });
 
-  qFarmStorage.storage.qsgov.token = zeroAddress;
+  qFarmStorage.storage.qsgov.token = "KT1NfYbYTCRZsNPZ97VdLqSrwPdVupiqniFu";
   qFarmStorage.storage.qsgov.id = 0;
-  qFarmStorage.storage.qsgov_lp = zeroAddress;
+  qFarmStorage.storage.qsgov_lp = "KT1MsQZeAbLuNfhfWdiUsJT4tTDzxymkaxwo";
   qFarmStorage.storage.admin = deployer;
   qFarmStorage.storage.burner = Burner["networks"][env.network]["burner"];
   qFarmStorage.storage.proxy_minter =
@@ -58,7 +56,7 @@ module.exports = async (tezos) => {
       amount: 0,
       parameter: {
         entrypoint: "setup_func",
-        value: JSON.parse(stdout.toString()).args[0],
+        value: JSON.parse(stdout.toString()).args[0].args[0],
       },
     });
 

@@ -12,9 +12,9 @@ import { fa2Storage } from "storage/test/FA2";
 import { qsFA2FactoryStorage } from "storage/test/QSFA2Factory";
 
 import {
-  BalanceRequest,
-  BalanceResponse,
   UpdateOperatorParam,
+  BalanceResponse,
+  BalanceRequest,
 } from "./types/FA2";
 
 describe("Burner tests", async () => {

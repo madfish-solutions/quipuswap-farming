@@ -121,18 +121,26 @@
 
 15. `fa12_tok_bal_callback`:
 
-    -
+    - ✅ should fail if not current contract or token from temp record is trying to call entrypoint.
 
 16. `fa2_tok_bal_callback`:
 
-    -
+    - ✅ should fail if not current contract or token from temp record is trying to call entrypoint.
 
-17. `buyback`:
+17. `swap_callback`:
+
+    - ✅ should fail if not current contract is trying to call entrypoint.
+
+18. `buyback`:
 
     - ✅ should fail if not admin is trying to do buyback;
     - ✅ should fail if farm not found;
     - ✅ should fail if staked by user amount is less than amount to withdraw;
-    - should buyback single FA1.2 staked token;
+    - ✅ should fail if expected QS GOV tokens amount is too high;
+    - ✅ should buyback single FA1.2 staked token;
+    - ✅ should buyback single FA2 staked token;
+    - should divest liquidity and buyback LP FA1.2 staked token;
+    - should divest liquidity and buyback LP FA2 staked token.
 
 ## TFarm
 
@@ -264,10 +272,7 @@
     - ✅ should withdraw single FA1.2 token;
     - ✅ should withdraw LP FA1.2 token;
     - ✅ should withdraw single FA2 token;
-    - should withdraw LP FA2 token;
-    - should change current delegated for the next candidate if votes were redistributed;
-    - should transfer FA1.2 reward tokens to the admin;
-    - should transfer FA2 reward tokens to the admin.
+    - ✅ should withdraw LP FA2 token.
 
 ## Burner
 

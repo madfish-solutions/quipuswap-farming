@@ -23,8 +23,8 @@ module.exports = async (tezos) => {
     signer: await InMemorySigner.fromSecretKey(secretKey),
   });
 
-  burnerStorage.qsgov_lp = zeroAddress;
-  burnerStorage.qsgov.token = zeroAddress;
+  burnerStorage.qsgov_lp = "KT1MsQZeAbLuNfhfWdiUsJT4tTDzxymkaxwo";
+  burnerStorage.qsgov.token = "KT1NfYbYTCRZsNPZ97VdLqSrwPdVupiqniFu";
   burnerStorage.qsgov.id = 0;
 
   const burnerAddress = await migrate(tezos, "burner", burnerStorage);

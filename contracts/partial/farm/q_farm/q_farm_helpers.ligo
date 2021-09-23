@@ -163,6 +163,20 @@ function get_burn_callback_entrypoint(
   )
   end
 
+function get_swap_callback_entrypoint(
+  const this            : address)
+                        : contract(unit) is
+  case (
+    Tezos.get_entrypoint_opt("%swap_callback", this)
+                        : option(contract(unit))
+  ) of
+    Some(contr) -> contr
+  | None        -> (
+    failwith("QFarm/swap-callback-entrypoint-404")
+                        : contract(unit)
+  )
+  end
+
 (*
   Swap tokens to XTZ. XTZ swap for QS GOV tokens and burn all of them.
 
@@ -174,31 +188,12 @@ function swap(
   const s               : storage_type)
                         : return_type is
   block {
-    const balance_of_params : balance_of_type = record [
-      requests = list [
-        record [
-          owner    = Tezos.self_address;
-          token_id = s.qsgov.id;
-        ]
-      ];
-      callback = get_burn_callback_entrypoint(s.burner)
-    ];
-
     var operations : list(operation) := list [
-      (* Swap all XTZ to QS GOV tokens operation *)
+      (* Swap callback operation *)
       Tezos.transaction(
-        TezToTokenPayment(record [
-          min_out  = s.temp.min_qs_gov_output;
-          receiver = Tezos.self_address;
-        ]),
-        Tezos.amount,
-        get_quipuswap_use_entrypoint(s.qsgov_lp)
-      );
-      (* Get balance of output QS GOV tokens to burn them *)
-      Tezos.transaction(
-        balance_of_params,
+        unit,
         0mutez,
-        get_fa2_token_balance_of_entrypoint(s.qsgov.token)
+        get_swap_callback_entrypoint(Tezos.self_address)
       )
     ];
 
@@ -288,6 +283,21 @@ function get_baker_registry_validate_entrypoint(
                         : contract(key_hash)
   )
   end
+
+function check_callback_caller(
+  const token           : token_type;
+  const admin           : address)
+                        : unit is
+  block {
+    const tok : address = case token of
+      FA12(token_address) -> token_address
+    | FA2(token_info)     -> token_info.token
+    end;
+
+    if Tezos.sender =/= admin and Tezos.sender =/= tok
+    then failwith("QFarm/wrong-caller")
+    else skip;
+  } with unit
 
 function get_votes(
   const fid             : fid_type;

@@ -42,7 +42,7 @@ export type Farm = {
   reward_token: Token;
   timelock: number;
   current_delegated: string;
-  current_candidate: string;
+  next_candidate: string;
   paused: boolean;
   reward_per_second: number;
   reward_per_share: number;

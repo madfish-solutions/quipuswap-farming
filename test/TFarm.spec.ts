@@ -328,10 +328,6 @@ describe("TFarm tests", async () => {
       newFarmParams.stake_params.is_lp_staked_token
     );
     strictEqual(
-      tFarm.storage.storage.farms[0].stake_params.token.fA12,
-      newFarmParams.stake_params.token.fA12
-    );
-    strictEqual(
       tFarm.storage.storage.farms[0].stake_params.qs_pool,
       newFarmParams.stake_params.qs_pool
     );
@@ -344,7 +340,7 @@ describe("TFarm tests", async () => {
       newFarmParams.timelock
     );
     strictEqual(tFarm.storage.storage.farms[0].current_delegated, zeroAddress);
-    strictEqual(tFarm.storage.storage.farms[0].current_candidate, zeroAddress);
+    strictEqual(tFarm.storage.storage.farms[0].next_candidate, zeroAddress);
     strictEqual(tFarm.storage.storage.farms[0].paused, newFarmParams.paused);
     strictEqual(
       +tFarm.storage.storage.farms[0].reward_per_second,
@@ -431,7 +427,6 @@ describe("TFarm tests", async () => {
     newFarmParams.fees.harvest_fee = 4.2 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 5 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12.contract.address };
-    newFarmParams.stake_params.token = { fA12: fa12.contract.address };
     newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.timelock = 0;
     newFarmParams.reward_token = {
@@ -847,7 +842,6 @@ describe("TFarm tests", async () => {
     newFarmParams.fees.withdrawal_fee = 6 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
     newFarmParams.stake_params.is_lp_staked_token = true;
-    newFarmParams.stake_params.token = { fA12: fa12.contract.address };
     newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.reward_per_second = 4 * precision;
     newFarmParams.timelock = 0;
@@ -917,9 +911,6 @@ describe("TFarm tests", async () => {
     newFarmParams.fees.harvest_fee = 25 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 7 * feePrecision;
     newFarmParams.stake_params.staked_token = {
-      fA2: { token: fa2.contract.address, id: 0 },
-    };
-    newFarmParams.stake_params.token = {
       fA2: { token: fa2.contract.address, id: 0 },
     };
     newFarmParams.stake_params.qs_pool = fa2LP.contract.address;
@@ -1007,9 +998,6 @@ describe("TFarm tests", async () => {
       fA2: { token: fa2LP.contract.address, id: 0 },
     };
     newFarmParams.stake_params.is_lp_staked_token = true;
-    newFarmParams.stake_params.token = {
-      fA2: { token: fa2.contract.address, id: 0 },
-    };
     newFarmParams.stake_params.qs_pool = fa2LP.contract.address;
     newFarmParams.reward_per_second = 10 * precision;
     newFarmParams.timelock = 0;
@@ -1920,7 +1908,7 @@ describe("TFarm tests", async () => {
       tFarm.storage.storage.votes[`${depositParams.fid},${bob.pkh}`];
 
     strictEqual(finalFarm.current_delegated, depositParams.candidate);
-    strictEqual(finalFarm.current_candidate, depositParams.candidate);
+    strictEqual(finalFarm.next_candidate, depositParams.candidate);
     strictEqual(+finalFarmDevRecord.used_votes, depositParams.amt);
     strictEqual(finalFarmDevCandidate, depositParams.candidate);
     strictEqual(+finalFarmBobVotes, +finalFarm.staked);
@@ -1970,7 +1958,7 @@ describe("TFarm tests", async () => {
       tFarm.storage.storage.votes[`${depositParams.fid},${bob.pkh}`];
 
     strictEqual(finalFarm.current_delegated, depositParams.candidate);
-    strictEqual(finalFarm.current_candidate, bob.pkh);
+    strictEqual(finalFarm.next_candidate, bob.pkh);
     strictEqual(+finalFarmDevRecord.used_votes, depositParams.amt * 2);
     strictEqual(finalFarmDevCandidate, depositParams.candidate);
     strictEqual(+finalFarmAliceVotes, depositParams.amt * 2);
@@ -3210,7 +3198,6 @@ describe("TFarm tests", async () => {
     newFarmParams.fees.harvest_fee = 14 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 60 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12.contract.address };
-    newFarmParams.stake_params.token = { fA12: fa12.contract.address };
     newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.timelock = 5;
     newFarmParams.reward_token = {
@@ -3993,10 +3980,10 @@ describe("TFarm tests", async () => {
     const finalFarmBobVotes: number =
       tFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
 
-    strictEqual(finalFarm.current_delegated, initialFarm.current_candidate);
-    strictEqual(finalFarm.current_candidate, initialFarm.current_delegated);
+    strictEqual(finalFarm.current_delegated, initialFarm.next_candidate);
+    strictEqual(finalFarm.next_candidate, initialFarm.current_delegated);
     strictEqual(+finalFarmDevRecord.used_votes, 0);
-    strictEqual(finalFarmDevCandidate, finalFarm.current_candidate);
+    strictEqual(finalFarmDevCandidate, finalFarm.next_candidate);
     strictEqual(
       +finalFarmAliceVotes,
       +initialFarmAliceVotes - initialFarmDevRecord.used_votes
@@ -4327,7 +4314,6 @@ describe("TFarm tests", async () => {
     newFarmParams.fees.withdrawal_fee = 60 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
     newFarmParams.stake_params.is_lp_staked_token = true;
-    newFarmParams.stake_params.token = { fA12: fa12.contract.address };
     newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.reward_per_second = 2 * precision;
     newFarmParams.timelock = 5;
@@ -4488,9 +4474,6 @@ describe("TFarm tests", async () => {
       fA2: { token: fa2LP.contract.address, id: 0 },
     };
     newFarmParams.stake_params.is_lp_staked_token = true;
-    newFarmParams.stake_params.token = {
-      fA2: { token: fa2.contract.address, id: 0 },
-    };
     newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.reward_per_second = 2 * precision;
     newFarmParams.timelock = 5;

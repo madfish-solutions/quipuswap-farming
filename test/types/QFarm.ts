@@ -2,7 +2,7 @@ import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 
 import { BigNumber } from "bignumber.js";
 
-import { StakeParams, Token, FA2Token } from "./Common";
+import { StakeParams, FA2Token } from "./Common";
 
 export type NewRewardPerSecond = {
   fid: number;
@@ -48,7 +48,7 @@ export type Farm = {
   reward_token: FA2Token;
   timelock: number;
   current_delegated: string;
-  current_candidate: string;
+  next_candidate: string;
   paused: boolean;
   reward_per_second: number;
   reward_per_share: number;

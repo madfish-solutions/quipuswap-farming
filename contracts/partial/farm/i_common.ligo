@@ -18,8 +18,6 @@ type stake_params_type  is [@layout:comb] record [
   staked_token            : token_type;
   (* Flag: LP token staked or not *)
   is_lp_staked_token      : bool;
-  (* If LP token staked - non zero address + ID, else - zero address + 0 ID *)
-  token                   : token_type;
   (* Quipuswap liquidity pool for staked or divested token *)
   qs_pool                 : address;
 ]

@@ -319,9 +319,6 @@ export class QFarmUtils {
         },
       },
       is_lp_staked_token: false,
-      token: {
-        fA12: zeroAddress,
-      },
       qs_pool: zeroAddress,
     };
     const newFarmParams: NewFarmParams = {

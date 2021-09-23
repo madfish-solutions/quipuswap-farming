@@ -15,7 +15,7 @@ export type QSFA2DexStorage = {
     veto: number;
     last_veto: string;
     current_delegated: string | null | undefined;
-    current_candidate: string | null | undefined;
+    next_candidate: string | null | undefined;
     total_votes: number;
     reward: number;
     total_reward: number;

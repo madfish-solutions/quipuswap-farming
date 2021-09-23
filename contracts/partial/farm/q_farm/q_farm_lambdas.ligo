@@ -65,7 +65,7 @@ function add_new_farm(
           reward_token      = s.qsgov;
           timelock          = params.timelock;
           current_delegated = zero_key_hash;
-          current_candidate = zero_key_hash;
+          next_candidate    = zero_key_hash;
           paused            = params.paused;
           reward_per_second = params.reward_per_second;
           reward_per_share  = 0n;

@@ -121,13 +121,13 @@
 
 15. `withdraw_farm_depo`:
 
-    - should fail if not admit is trying to withdraw farm depo;
-    - should fail if farm not found;
-    - should fail if staked by farm amount is less than amount to withdraw;
-    - should withdraw single FA1.2 token;
-    - should withdraw LP FA1.2 token;
-    - should withdraw single FA2 token;
-    - should withdraw LP FA2 token.
+    - ✅ should fail if not admit is trying to withdraw farm depo;
+    - ✅ should fail if farm not found;
+    - ✅ should fail if staked by farm amount is less than amount to withdraw;
+    - ✅ should withdraw single FA1.2 token;
+    - ✅ should withdraw LP FA1.2 token;
+    - ✅ should withdraw single FA2 token;
+    - ✅ should withdraw LP FA2 token.
 
 ## TFarm
 

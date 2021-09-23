@@ -295,9 +295,6 @@ export class TFarmUtils {
         fA12: zeroAddress,
       },
       is_lp_staked_token: false,
-      token: {
-        fA12: zeroAddress,
-      },
       qs_pool: zeroAddress,
     };
     const newFarmParams: NewFarmParams = {

@@ -19,7 +19,7 @@ type farm_type          is [@layout:comb] record [
   (* The account XTZ are currently delegated for *)
   current_delegated       : key_hash;
   (* The best candidate to become next delegated *)
-  current_candidate       : key_hash;
+  next_candidate          : key_hash;
   (* Falg: farm paused or not *)
   paused                  : bool;
   (* Reward per second *)

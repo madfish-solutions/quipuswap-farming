@@ -167,15 +167,17 @@ function vote(
     end;
 
     (* Get votes amount for all used below candidates *)
-    const votes1 : nat = get_votes(farm.fid, farm.current_delegated, s);
-    const votes2 : nat = get_votes(farm.fid, farm.current_candidate, s);
-    var votes3 : nat := get_votes(farm.fid, depo.candidate, s);
+    const current_delegated_votes : nat =
+      get_votes(farm.fid, farm.current_delegated, s);
+    const next_candidate_votes : nat =
+      get_votes(farm.fid, farm.next_candidate, s);
+    var depo_candidate_votes : nat := get_votes(farm.fid, depo.candidate, s);
 
     (* Update user's new candidate votes amount *)
-    s.votes[(farm.fid, depo.candidate)] := votes3 + user.staked;
+    s.votes[(farm.fid, depo.candidate)] := depo_candidate_votes + user.staked;
 
     (* Update votes for the candidate from user's deposit *)
-    votes3 := get_votes(farm.fid, depo.candidate, s);
+    depo_candidate_votes := get_votes(farm.fid, depo.candidate, s);
 
     (* Update user's candidate *)
     s.candidates[(farm.fid, Tezos.sender)] := depo.candidate;
@@ -195,23 +197,23 @@ function vote(
         operations := get_vote_op(farm, depo.candidate) # operations;
     }
     | Some(_) -> {
-      if votes1 =/= votes3
+      if current_delegated_votes =/= depo_candidate_votes
       then {
-        if votes1 < votes3
+        if current_delegated_votes < depo_candidate_votes
         then {
-          (* Update current candidate and current baker *)
-          farm.current_candidate := farm.current_delegated;
+          (* Update next candidate and current baker *)
+          farm.next_candidate := farm.current_delegated;
           farm.current_delegated := depo.candidate;
 
           operations :=  get_vote_op(farm, depo.candidate) # operations;
         }
         else {
-          (* Update current candidate *)
-          case s.votes[(farm.fid, farm.current_candidate)] of
-            None    -> farm.current_candidate := depo.candidate
+          (* Update next candidate *)
+          case s.votes[(farm.fid, farm.next_candidate)] of
+            None    -> farm.next_candidate := depo.candidate
           | Some(_) -> {
-            if votes2 < votes3
-            then farm.current_candidate := depo.candidate
+            if next_candidate_votes < depo_candidate_votes
+            then farm.next_candidate := depo.candidate
             else skip;
           }
           end;
@@ -220,16 +222,16 @@ function vote(
         };
       }
       else {
-        case s.votes[(farm.fid, farm.current_candidate)] of
+        case s.votes[(farm.fid, farm.next_candidate)] of
           None    -> skip
         | Some(_) -> {
-          if votes2 > votes1
+          if next_candidate_votes > current_delegated_votes
           then {
-            (* Swap current baker and current candidate *)
+            (* Swap current baker and next candidate *)
             const tmp : key_hash = farm.current_delegated;
 
-            farm.current_delegated := farm.current_candidate;
-            farm.current_candidate := tmp;
+            farm.current_delegated := farm.next_candidate;
+            farm.next_candidate := tmp;
           }
           else skip;
         }
@@ -288,9 +290,11 @@ function revote(
     s.users_info[(farm.fid, Tezos.sender)] := user;
 
     (* Get votes amount for all used below candidates *)
-    const votes1 : nat = get_votes(farm.fid, farm.current_delegated, s);
-    const votes2 : nat = get_votes(farm.fid, farm.current_candidate, s);
-    const votes3 : nat = get_votes(farm.fid, users_candidate, s);
+    const current_delegated_votes : nat =
+      get_votes(farm.fid, farm.current_delegated, s);
+    const next_candidate_votes : nat =
+      get_votes(farm.fid, farm.next_candidate, s);
+    const depo_candidate_votes : nat = get_votes(farm.fid, users_candidate, s);
 
     (* Check if farm already voted for the baker *)
     case s.votes[(farm.fid, farm.current_delegated)] of
@@ -301,23 +305,23 @@ function revote(
         operations := get_vote_op(farm, users_candidate) # operations;
     }
     | Some(_) -> {
-      if votes1 =/= votes3
+      if current_delegated_votes =/= depo_candidate_votes
       then {
-        if votes1 < votes3
+        if current_delegated_votes < depo_candidate_votes
         then {
-          (* Update current candidate and current baker *)
-          farm.current_candidate := farm.current_delegated;
+          (* Update next candidate and current baker *)
+          farm.next_candidate := farm.current_delegated;
           farm.current_delegated := users_candidate;
 
           operations :=  get_vote_op(farm, users_candidate) # operations;
         }
         else {
           (* Update current candidate *)
-          case s.votes[(farm.fid, farm.current_candidate)] of
-            None    -> farm.current_candidate := users_candidate
+          case s.votes[(farm.fid, farm.next_candidate)] of
+            None    -> farm.next_candidate := users_candidate
           | Some(_) -> {
-            if votes2 < votes3
-            then farm.current_candidate := users_candidate
+            if next_candidate_votes < depo_candidate_votes
+            then farm.next_candidate := users_candidate
             else skip;
           }
           end;
@@ -326,16 +330,16 @@ function revote(
         };
       }
       else {
-        case s.votes[(farm.fid, farm.current_candidate)] of
+        case s.votes[(farm.fid, farm.next_candidate)] of
           None    -> skip
         | Some(_) -> {
-          if votes2 > votes1
+          if next_candidate_votes > current_delegated_votes
           then {
-            (* Swap current baker and current candidate *)
+            (* Swap current baker and next candidate *)
             const tmp : key_hash = farm.current_delegated;
 
-            farm.current_delegated := farm.current_candidate;
-            farm.current_candidate := tmp;
+            farm.current_delegated := farm.next_candidate;
+            farm.next_candidate := tmp;
           }
           else skip;
         }

@@ -1,10 +1,10 @@
 function claim_rewards(
   var user              : user_info_type;
   var operations        : list(operation);
-  const farm            : farm_type;
+  var farm              : farm_type;
   const receiver        : address;
   const s               : storage_type)
-                        : (list(operation) * user_info_type) is
+                        : claim_return_type is
   block {
     const earned : nat = user.earned / precision;
 
@@ -20,6 +20,8 @@ function claim_rewards(
         None           -> zero_address
       | Some(referrer) -> referrer
       end;
+
+      farm.claimed := farm.claimed + earned;
 
       case farm.reward_token of
         FA12(_)         -> {
@@ -75,14 +77,19 @@ function claim_rewards(
       }
       end;
     };
-  } with (operations, user)
+  } with (record [
+    operations = operations;
+    user       = user;
+    farm       = farm;
+  ])
 
 function transfer_rewards_to_admin(
+  var farm              : farm_type;
   var user              : user_info_type;
   var operations        : list(operation);
   const reward_token    : token_type;
   const admin           : address)
-                        : (list(operation) * user_info_type) is
+                        : claim_return_type is
   block {
     const earned : nat = user.earned / precision;
 
@@ -91,6 +98,8 @@ function transfer_rewards_to_admin(
     else {
       user.earned := abs(user.earned - earned * precision);
 
+      farm.claimed := farm.claimed + earned;
+
       operations := transfer(
         Tezos.self_address,
         admin,
@@ -98,7 +107,11 @@ function transfer_rewards_to_admin(
         reward_token
       ) # operations;
     };
-  } with (operations, user)
+  } with (record [
+    operations = operations;
+    user       = user;
+    farm       = farm;
+  ])
 
 function get_baker_registry_validate_entrypoint(
   const baker_registry  : address)

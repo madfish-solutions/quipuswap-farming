@@ -47,6 +47,7 @@ export type Farm = {
   reward_per_second: number;
   reward_per_share: number;
   staked: number;
+  claimed: number;
   start_time: string;
   end_time: string;
   fid: number;

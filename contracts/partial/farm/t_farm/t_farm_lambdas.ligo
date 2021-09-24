@@ -33,6 +33,7 @@ function add_new_farm(
           reward_per_second = params.reward_per_second;
           reward_per_share  = 0n;
           staked            = 0n;
+          claimed           = 0n;
           start_time        = start_time;
           end_time          = params.end_time;
           fid               = s.farms_count;
@@ -80,7 +81,11 @@ function deposit(
         user.earned := user.earned +
           abs(user.staked * farm.reward_per_share - user.prev_earned);
 
-        var res : (list(operation) * user_info_type) := (operations, user);
+        var res : claim_return_type := record [
+          operations = operations;
+          user       = user;
+          farm       = farm;
+        ];
 
         if abs(Tezos.now - user.last_staked) >= farm.timelock
           or Tezos.now >= farm.end_time
@@ -95,8 +100,9 @@ function deposit(
         }
         else skip;
 
-        operations := res.0;
-        user := res.1;
+        operations := res.operations;
+        user := res.user;
+        farm := res.farm;
 
         case params.referrer of
           None      -> skip
@@ -178,7 +184,11 @@ function withdraw(
         user.earned := user.earned +
           abs(user.staked * farm.reward_per_share - user.prev_earned);
 
-        var res : (list(operation) * user_info_type) := (operations, user);
+        var res : claim_return_type := record [
+          operations = operations;
+          user       = user;
+          farm       = farm;
+        ];
 
         if abs(Tezos.now - user.last_staked) >= farm.timelock
           or Tezos.now >= farm.end_time
@@ -193,6 +203,7 @@ function withdraw(
         }
         else {
           res := transfer_rewards_to_admin(
+            farm,
             user,
             operations,
             farm.reward_token,
@@ -221,8 +232,9 @@ function withdraw(
           };
         };
 
-        operations := res.0;
-        user := res.1;
+        operations := res.operations;
+        user := res.user;
+        farm := res.farm;
 
         user.staked := abs(user.staked - value);
         user.prev_earned := user.staked * farm.reward_per_share;
@@ -280,7 +292,11 @@ function harvest(
         user.earned := user.earned +
           abs(user.staked * farm.reward_per_share - user.prev_earned);
 
-        var res : (list(operation) * user_info_type) := (operations, user);
+        var res : claim_return_type := record [
+          operations = operations;
+          user       = user;
+          farm       = farm;
+        ];
 
         if abs(Tezos.now - user.last_staked) >= farm.timelock
           or Tezos.now >= farm.end_time
@@ -295,8 +311,9 @@ function harvest(
         }
         else failwith("TFarm/timelock-is-not-finished");
 
-        operations := res.0;
-        user := res.1;
+        operations := res.operations;
+        user := res.user;
+        farm := res.farm;
 
         user.prev_earned := user.staked * farm.reward_per_share;
 
@@ -331,16 +348,17 @@ function claim_farm_rewards(
         user.earned := user.earned +
           abs(user.staked * farm.reward_per_share - user.prev_earned);
 
-        var res : (list(operation) * user_info_type) :=
-          transfer_rewards_to_admin(
-            user,
-            operations,
-            farm.reward_token,
-            s.admin
-          );
+        var res : claim_return_type := transfer_rewards_to_admin(
+          farm,
+          user,
+          operations,
+          farm.reward_token,
+          s.admin
+        );
 
-        operations := res.0;
-        user := res.1;
+        operations := res.operations;
+        user := res.user;
+        farm := res.farm;
 
         user.prev_earned := user.staked * farm.reward_per_share;
 

@@ -14,10 +14,10 @@ function get_proxy_minter_mint_entrypoint(
 
 function claim_rewards(
   var user              : user_info_type;
-  const farm            : farm_type;
+  var farm              : farm_type;
   const receiver        : address;
   const s               : storage_type)
-                        : (option(operation) * user_info_type) is
+                        : claim_return_type is
   block {
     const earned : nat = user.earned / precision;
     var op : option(operation) := (None : option(operation));
@@ -36,6 +36,8 @@ function claim_rewards(
           amount   = actual_earned;
         ]
       ];
+
+      farm.claimed := farm.claimed + earned;
 
       if harvest_fee > 0n
       then {
@@ -60,14 +62,18 @@ function claim_rewards(
         )
       );
     };
-  } with (op, user)
+  } with (record [
+    op   = op;
+    user = user;
+    farm = farm;
+  ])
 
 function burn_rewards(
   var user              : user_info_type;
-  const farm            : farm_type;
+  var farm              : farm_type;
   const pay_burn_reward : bool;
   const s               : storage_type)
-                        : (option(operation) * user_info_type) is
+                        : claim_return_type is
   block {
     const earned : nat = user.earned / precision;
     var op : option(operation) := (None : option(operation));
@@ -76,6 +82,8 @@ function burn_rewards(
     then skip
     else {
       user.earned := abs(user.earned - earned * precision);
+
+      farm.claimed := farm.claimed + earned;
 
       var mint_data : mint_gov_toks_type := list [];
 
@@ -119,7 +127,11 @@ function burn_rewards(
         )
       );
     };
-  } with (op, user)
+  } with (record [
+    op   = op;
+    user = user;
+    farm = farm;
+  ])
 
 function get_baker_registry_validate_entrypoint(
   const baker_registry  : address)

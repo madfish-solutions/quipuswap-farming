@@ -500,6 +500,7 @@ describe("QFarm tests", async () => {
     );
     strictEqual(+qFarm.storage.storage.farms[0].reward_per_share, 0);
     strictEqual(+qFarm.storage.storage.farms[0].staked, 0);
+    strictEqual(+qFarm.storage.storage.farms[0].claimed, 0);
     strictEqual(+qFarm.storage.storage.farms[0].fid, 0);
 
     ok(
@@ -911,6 +912,7 @@ describe("QFarm tests", async () => {
       fa12.storage.ledger[qFarm.contract.address];
 
     strictEqual(+finalFarm.staked, +initialFarm.staked + depositParams.amt);
+    strictEqual(+finalFarm.claimed, +initialFarm.claimed);
     strictEqual(
       +finalFarmAliceRecord.staked,
       +initialFarmAliceRecord.staked + depositParams.amt
@@ -979,6 +981,7 @@ describe("QFarm tests", async () => {
       fa12LP.storage.storage.ledger[qFarm.contract.address];
 
     strictEqual(+finalFarm.staked, depositParams.amt);
+    strictEqual(+finalFarm.claimed, 0);
     strictEqual(+finalFarmAliceRecord.staked, depositParams.amt);
     strictEqual(
       +finalTokenAliceRecord.balance,
@@ -1052,6 +1055,7 @@ describe("QFarm tests", async () => {
       fa2.storage.account_info[qFarm.contract.address];
 
     strictEqual(+finalFarm.staked, +initialFarm.staked + depositParams.amt);
+    strictEqual(+finalFarm.claimed, +initialFarm.claimed);
     strictEqual(+finalFarmAliceRecord.staked, depositParams.amt);
     strictEqual(
       +(await finalTokenAliceRecord.balances.get("0")),
@@ -1123,6 +1127,7 @@ describe("QFarm tests", async () => {
       fa2LP.storage.storage.ledger[qFarm.contract.address];
 
     strictEqual(+finalFarm.staked, depositParams.amt);
+    strictEqual(+finalFarm.claimed, 0);
     strictEqual(+finalFarmAliceRecord.staked, depositParams.amt);
     strictEqual(
       +finalTokenAliceRecord.balance,
@@ -1184,6 +1189,13 @@ describe("QFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked > initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
         res.expectedShareReward
@@ -1265,6 +1277,13 @@ describe("QFarm tests", async () => {
     ok(finalFarmAliceRecord.last_staked > initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
     ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
+    ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
         res.expectedShareReward
       )
@@ -1342,6 +1361,8 @@ describe("QFarm tests", async () => {
       feePrecision
     );
 
+    strictEqual(+finalFarm.claimed, +initialFarm.claimed);
+
     ok(finalFarmAliceRecord.last_staked > initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
     ok(
@@ -1410,6 +1431,13 @@ describe("QFarm tests", async () => {
     );
 
     ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
+    ok(
       new BigNumber(+(await finalQsGovDevRecord.balances.get("0"))).isEqualTo(
         res.actualUserEarned
       )
@@ -1471,6 +1499,13 @@ describe("QFarm tests", async () => {
       feePrecision
     );
 
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
     ok(
       new BigNumber(+(await finalQsGovAliceRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialQsGovAliceRecord.balances.get("0"))).plus(
@@ -1536,6 +1571,13 @@ describe("QFarm tests", async () => {
     );
 
     ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
+    ok(
       new BigNumber(+(await finalQsGovAliceRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialQsGovAliceRecord.balances.get("0"))).plus(
           res.actualUserEarned
@@ -1600,6 +1642,13 @@ describe("QFarm tests", async () => {
       feePrecision
     );
 
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
     ok(
       new BigNumber(+(await finalQsGovAliceRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialQsGovAliceRecord.balances.get("0"))).plus(
@@ -1776,6 +1825,13 @@ describe("QFarm tests", async () => {
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
     ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
+    ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
         res.expectedShareReward
       )
@@ -1876,6 +1932,13 @@ describe("QFarm tests", async () => {
     );
 
     ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
+    ok(
       new BigNumber(+(await finalQsGovDevRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialQsGovDevRecord.balances.get("0"))).plus(
           res.actualUserEarned
@@ -1938,6 +2001,13 @@ describe("QFarm tests", async () => {
       feePrecision
     );
 
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
     ok(
       new BigNumber(+(await finalQsGovAliceRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialQsGovAliceRecord.balances.get("0"))).plus(
@@ -2011,6 +2081,13 @@ describe("QFarm tests", async () => {
     );
 
     ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
+    ok(
       new BigNumber(+(await finalQsGovAliceRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialQsGovAliceRecord.balances.get("0"))).plus(
           res.actualUserEarned
@@ -2073,6 +2150,13 @@ describe("QFarm tests", async () => {
       feePrecision
     );
 
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
     ok(
       new BigNumber(+(await finalQsGovAliceRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialQsGovAliceRecord.balances.get("0"))).plus(
@@ -2158,6 +2242,14 @@ describe("QFarm tests", async () => {
     const finalTokenAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
     const finalTokenFarmRecord: UserFA12Info =
       fa12.storage.ledger[qFarm.contract.address];
+    const res: FarmData = QFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
     strictEqual(
@@ -2173,7 +2265,13 @@ describe("QFarm tests", async () => {
       +initialTokenFarmRecord.balance - withdrawParams.amt
     );
 
-    ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
   });
 
   it("should withdraw LP FA1.2 token", async () => {
@@ -2216,6 +2314,14 @@ describe("QFarm tests", async () => {
       fa12LP.storage.storage.ledger[alice.pkh];
     const finalTokenFarmRecord: UserFA12Info =
       fa12LP.storage.storage.ledger[qFarm.contract.address];
+    const res: FarmData = QFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
     strictEqual(
@@ -2230,6 +2336,14 @@ describe("QFarm tests", async () => {
     strictEqual(
       +finalTokenFarmRecord.frozen_balance,
       +initialTokenFarmRecord.frozen_balance - withdrawParams.amt
+    );
+
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
     );
   });
 
@@ -2273,6 +2387,14 @@ describe("QFarm tests", async () => {
       fa2.storage.account_info[alice.pkh];
     const finalTokenFarmRecord: UserFA2Info =
       fa2.storage.account_info[qFarm.contract.address];
+    const res: FarmData = QFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
     strictEqual(
@@ -2286,6 +2408,14 @@ describe("QFarm tests", async () => {
     strictEqual(
       +(await finalTokenFarmRecord.balances.get("0")),
       +(await initialTokenFarmRecord.balances.get("0")) - withdrawParams.amt
+    );
+
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
     );
   });
 
@@ -2329,6 +2459,14 @@ describe("QFarm tests", async () => {
       fa2LP.storage.storage.ledger[alice.pkh];
     const finalTokenFarmRecord: UserFA2LPInfo =
       fa2LP.storage.storage.ledger[qFarm.contract.address];
+    const res: FarmData = QFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
     strictEqual(
@@ -2343,6 +2481,14 @@ describe("QFarm tests", async () => {
     strictEqual(
       +finalTokenFarmRecord.frozen_balance,
       +initialTokenFarmRecord.frozen_balance - withdrawParams.amt
+    );
+
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
     );
   });
 
@@ -2384,6 +2530,14 @@ describe("QFarm tests", async () => {
       fa2LP.storage.storage.ledger[dev.pkh];
     const finalTokenFarmRecord: UserFA2LPInfo =
       fa2LP.storage.storage.ledger[qFarm.contract.address];
+    const res: FarmData = QFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
     strictEqual(
@@ -2395,6 +2549,14 @@ describe("QFarm tests", async () => {
     strictEqual(
       +finalTokenFarmRecord.frozen_balance,
       +initialTokenFarmRecord.frozen_balance - withdrawParams.amt
+    );
+
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
     );
   });
 
@@ -2449,6 +2611,13 @@ describe("QFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
         res.expectedShareReward
@@ -2532,6 +2701,13 @@ describe("QFarm tests", async () => {
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
     ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
+    ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
         res.expectedShareReward
       )
@@ -2612,6 +2788,13 @@ describe("QFarm tests", async () => {
     );
 
     ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
+    ok(
       new BigNumber(+(await finalQsGovDevRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialQsGovDevRecord.balances.get("0"))).plus(
           res.actualUserEarned
@@ -2676,6 +2859,13 @@ describe("QFarm tests", async () => {
       feePrecision
     );
 
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
     ok(
       new BigNumber(+(await finalQsGovAliceRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialQsGovAliceRecord.balances.get("0"))).plus(
@@ -2751,6 +2941,13 @@ describe("QFarm tests", async () => {
     );
 
     ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
+    ok(
       new BigNumber(+(await finalQsGovAliceRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialQsGovAliceRecord.balances.get("0"))).plus(
           res.actualUserEarned
@@ -2815,6 +3012,13 @@ describe("QFarm tests", async () => {
       feePrecision
     );
 
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
     ok(
       new BigNumber(+(await finalQsGovAliceRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialQsGovAliceRecord.balances.get("0"))).plus(
@@ -2892,6 +3096,11 @@ describe("QFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed).plus(res.actualUserBurned)
+      )
+    );
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
         res.expectedShareReward
@@ -3195,6 +3404,11 @@ describe("QFarm tests", async () => {
     ok(finalFarmFarmRecord.last_staked === initialFarmFarmRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
     ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed).plus(res.actualUserBurned)
+      )
+    );
+    ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
         res.expectedShareReward
       )
@@ -3273,6 +3487,11 @@ describe("QFarm tests", async () => {
 
     ok(finalFarmFarmRecord.last_staked === initialFarmFarmRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed).plus(res.actualUserBurned)
+      )
+    );
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
         res.expectedShareReward

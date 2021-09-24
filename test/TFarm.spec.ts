@@ -469,6 +469,7 @@ describe("TFarm tests", async () => {
     );
     strictEqual(+tFarm.storage.storage.farms[0].reward_per_share, 0);
     strictEqual(+tFarm.storage.storage.farms[0].staked, 0);
+    strictEqual(+tFarm.storage.storage.farms[0].claimed, 0);
     strictEqual(+tFarm.storage.storage.farms[0].fid, 0);
 
     ok(
@@ -937,6 +938,14 @@ describe("TFarm tests", async () => {
     const finalTokenAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
     const finalTokenFarmRecord: UserFA12Info =
       fa12.storage.ledger[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked + depositParams.amt);
     strictEqual(
@@ -950,6 +959,14 @@ describe("TFarm tests", async () => {
     strictEqual(
       +finalTokenFarmRecord.balance,
       +initialTokenFarmRecord.balance + depositParams.amt
+    );
+
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
     );
   });
 
@@ -1014,6 +1031,7 @@ describe("TFarm tests", async () => {
       fa12LP.storage.storage.ledger[tFarm.contract.address];
 
     strictEqual(+finalFarm.staked, depositParams.amt);
+    strictEqual(+finalFarm.claimed, 0);
     strictEqual(+finalFarmAliceRecord.staked, depositParams.amt);
     strictEqual(
       +finalTokenAliceRecord.balance,
@@ -1096,6 +1114,7 @@ describe("TFarm tests", async () => {
       fa2.storage.account_info[tFarm.contract.address];
 
     strictEqual(+finalFarm.staked, +initialFarm.staked + depositParams.amt);
+    strictEqual(+finalFarm.claimed, +initialFarm.claimed);
     strictEqual(+finalFarmAliceRecord.staked, depositParams.amt);
     strictEqual(
       +(await finalTokenAliceRecord.balances.get("0")),
@@ -1175,6 +1194,7 @@ describe("TFarm tests", async () => {
       fa2LP.storage.storage.ledger[tFarm.contract.address];
 
     strictEqual(+finalFarm.staked, depositParams.amt);
+    strictEqual(+finalFarm.claimed, 0);
     strictEqual(+finalFarmAliceRecord.staked, depositParams.amt);
     strictEqual(
       +finalTokenAliceRecord.balance,
@@ -1241,6 +1261,13 @@ describe("TFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked > initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
         res.expectedShareReward
@@ -1335,6 +1362,13 @@ describe("TFarm tests", async () => {
     ok(finalFarmAliceRecord.last_staked > initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
     ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
+    ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
         res.expectedShareReward
       )
@@ -1422,6 +1456,8 @@ describe("TFarm tests", async () => {
       precision,
       feePrecision
     );
+
+    strictEqual(+finalFarm.claimed, +initialFarm.claimed);
 
     ok(finalFarmAliceRecord.last_staked > initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
@@ -1530,6 +1566,13 @@ describe("TFarm tests", async () => {
           .minus(res.referralCommission)
       )
     );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
   });
 
   it("should transfer FA2 reward tokens as reward to rewards receiver", async () => {
@@ -1609,6 +1652,13 @@ describe("TFarm tests", async () => {
           .minus(res.referralCommission)
       )
     );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
   });
 
   it("should transfer FA1.2 reward tokens as harvest fee to referrer (in case when user have referrer)", async () => {
@@ -1682,6 +1732,13 @@ describe("TFarm tests", async () => {
         new BigNumber(+initialRewTokFarmRecord.balance)
           .minus(res.actualUserEarned)
           .minus(res.referralCommission)
+      )
+    );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
       )
     );
   });
@@ -1763,6 +1820,13 @@ describe("TFarm tests", async () => {
           .minus(res.referralCommission)
       )
     );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
   });
 
   it("should transfer FA1.2 reward tokens as harvest fee to zero address (in case when user does not have referrer)", async () => {
@@ -1834,6 +1898,13 @@ describe("TFarm tests", async () => {
         new BigNumber(+initialRewTokFarmRecord.balance)
           .minus(res.actualUserEarned)
           .minus(res.referralCommission)
+      )
+    );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
       )
     );
   });
@@ -1909,6 +1980,13 @@ describe("TFarm tests", async () => {
         new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
           .minus(res.actualUserEarned)
           .minus(res.referralCommission)
+      )
+    );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
       )
     );
   });
@@ -1989,6 +2067,13 @@ describe("TFarm tests", async () => {
         new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
           .minus(res.actualUserEarned)
           .minus(res.referralCommission)
+      )
+    );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
       )
     );
   });
@@ -2154,6 +2239,13 @@ describe("TFarm tests", async () => {
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
     ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
+    ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
         res.expectedShareReward
       )
@@ -2282,6 +2374,13 @@ describe("TFarm tests", async () => {
           .minus(res.referralCommission)
       )
     );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
   });
 
   it("should transfer FA2 reward tokens as reward to rewards receiver", async () => {
@@ -2358,6 +2457,13 @@ describe("TFarm tests", async () => {
           .minus(res.referralCommission)
       )
     );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
   });
 
   it("should transfer FA1.2 reward tokens as harvest fee to referrer (in case when user have referrer)", async () => {
@@ -2427,6 +2533,13 @@ describe("TFarm tests", async () => {
         new BigNumber(+initialRewTokFarmRecord.balance)
           .minus(res.actualUserEarned)
           .minus(res.referralCommission)
+      )
+    );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
       )
     );
   });
@@ -2503,6 +2616,13 @@ describe("TFarm tests", async () => {
         new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
           .minus(res.actualUserEarned)
           .minus(res.referralCommission)
+      )
+    );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
       )
     );
   });
@@ -2588,6 +2708,13 @@ describe("TFarm tests", async () => {
           .minus(res.referralCommission)
       )
     );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
   });
 
   it("should transfer FA2 reward tokens as harvest fee to zero address (in case when user does not have referrer)", async () => {
@@ -2662,6 +2789,13 @@ describe("TFarm tests", async () => {
         new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
           .minus(res.actualUserEarned)
           .minus(res.referralCommission)
+      )
+    );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
       )
     );
   });
@@ -2740,6 +2874,13 @@ describe("TFarm tests", async () => {
           .minus(res.referralCommission)
       )
     );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
   });
 
   it("should fail if farm not found", async () => {
@@ -2811,6 +2952,14 @@ describe("TFarm tests", async () => {
     const finalTokenAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
     const finalTokenFarmRecord: UserFA12Info =
       fa12.storage.ledger[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
     strictEqual(
@@ -2826,7 +2975,13 @@ describe("TFarm tests", async () => {
       +initialTokenFarmRecord.balance - withdrawParams.amt
     );
 
-    ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
   });
 
   it("should withdraw LP FA1.2 token", async () => {
@@ -2869,6 +3024,14 @@ describe("TFarm tests", async () => {
       fa12LP.storage.storage.ledger[alice.pkh];
     const finalTokenFarmRecord: UserFA12Info =
       fa12LP.storage.storage.ledger[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
     strictEqual(
@@ -2883,6 +3046,14 @@ describe("TFarm tests", async () => {
     strictEqual(
       +finalTokenFarmRecord.frozen_balance,
       +initialTokenFarmRecord.frozen_balance - withdrawParams.amt
+    );
+
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
     );
   });
 
@@ -2926,6 +3097,14 @@ describe("TFarm tests", async () => {
       fa2.storage.account_info[alice.pkh];
     const finalTokenFarmRecord: UserFA2Info =
       fa2.storage.account_info[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
     strictEqual(
@@ -2939,6 +3118,14 @@ describe("TFarm tests", async () => {
     strictEqual(
       +(await finalTokenFarmRecord.balances.get("0")),
       +(await initialTokenFarmRecord.balances.get("0")) - withdrawParams.amt
+    );
+
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
     );
   });
 
@@ -2982,6 +3169,14 @@ describe("TFarm tests", async () => {
       fa2LP.storage.storage.ledger[alice.pkh];
     const finalTokenFarmRecord: UserFA2LPInfo =
       fa2LP.storage.storage.ledger[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
     strictEqual(
@@ -2996,6 +3191,14 @@ describe("TFarm tests", async () => {
     strictEqual(
       +finalTokenFarmRecord.frozen_balance,
       +initialTokenFarmRecord.frozen_balance - withdrawParams.amt
+    );
+
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
     );
   });
 
@@ -3037,6 +3240,14 @@ describe("TFarm tests", async () => {
       fa2LP.storage.storage.ledger[dev.pkh];
     const finalTokenFarmRecord: UserFA2LPInfo =
       fa2LP.storage.storage.ledger[tFarm.contract.address];
+    const res: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
     strictEqual(
@@ -3048,6 +3259,14 @@ describe("TFarm tests", async () => {
     strictEqual(
       +finalTokenFarmRecord.frozen_balance,
       +initialTokenFarmRecord.frozen_balance - withdrawParams.amt
+    );
+
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
     );
   });
 
@@ -3106,6 +3325,13 @@ describe("TFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
         res.expectedShareReward
@@ -3196,6 +3422,13 @@ describe("TFarm tests", async () => {
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
     ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
+    ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
         res.expectedShareReward
       )
@@ -3283,6 +3516,13 @@ describe("TFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
         res.expectedShareReward
@@ -3394,6 +3634,13 @@ describe("TFarm tests", async () => {
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
         res.expectedShareReward
@@ -3587,6 +3834,13 @@ describe("TFarm tests", async () => {
           .minus(res.referralCommission)
       )
     );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
   });
 
   it("should transfer FA2 reward tokens as reward to rewards receiver", async () => {
@@ -3660,6 +3914,13 @@ describe("TFarm tests", async () => {
           .minus(res.referralCommission)
       )
     );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
   });
 
   it("should transfer FA1.2 reward tokens as harvest fee to referrer (in case when user have referrer)", async () => {
@@ -3731,6 +3992,13 @@ describe("TFarm tests", async () => {
         new BigNumber(+initialRewTokFarmRecord.balance)
           .minus(res.actualUserEarned)
           .minus(res.referralCommission)
+      )
+    );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
       )
     );
   });
@@ -3809,6 +4077,13 @@ describe("TFarm tests", async () => {
         new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
           .minus(res.actualUserEarned)
           .minus(res.referralCommission)
+      )
+    );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
       )
     );
   });
@@ -3896,6 +4171,13 @@ describe("TFarm tests", async () => {
           .minus(res.referralCommission)
       )
     );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
   });
 
   it("should transfer FA2 reward tokens as harvest fee to zero address (in case when user does not have referrer)", async () => {
@@ -3974,6 +4256,13 @@ describe("TFarm tests", async () => {
           .minus(res.referralCommission)
       )
     );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
   });
 
   it("should calculate and transfer reward tokens as harvest fee with decimals (like 4.2%)", async () => {
@@ -4050,6 +4339,13 @@ describe("TFarm tests", async () => {
         new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
           .minus(res.actualUserEarned)
           .minus(res.referralCommission)
+      )
+    );
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
       )
     );
   });
@@ -4241,6 +4537,13 @@ describe("TFarm tests", async () => {
     ok(finalFarmFarmRecord.last_staked === initialFarmFarmRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
     ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
+    ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
         res.expectedShareReward
       )
@@ -4308,6 +4611,13 @@ describe("TFarm tests", async () => {
 
     ok(finalFarmFarmRecord.last_staked === initialFarmFarmRecord.last_staked);
     ok(finalFarm.upd > initialFarm.upd);
+    ok(
+      new BigNumber(+finalFarm.claimed).isEqualTo(
+        new BigNumber(+initialFarm.claimed)
+          .plus(res.actualUserEarned)
+          .plus(res.referralCommission)
+      )
+    );
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
         res.expectedShareReward

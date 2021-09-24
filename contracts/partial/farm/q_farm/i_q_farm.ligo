@@ -30,6 +30,8 @@ type farm_type          is [@layout:comb] record [
   reward_per_share        : nat;
   (* Total count of staked tokens in the farm *)
   staked                  : nat;
+  (* Total count of claimed tokens *)
+  claimed                 : nat;
   (* Farm start time *)
   start_time              : timestamp;
   (* Farm ID *)
@@ -103,6 +105,15 @@ type add_new_farm_type  is [@layout:comb] record [
 ]
 
 type burn_farm_rew_type is nat (* Farm ID *)
+
+type claim_return_type  is [@layout:comb] record [
+  (* Claim rewards operation *)
+  op                      : option(operation);
+  (* Updated user (after claiminig ) *)
+  user                    : user_info_type;
+  (* Updated farm (after claiming) *)
+  farm                    : farm_type;
+]
 
 type action_type        is
   Set_admin               of set_admin_type

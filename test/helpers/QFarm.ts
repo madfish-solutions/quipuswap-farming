@@ -5,6 +5,7 @@ import {
   WalletParamsWithKind,
   WalletOperation,
   TezosToolkit,
+  MichelsonMap,
   Contract,
   OpKind,
 } from "@taquito/taquito";
@@ -335,6 +336,7 @@ export class QFarmUtils {
     const newFarmParams: NewFarmParams = {
       fees: fees,
       stake_params: stakeParams,
+      token_info: MichelsonMap.fromLiteral({}),
       paused: false,
       reward_per_second: 0,
       timelock: 0,

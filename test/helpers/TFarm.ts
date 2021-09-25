@@ -5,6 +5,7 @@ import {
   WalletParamsWithKind,
   WalletOperation,
   TezosToolkit,
+  MichelsonMap,
   Contract,
   OpKind,
 } from "@taquito/taquito";
@@ -311,6 +312,7 @@ export class TFarmUtils {
     const newFarmParams: NewFarmParams = {
       fees: fees,
       stake_params: stakeParams,
+      token_info: MichelsonMap.fromLiteral({}),
       reward_token: {
         fA12: zeroAddress,
       },

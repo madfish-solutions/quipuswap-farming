@@ -12,6 +12,7 @@ export const tFarmStorage: TFarmStorage = {
     votes: MichelsonMap.fromLiteral({}),
     candidates: MichelsonMap.fromLiteral({}),
     banned_bakers: MichelsonMap.fromLiteral({}),
+    token_metadata: MichelsonMap.fromLiteral({}),
     qsgov: {
       token: null,
       id: 0,

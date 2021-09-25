@@ -17,6 +17,7 @@ export type SetFeeParams = {
 export type NewFarmParams = {
   fees: TFees;
   stake_params: StakeParams;
+  token_info: MichelsonMap<MichelsonMapKey, unknown>;
   reward_token: Token;
   paused: boolean;
   timelock: number;
@@ -61,6 +62,7 @@ export type TFarmStorage = {
     votes: MichelsonMap<MichelsonMapKey, unknown>;
     candidates: MichelsonMap<MichelsonMapKey, unknown>;
     banned_bakers: MichelsonMap<MichelsonMapKey, unknown>;
+    token_metadata: MichelsonMap<MichelsonMapKey, unknown>;
     qsgov: FA2Token;
     qsgov_lp: string;
     admin: string;

@@ -75,6 +75,14 @@ function add_new_farm(
           fid               = s.farms_count;
         ];
 
+        function copy_map(const _key : string; const value : bytes) : bytes is
+          value;
+
+        s.token_metadata[s.farms_count] := record [
+          token_id   = s.farms_count;
+          token_info = Map.map(copy_map, params.token_info);
+        ];
+
         s.farms_count := s.farms_count + 1n;
       }
     | _                                 -> skip

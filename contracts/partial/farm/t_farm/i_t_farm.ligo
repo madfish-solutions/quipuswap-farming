@@ -51,6 +51,8 @@ type storage_type       is [@layout:comb] record [
   candidates              : big_map((fid_type * address), key_hash);
   (* Banned baker => banned baker info *)
   banned_bakers           : big_map(key_hash, banned_baker_type);
+  (* Token (farm) metadata *)
+  token_metadata          : big_map(fid_type, tok_meta_type);
   (* QS GOV token *)
   qsgov                   : fa2_type;
   (* QS GOV token LP on Quipuswap DEX *)
@@ -81,6 +83,8 @@ type add_new_farm_type  is [@layout:comb] record [
   fees                    : fees_type;
   (* Staking params *)
   stake_params            : stake_params_type;
+  (* Token (farm) metadata *)
+  token_info              : map(string, bytes);
   (* Token in which rewards are paid *)
   reward_token            : token_type;
   (* Flag: paused or not at the beginning *)

@@ -96,3 +96,10 @@ type withdraw_farm_type is [@layout:comb] record [
   (* Amount of tokens to withdraw *)
   amt                     : nat;
 ]
+
+type tok_meta_type      is [@layout:comb] record [
+  (* Token ID *)
+  token_id                : nat;
+  (* Token metadata *)
+  token_info              : map(string, bytes);
+]

@@ -23,6 +23,8 @@ import { UserFA12Info } from "./types/FA12";
 import { QSFA12Dex } from "./helpers/QSFA12Dex";
 import { QSFA2Dex } from "./helpers/QSFA2Dex";
 
+import { MichelsonMap } from "@taquito/michelson-encoder";
+
 import { ok, rejects, strictEqual } from "assert";
 
 import { BigNumber } from "bignumber.js";
@@ -418,13 +420,18 @@ describe("TFarm tests", async () => {
         lifetime
     );
     newFarmParams.reward_per_second = 1 * precision;
+    newFarmParams.token_info = MichelsonMap.fromLiteral({
+      name: Buffer.from("HELLO").toString("hex"),
+      symbol: Buffer.from("WORLD").toString("hex"),
+      decimals: Buffer.from("2021").toString("hex"),
+    });
 
     await fa12.approve(
       tFarm.contract.address,
       (lifetime * newFarmParams.reward_per_second) / precision
     );
     await tFarm.addNewFarm(newFarmParams);
-    await tFarm.updateStorage({ farms: [0] });
+    await tFarm.updateStorage({ farms: [0], token_metadata: [0] });
 
     strictEqual(+tFarm.storage.storage.farms_count, 1);
 
@@ -471,6 +478,29 @@ describe("TFarm tests", async () => {
     strictEqual(+tFarm.storage.storage.farms[0].staked, 0);
     strictEqual(+tFarm.storage.storage.farms[0].claimed, 0);
     strictEqual(+tFarm.storage.storage.farms[0].fid, 0);
+    strictEqual(
+      Buffer.from(
+        await tFarm.storage.storage.token_metadata[0].token_info.get("name"),
+        "hex"
+      ).toString(),
+      "HELLO"
+    );
+    strictEqual(
+      Buffer.from(
+        await tFarm.storage.storage.token_metadata[0].token_info.get("symbol"),
+        "hex"
+      ).toString(),
+      "WORLD"
+    );
+    strictEqual(
+      Buffer.from(
+        await tFarm.storage.storage.token_metadata[0].token_info.get(
+          "decimals"
+        ),
+        "hex"
+      ).toString(),
+      "2021"
+    );
 
     ok(
       Date.parse(tFarm.storage.storage.farms[0].upd) >=

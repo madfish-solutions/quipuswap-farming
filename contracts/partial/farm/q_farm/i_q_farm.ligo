@@ -132,6 +132,9 @@ type action_type        is
 | Burn_xtz_rewards        of burn_xtz_rew_type
 | Burn_farm_rewards       of burn_farm_rew_type
 | Withdraw_farm_depo      of withdraw_farm_type
+| Transfer                of list(fa2_send_type)
+| Update_operators        of list(upd_operator_type)
+| Balance_of              of balance_of_type
 
 type return_type        is (list(operation) * storage_type)
 
@@ -160,4 +163,4 @@ type full_action_type   is
 | Setup_func              of setup_func_type
 | Default                 of unit
 
-[@inline] const q_farm_methods_max_index : nat = 16n;
+[@inline] const q_farm_methods_max_index : nat = 18n;

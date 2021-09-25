@@ -13,6 +13,7 @@
 
 #include "../partial/farm/common_helpers.ligo"
 #include "../partial/farm/common_lambdas.ligo"
+#include "../partial/farm/fa2_farm_lambdas.ligo"
 
 #include "../partial/farm/t_farm/t_farm_methods.ligo"
 #include "../partial/farm/t_farm/t_farm_lambdas.ligo"

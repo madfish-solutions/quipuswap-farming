@@ -8,9 +8,8 @@ function claim_rewards(
   block {
     const earned : nat = user.earned / precision;
 
-    if earned = 0n
-    then skip
-    else {
+    if earned =/= 0n
+    then {
       user.earned := abs(user.earned - earned * precision);
 
       const actual_earned : nat = earned *
@@ -25,9 +24,9 @@ function claim_rewards(
 
       case farm.reward_token of
         FA12(_)         -> {
-        if harvest_fee > 0n
+        if harvest_fee =/= 0n
         then {
-          operations := transfer(
+          operations := transfer_token(
             Tezos.self_address,
             fee_receiver,
             harvest_fee,
@@ -36,7 +35,7 @@ function claim_rewards(
         }
         else skip;
 
-        operations := transfer(
+        operations := transfer_token(
           Tezos.self_address,
           receiver,
           actual_earned,
@@ -52,7 +51,7 @@ function claim_rewards(
           ]
         ];
 
-        if harvest_fee > 0n
+        if harvest_fee =/= 0n
         then {
           const fee_dst : transfer_dst_type = record [
             to_      = fee_receiver;
@@ -76,7 +75,8 @@ function claim_rewards(
         ) # operations;
       }
       end;
-    };
+    }
+    else skip;
   } with (record [
     operations = operations;
     user       = user;
@@ -93,20 +93,20 @@ function transfer_rewards_to_admin(
   block {
     const earned : nat = user.earned / precision;
 
-    if earned = 0n
-    then skip
-    else {
+    if earned =/= 0n
+    then {
       user.earned := abs(user.earned - earned * precision);
 
       farm.claimed := farm.claimed + earned;
 
-      operations := transfer(
+      operations := transfer_token(
         Tezos.self_address,
         admin,
         earned,
         reward_token
       ) # operations;
-    };
+    }
+    else skip;
   } with (record [
     operations = operations;
     user       = user;

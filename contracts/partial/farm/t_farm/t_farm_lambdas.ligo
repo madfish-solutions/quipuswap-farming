@@ -44,7 +44,7 @@ function add_new_farm(
         const rew_amt : nat = abs(params.end_time - params.start_time) *
           (params.reward_per_second / precision);
 
-        operations := transfer(
+        operations := transfer_token(
           Tezos.sender,
           Tezos.self_address,
           rew_amt,
@@ -116,7 +116,7 @@ function deposit(
         user.staked := user.staked + params.amt;
         user.prev_earned := user.staked * farm.reward_per_share;
 
-        if params.amt > 0n
+        if params.amt =/= 0n
         then user.last_staked := Tezos.now
         else skip;
 
@@ -126,7 +126,7 @@ function deposit(
 
         s.farms[farm.fid] := farm;
 
-        if params.amt > 0n
+        if params.amt =/= 0n
         then {
           if farm.stake_params.is_lp_staked_token
           then {
@@ -143,7 +143,7 @@ function deposit(
           }
           else skip;
 
-          operations := transfer(
+          operations := transfer_token(
             Tezos.sender,
             Tezos.self_address,
             params.amt,
@@ -215,9 +215,8 @@ function withdraw(
 
           const withdrawal_fee : nat = abs(value - value_without_fee);
 
-          if withdrawal_fee = 0n
-          then skip
-          else {
+          if withdrawal_fee =/= 0n
+          then {
             var farm_user : user_info_type :=
               get_user_info(farm.fid, Tezos.self_address, s);
 
@@ -229,7 +228,8 @@ function withdraw(
             farm_user.last_staked := Tezos.now;
 
             s.users_info[(farm.fid, Tezos.self_address)] := farm_user;
-          };
+          }
+          else skip;
         };
 
         operations := res.operations;
@@ -245,7 +245,7 @@ function withdraw(
 
         s.farms[farm.fid] := farm;
 
-        operations := transfer(
+        operations := transfer_token(
           Tezos.self_address,
           params.receiver,
           value_without_fee,

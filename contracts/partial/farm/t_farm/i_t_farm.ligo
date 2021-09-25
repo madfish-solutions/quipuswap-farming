@@ -121,6 +121,9 @@ type action_type        is
 | Burn_xtz_rewards        of burn_xtz_rew_type
 | Claim_farm_rewards      of claim_farm_type
 | Withdraw_farm_depo      of withdraw_farm_type
+| Transfer                of list(fa2_send_type)
+| Update_operators        of list(upd_operator_type)
+| Balance_of              of balance_of_type
 
 type return_type        is (list(operation) * storage_type)
 
@@ -146,4 +149,4 @@ type full_action_type   is
   Use                     of action_type
 | Setup_func              of setup_func_type
 
-[@inline] const t_farm_methods_max_index : nat = 13n;
+[@inline] const t_farm_methods_max_index : nat = 16n;

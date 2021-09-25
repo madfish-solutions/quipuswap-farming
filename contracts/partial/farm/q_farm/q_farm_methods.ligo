@@ -20,6 +20,9 @@
     | Burn_xtz_rewards(_)      -> 13n
     | Burn_farm_rewards(_)     -> 14n
     | Withdraw_farm_depo(_)    -> 15n
+    | Transfer(_)              -> 16n
+    | Update_operators(_)      -> 17n
+    | Balance_of(_)            -> 18n
     end;
 
     const res : return_type = case s.q_farm_lambdas[id] of

@@ -22,9 +22,8 @@ function claim_rewards(
     const earned : nat = user.earned / precision;
     var op : option(operation) := (None : option(operation));
 
-    if earned = 0n
-    then skip
-    else {
+    if earned =/= 0n
+    then {
       user.earned := abs(user.earned - earned * precision);
 
       const actual_earned : nat = earned *
@@ -39,7 +38,7 @@ function claim_rewards(
 
       farm.claimed := farm.claimed + earned;
 
-      if harvest_fee > 0n
+      if harvest_fee =/= 0n
       then {
         const fee_receiver : address = case s.referrers[Tezos.sender] of
           None           -> zero_address
@@ -61,7 +60,8 @@ function claim_rewards(
           get_proxy_minter_mint_entrypoint(s.proxy_minter)
         )
       );
-    };
+    }
+    else skip;
   } with (record [
     op   = op;
     user = user;
@@ -78,9 +78,8 @@ function burn_rewards(
     const earned : nat = user.earned / precision;
     var op : option(operation) := (None : option(operation));
 
-    if earned = 0n
-    then skip
-    else {
+    if earned =/= 0n
+    then {
       user.earned := abs(user.earned - earned * precision);
 
       farm.claimed := farm.claimed + earned;
@@ -99,7 +98,7 @@ function burn_rewards(
 
         mint_data := dst1 # mint_data;
 
-        if reward > 0n
+        if reward =/= 0n
         then {
           const dst2 : mint_gov_tok_type = record [
             receiver = Tezos.sender;
@@ -126,7 +125,8 @@ function burn_rewards(
           get_proxy_minter_mint_entrypoint(s.proxy_minter)
         )
       );
-    };
+    }
+    else skip;
   } with (record [
     op   = op;
     user = user;

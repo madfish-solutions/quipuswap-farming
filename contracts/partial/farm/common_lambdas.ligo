@@ -218,7 +218,7 @@ function withdraw_farm_depo(
 
         s.farms[farm.fid] := farm;
 
-        operations := transfer(
+        operations := transfer_token(
           Tezos.self_address,
           s.admin,
           value,

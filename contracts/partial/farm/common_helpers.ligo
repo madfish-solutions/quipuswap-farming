@@ -20,6 +20,7 @@ function get_user_info(
       earned      = 0n;
       prev_earned = 0n;
       used_votes  = 0n;
+      allowances  = (set [] : set(address));
     ]
     end
 
@@ -40,9 +41,8 @@ function update_farm_rewards(
   var s                 : storage_type)
                         : storage_type * farm_type is
   block {
-    if Tezos.now < _farm.start_time
-    then skip
-    else {
+    if Tezos.now >= _farm.start_time
+    then {
       if _farm.staked =/= 0n
       then {
         const time_diff : nat = abs(Tezos.now - _farm.upd);
@@ -56,5 +56,6 @@ function update_farm_rewards(
       _farm.upd := Tezos.now;
 
       s.farms[_farm.fid] := _farm;
-    };
+    }
+    else skip;
   } with (s, _farm)

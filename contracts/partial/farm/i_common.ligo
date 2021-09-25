@@ -11,6 +11,8 @@ type user_info_type     is [@layout:comb] record [
   prev_earned             : nat;
   (* Amount of used votes for the preferred baker *)
   used_votes              : nat;
+  (* Set of user's allowances for staked tokens transfer *)
+  allowances              : set(address);
 ]
 
 type stake_params_type  is [@layout:comb] record [

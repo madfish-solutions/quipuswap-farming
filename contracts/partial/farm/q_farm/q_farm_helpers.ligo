@@ -14,17 +14,16 @@ function get_proxy_minter_mint_entrypoint(
 
 function claim_rewards(
   var user              : user_info_type;
-  const farm            : farm_type;
+  var farm              : farm_type;
   const receiver        : address;
   const s               : storage_type)
-                        : (option(operation) * user_info_type) is
+                        : claim_return_type is
   block {
     const earned : nat = user.earned / precision;
     var op : option(operation) := (None : option(operation));
 
-    if earned = 0n
-    then skip
-    else {
+    if earned =/= 0n
+    then {
       user.earned := abs(user.earned - earned * precision);
 
       const actual_earned : nat = earned *
@@ -37,7 +36,9 @@ function claim_rewards(
         ]
       ];
 
-      if harvest_fee > 0n
+      farm.claimed := farm.claimed + earned;
+
+      if harvest_fee =/= 0n
       then {
         const fee_receiver : address = case s.referrers[Tezos.sender] of
           None           -> zero_address
@@ -59,23 +60,29 @@ function claim_rewards(
           get_proxy_minter_mint_entrypoint(s.proxy_minter)
         )
       );
-    };
-  } with (op, user)
+    }
+    else skip;
+  } with (record [
+    op   = op;
+    user = user;
+    farm = farm;
+  ])
 
 function burn_rewards(
   var user              : user_info_type;
-  const farm            : farm_type;
+  var farm              : farm_type;
   const pay_burn_reward : bool;
   const s               : storage_type)
-                        : (option(operation) * user_info_type) is
+                        : claim_return_type is
   block {
     const earned : nat = user.earned / precision;
     var op : option(operation) := (None : option(operation));
 
-    if earned = 0n
-    then skip
-    else {
+    if earned =/= 0n
+    then {
       user.earned := abs(user.earned - earned * precision);
+
+      farm.claimed := farm.claimed + earned;
 
       var mint_data : mint_gov_toks_type := list [];
 
@@ -91,7 +98,7 @@ function burn_rewards(
 
         mint_data := dst1 # mint_data;
 
-        if reward > 0n
+        if reward =/= 0n
         then {
           const dst2 : mint_gov_tok_type = record [
             receiver = Tezos.sender;
@@ -118,8 +125,13 @@ function burn_rewards(
           get_proxy_minter_mint_entrypoint(s.proxy_minter)
         )
       );
-    };
-  } with (op, user)
+    }
+    else skip;
+  } with (record [
+    op   = op;
+    user = user;
+    farm = farm;
+  ])
 
 function get_baker_registry_validate_entrypoint(
   const baker_registry  : address)

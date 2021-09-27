@@ -11,6 +11,8 @@ type user_info_type     is [@layout:comb] record [
   prev_earned             : nat;
   (* Amount of used votes for the preferred baker *)
   used_votes              : nat;
+  (* Set of user's allowances for staked tokens transfer *)
+  allowances              : set(address);
 ]
 
 type stake_params_type  is [@layout:comb] record [
@@ -93,4 +95,25 @@ type withdraw_farm_type is [@layout:comb] record [
   fid                     : fid_type;
   (* Amount of tokens to withdraw *)
   amt                     : nat;
+]
+
+type tok_meta_type      is [@layout:comb] record [
+  (* Token (farm) ID *)
+  token_id                : nat;
+  (* Token metadata *)
+  token_info              : map(string, bytes);
+]
+
+type meta_pair_type     is [@layout:comb] record [
+  (* Metadata key *)
+  key                     : string;
+  (* Metadata value *)
+  value                   : bytes;
+]
+
+type upd_tok_meta_type  is [@layout:comb] record [
+  (* Token (farm) ID *)
+  token_id                : nat;
+  (* Token metadata *)
+  token_info              : list(meta_pair_type);
 ]

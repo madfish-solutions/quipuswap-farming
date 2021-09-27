@@ -218,7 +218,7 @@ function withdraw_farm_depo(
 
         s.farms[farm.fid] := farm;
 
-        operations := transfer(
+        operations := transfer_token(
           Tezos.self_address,
           s.admin,
           value,
@@ -228,3 +228,30 @@ function withdraw_farm_depo(
     | _                                 -> skip
     end
   } with (operations, s)
+
+function update_token_metadata(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    case action of
+      Update_token_metadata(params)     -> {
+        only_admin(s.admin);
+
+        var metadata : tok_meta_type := get_token_metadata(params.token_id, s);
+
+        function upd_tok_meta(
+          var metadata  : tok_meta_type;
+          const pair    : meta_pair_type)
+                        : tok_meta_type is
+          block {
+            metadata.token_info[pair.key] := pair.value;
+          } with metadata;
+
+        metadata := List.fold(upd_tok_meta, params.token_info, metadata);
+
+        s.token_metadata[params.token_id] := metadata;
+      }
+    | _                                 -> skip
+    end
+  } with (no_operations, s)

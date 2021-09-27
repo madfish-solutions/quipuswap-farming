@@ -51,9 +51,9 @@ function burn_callback(
     );
     var operations : list(operation) := no_operations;
 
-    if qs_gov_balance > 0n
+    if qs_gov_balance =/= 0n
     then {
-      operations := transfer(
+      operations := transfer_token(
         Tezos.self_address,
         zero_address,
         qs_gov_balance,

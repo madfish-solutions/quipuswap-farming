@@ -37,9 +37,9 @@ function withdraw_tokens(
 
     var operations : list(operation) := no_operations;
 
-    if amt > 0n
+    if amt =/= 0n
     then {
-      operations := transfer(
+      operations := transfer_token(
         Tezos.self_address,
         s.admin,
         amt,

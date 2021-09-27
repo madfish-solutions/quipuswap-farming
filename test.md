@@ -138,6 +138,35 @@
     - ✅ should withdraw single FA2 token;
     - ✅ should withdraw LP FA2 token.
 
+17. `transfer`:
+
+    - ✅ should fail if farm not found;
+    - ✅ should fail if self to self transfer;
+    - ✅ should fail if not operator is trying to transfer tokens;
+    - ✅ should fail if insufficient balance;
+    - ✅ should fail if one transaction from a group fails;
+    - ✅ should transfer one token and update values correctly;
+    - ✅ should transfer a group of tokens and update values correctly.
+
+18. `update_operators`:
+
+    - ✅ should fail if not owner is trying to add operator;
+    - ✅ should fail if not owner is trying to remove operator;
+    - ✅ should fail if one transaction from a group fails;
+    - ✅ should add operator;
+    - ✅ should remove operator;
+    - ✅ should add/remove operators per one transation.
+
+19. `balance_of`:
+
+    - ✅ should return correct balance of staked tokens.
+
+20. `update_token_metadata`:
+
+    - ✅ should fail if not admit is trying to update token metadata;
+    - ✅ should fail if farm not found;
+    - ✅ should update token metadata.
+
 ## TFarm
 
 1. `set_admin`:
@@ -278,6 +307,35 @@
     - ✅ should withdraw LP FA1.2 token;
     - ✅ should withdraw single FA2 token;
     - ✅ should withdraw LP FA2 token.
+
+15. `transfer`:
+
+    - ✅ should fail if farm not found;
+    - ✅ should fail if self to self transfer;
+    - ✅ should fail if not operator is trying to transfer tokens;
+    - ✅ should fail if insufficient balance;
+    - ✅ should fail if one transaction from a group fails;
+    - ✅ should transfer one token and update values correctly;
+    - ✅ should transfer a group of tokens and update values correctly.
+
+16. `update_operators`:
+
+    - ✅ should fail if not owner is trying to add operator;
+    - ✅ should fail if not owner is trying to remove operator;
+    - ✅ should fail if one transaction from a group fails;
+    - ✅ should add operator;
+    - ✅ should remove operator;
+    - ✅ should add/remove operators per one transation.
+
+17. `balance_of`:
+
+    - ✅ should return correct balance of staked tokens.
+
+18. `update_token_metadata`:
+
+    - ✅ should fail if not admit is trying to update token metadata;
+    - ✅ should fail if farm not found;
+    - ✅ should update token metadata.
 
 ## Burner
 

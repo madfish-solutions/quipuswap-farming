@@ -46,6 +46,7 @@ export type UserInfoType = {
   earned: number;
   prev_earned: number;
   used_votes: number;
+  allowances: string[];
 };
 
 export type WithdrawData = {
@@ -61,4 +62,14 @@ export type WithdrawFarmDepoParams = {
 export type BanBakerParam = {
   baker: string;
   period: number;
+};
+
+export type Meta = {
+  key: string;
+  value: string;
+};
+
+export type UpdTokMetaParams = {
+  token_id: number;
+  token_info: Meta[];
 };

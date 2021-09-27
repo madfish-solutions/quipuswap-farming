@@ -1,4 +1,8 @@
-import { TezosToolkit, TransactionOperation } from "@taquito/taquito";
+import {
+  TransactionOperation,
+  TezosToolkit,
+  MichelsonMap,
+} from "@taquito/taquito";
 import { InMemorySigner } from "@taquito/signer";
 
 import { confirmOperation } from "../../scripts/confirmation";
@@ -59,7 +63,9 @@ export class Utils {
         arr.push(k);
       }
 
-      if (
+      if (obj[k] instanceof MichelsonMap || Array.isArray(obj[k])) {
+        arr.push(obj[k]);
+      } else if (
         typeof obj[k] === "object" &&
         (!(obj[k] instanceof Date) ||
           !(obj[k] instanceof null) ||

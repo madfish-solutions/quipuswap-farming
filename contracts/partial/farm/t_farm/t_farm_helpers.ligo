@@ -1,16 +1,15 @@
 function claim_rewards(
   var user              : user_info_type;
   var operations        : list(operation);
-  const farm            : farm_type;
+  var farm              : farm_type;
   const receiver        : address;
   const s               : storage_type)
-                        : (list(operation) * user_info_type) is
+                        : claim_return_type is
   block {
     const earned : nat = user.earned / precision;
 
-    if earned = 0n
-    then skip
-    else {
+    if earned =/= 0n
+    then {
       user.earned := abs(user.earned - earned * precision);
 
       const actual_earned : nat = earned *
@@ -21,11 +20,13 @@ function claim_rewards(
       | Some(referrer) -> referrer
       end;
 
+      farm.claimed := farm.claimed + earned;
+
       case farm.reward_token of
         FA12(_)         -> {
-        if harvest_fee > 0n
+        if harvest_fee =/= 0n
         then {
-          operations := transfer(
+          operations := transfer_token(
             Tezos.self_address,
             fee_receiver,
             harvest_fee,
@@ -34,7 +35,7 @@ function claim_rewards(
         }
         else skip;
 
-        operations := transfer(
+        operations := transfer_token(
           Tezos.self_address,
           receiver,
           actual_earned,
@@ -50,7 +51,7 @@ function claim_rewards(
           ]
         ];
 
-        if harvest_fee > 0n
+        if harvest_fee =/= 0n
         then {
           const fee_dst : transfer_dst_type = record [
             to_      = fee_receiver;
@@ -74,31 +75,43 @@ function claim_rewards(
         ) # operations;
       }
       end;
-    };
-  } with (operations, user)
+    }
+    else skip;
+  } with (record [
+    operations = operations;
+    user       = user;
+    farm       = farm;
+  ])
 
 function transfer_rewards_to_admin(
+  var farm              : farm_type;
   var user              : user_info_type;
   var operations        : list(operation);
   const reward_token    : token_type;
   const admin           : address)
-                        : (list(operation) * user_info_type) is
+                        : claim_return_type is
   block {
     const earned : nat = user.earned / precision;
 
-    if earned = 0n
-    then skip
-    else {
+    if earned =/= 0n
+    then {
       user.earned := abs(user.earned - earned * precision);
 
-      operations := transfer(
+      farm.claimed := farm.claimed + earned;
+
+      operations := transfer_token(
         Tezos.self_address,
         admin,
         earned,
         reward_token
       ) # operations;
-    };
-  } with (operations, user)
+    }
+    else skip;
+  } with (record [
+    operations = operations;
+    user       = user;
+    farm       = farm;
+  ])
 
 function get_baker_registry_validate_entrypoint(
   const baker_registry  : address)

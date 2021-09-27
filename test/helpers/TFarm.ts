@@ -5,6 +5,7 @@ import {
   WalletParamsWithKind,
   WalletOperation,
   TezosToolkit,
+  MichelsonMap,
   Contract,
   OpKind,
 } from "@taquito/taquito";
@@ -25,6 +26,7 @@ import tFarmFunctions from "../../storage/json/TFarmFunctions.json";
 
 import {
   WithdrawFarmDepoParams,
+  UpdTokMetaParams,
   PauseFarmParam,
   WithdrawParams,
   DepositParams,
@@ -42,6 +44,7 @@ import {
   TFees,
   Farm,
 } from "../types/TFarm";
+import { TransferParam, UpdateOperatorParam } from "test/types/FA2";
 
 import { Utils, zeroAddress } from "./Utils";
 
@@ -290,6 +293,40 @@ export class TFarm {
 
     return operation;
   }
+
+  async transfer(params: TransferParam[]): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .transfer(params)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async updateOperators(
+    params: UpdateOperatorParam[]
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .update_operators(params)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async updateTokenMetadata(
+    params: UpdTokMetaParams
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .update_token_metadata(...Utils.destructObj(params))
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
 }
 
 export class TFarmUtils {
@@ -311,6 +348,7 @@ export class TFarmUtils {
     const newFarmParams: NewFarmParams = {
       fees: fees,
       stake_params: stakeParams,
+      token_info: MichelsonMap.fromLiteral({}),
       reward_token: {
         fA12: zeroAddress,
       },

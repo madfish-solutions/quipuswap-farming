@@ -28,6 +28,8 @@ type farm_type          is [@layout:comb] record [
   reward_per_share        : nat;
   (* Total count of staked tokens in the farm *)
   staked                  : nat;
+  (* Total count of claimed tokens *)
+  claimed                 : nat;
   (* Farm start time *)
   start_time              : timestamp;
   (* Farm end time *)
@@ -49,6 +51,8 @@ type storage_type       is [@layout:comb] record [
   candidates              : big_map((fid_type * address), key_hash);
   (* Banned baker => banned baker info *)
   banned_bakers           : big_map(key_hash, banned_baker_type);
+  (* Token (farm) metadata *)
+  token_metadata          : big_map(fid_type, tok_meta_type);
   (* QS GOV token *)
   qsgov                   : fa2_type;
   (* QS GOV token LP on Quipuswap DEX *)
@@ -79,6 +83,8 @@ type add_new_farm_type  is [@layout:comb] record [
   fees                    : fees_type;
   (* Staking params *)
   stake_params            : stake_params_type;
+  (* Token (farm) metadata *)
+  token_info              : map(string, bytes);
   (* Token in which rewards are paid *)
   reward_token            : token_type;
   (* Flag: paused or not at the beginning *)
@@ -95,6 +101,15 @@ type add_new_farm_type  is [@layout:comb] record [
 
 type claim_farm_type    is nat (* Farm ID *)
 
+type claim_return_type  is [@layout:comb] record [
+  (* Claim rewards operations *)
+  operations              : list(operation);
+  (* Updated user (after claiminig ) *)
+  user                    : user_info_type;
+  (* Updated farm (after claiming) *)
+  farm                    : farm_type;
+]
+
 type action_type        is
   Set_admin               of set_admin_type
 | Confirm_admin           of confirm_admin_type
@@ -110,6 +125,10 @@ type action_type        is
 | Burn_xtz_rewards        of burn_xtz_rew_type
 | Claim_farm_rewards      of claim_farm_type
 | Withdraw_farm_depo      of withdraw_farm_type
+| Transfer                of list(fa2_send_type)
+| Update_operators        of list(upd_operator_type)
+| Balance_of              of balance_of_type
+| Update_token_metadata   of upd_tok_meta_type
 
 type return_type        is (list(operation) * storage_type)
 
@@ -135,4 +154,4 @@ type full_action_type   is
   Use                     of action_type
 | Setup_func              of setup_func_type
 
-[@inline] const t_farm_methods_max_index : nat = 13n;
+[@inline] const t_farm_methods_max_index : nat = 17n;

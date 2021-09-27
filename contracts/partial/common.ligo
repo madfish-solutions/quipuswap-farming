@@ -202,7 +202,7 @@ function transfer_fa2(
     get_fa2_token_transfer_entrypoint(token)
   );
 
-function transfer(
+function transfer_token(
   const from_           : address;
   const to_             : address;
   const amt             : nat;

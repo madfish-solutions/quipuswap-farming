@@ -62,5 +62,21 @@
   {
     "index": 15,
     "name": "withdraw_farm_depo"
+  },
+  {
+    "index": 16,
+    "name": "transfer"
+  },
+  {
+    "index": 17,
+    "name": "update_operators"
+  },
+  {
+    "index": 18,
+    "name": "balance_of"
+  },
+  {
+    "index": 19,
+    "name": "update_token_metadata"
   }
 ]

@@ -30,6 +30,8 @@ type farm_type          is [@layout:comb] record [
   reward_per_share        : nat;
   (* Total count of staked tokens in the farm *)
   staked                  : nat;
+  (* Total count of claimed tokens *)
+  claimed                 : nat;
   (* Farm start time *)
   start_time              : timestamp;
   (* Farm ID *)
@@ -49,6 +51,8 @@ type storage_type       is [@layout:comb] record [
   candidates              : big_map((fid_type * address), key_hash);
   (* Banned baker => banned baker info *)
   banned_bakers           : big_map(key_hash, banned_baker_type);
+  (* Token (farm) metadata *)
+  token_metadata          : big_map(fid_type, tok_meta_type);
   (* QS GOV token *)
   qsgov                   : fa2_type;
   (* QS GOV token LP on Quipuswap DEX *)
@@ -92,6 +96,8 @@ type add_new_farm_type  is [@layout:comb] record [
   fees                    : fees_type;
   (* Staking params *)
   stake_params            : stake_params_type;
+  (* Token (farm) metadata *)
+  token_info              : map(string, bytes);
   (* Flag: paused or not at the beginning *)
   paused                  : bool;
   (* QS GOV tokens per second *)
@@ -103,6 +109,15 @@ type add_new_farm_type  is [@layout:comb] record [
 ]
 
 type burn_farm_rew_type is nat (* Farm ID *)
+
+type claim_return_type  is [@layout:comb] record [
+  (* Claim rewards operation *)
+  op                      : option(operation);
+  (* Updated user (after claiminig ) *)
+  user                    : user_info_type;
+  (* Updated farm (after claiming) *)
+  farm                    : farm_type;
+]
 
 type action_type        is
   Set_admin               of set_admin_type
@@ -121,6 +136,10 @@ type action_type        is
 | Burn_xtz_rewards        of burn_xtz_rew_type
 | Burn_farm_rewards       of burn_farm_rew_type
 | Withdraw_farm_depo      of withdraw_farm_type
+| Transfer                of list(fa2_send_type)
+| Update_operators        of list(upd_operator_type)
+| Balance_of              of balance_of_type
+| Update_token_metadata   of upd_tok_meta_type
 
 type return_type        is (list(operation) * storage_type)
 
@@ -149,4 +168,4 @@ type full_action_type   is
 | Setup_func              of setup_func_type
 | Default                 of unit
 
-[@inline] const q_farm_methods_max_index : nat = 16n;
+[@inline] const q_farm_methods_max_index : nat = 19n;

@@ -66,5 +66,9 @@
   {
     "index": 16,
     "name": "balance_of"
+  },
+  {
+    "index": 17,
+    "name": "update_token_metadata"
   }
 ]

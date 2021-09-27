@@ -98,8 +98,22 @@ type withdraw_farm_type is [@layout:comb] record [
 ]
 
 type tok_meta_type      is [@layout:comb] record [
-  (* Token ID *)
+  (* Token (farm) ID *)
   token_id                : nat;
   (* Token metadata *)
   token_info              : map(string, bytes);
+]
+
+type meta_pair_type     is [@layout:comb] record [
+  (* Metadata key *)
+  key                     : string;
+  (* Metadata value *)
+  value                   : bytes;
+]
+
+type upd_tok_meta_type  is [@layout:comb] record [
+  (* Token (farm) ID *)
+  token_id                : nat;
+  (* Token metadata *)
+  token_info              : list(meta_pair_type);
 ]

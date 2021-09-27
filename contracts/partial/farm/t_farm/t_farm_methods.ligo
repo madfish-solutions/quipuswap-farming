@@ -4,23 +4,24 @@
                         : full_return_type is
   block {
     const id : nat = case action of
-      Set_admin(_)          -> 0n
-    | Confirm_admin(_)      -> 1n
-    | Set_fees(_)           -> 2n
-    | Set_burner(_)         -> 3n
-    | Set_baker_registry(_) -> 4n
-    | Ban_bakers(_)         -> 5n
-    | Add_new_farm(_)       -> 6n
-    | Pause_farms(_)        -> 7n
-    | Deposit(_)            -> 8n
-    | Withdraw(_)           -> 9n
-    | Harvest(_)            -> 10n
-    | Burn_xtz_rewards(_)   -> 11n
-    | Claim_farm_rewards(_) -> 12n
-    | Withdraw_farm_depo(_) -> 13n
-    | Transfer(_)           -> 14n
-    | Update_operators(_)   -> 15n
-    | Balance_of(_)         -> 16n
+      Set_admin(_)             -> 0n
+    | Confirm_admin(_)         -> 1n
+    | Set_fees(_)              -> 2n
+    | Set_burner(_)            -> 3n
+    | Set_baker_registry(_)    -> 4n
+    | Ban_bakers(_)            -> 5n
+    | Add_new_farm(_)          -> 6n
+    | Pause_farms(_)           -> 7n
+    | Deposit(_)               -> 8n
+    | Withdraw(_)              -> 9n
+    | Harvest(_)               -> 10n
+    | Burn_xtz_rewards(_)      -> 11n
+    | Claim_farm_rewards(_)    -> 12n
+    | Withdraw_farm_depo(_)    -> 13n
+    | Transfer(_)              -> 14n
+    | Update_operators(_)      -> 15n
+    | Balance_of(_)            -> 16n
+    | Update_token_metadata(_) -> 17n
     end;
 
     const res : return_type = case s.t_farm_lambdas[id] of

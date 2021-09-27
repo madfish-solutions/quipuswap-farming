@@ -26,6 +26,7 @@ import tFarmFunctions from "../../storage/json/TFarmFunctions.json";
 
 import {
   WithdrawFarmDepoParams,
+  UpdTokMetaParams,
   PauseFarmParam,
   WithdrawParams,
   DepositParams,
@@ -285,6 +286,18 @@ export class TFarm {
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .withdraw_farm_depo(...Utils.destructObj(params))
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async updateTokenMetadata(
+    params: UpdTokMetaParams
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .update_token_metadata(...Utils.destructObj(params))
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

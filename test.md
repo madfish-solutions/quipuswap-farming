@@ -138,6 +138,24 @@
     - ✅ should withdraw single FA2 token;
     - ✅ should withdraw LP FA2 token.
 
+17. `transfer`:
+
+    -
+
+18. `update_operators`:
+
+    -
+
+19. `balance_of`:
+
+    -
+
+20. `update_token_metadata`:
+
+    - ✅ should fail if not admit is trying to update token metadata;
+    - ✅ should fail if farm not found;
+    - ✅ should update token metadata.
+
 ## TFarm
 
 1. `set_admin`:
@@ -278,6 +296,24 @@
     - ✅ should withdraw LP FA1.2 token;
     - ✅ should withdraw single FA2 token;
     - ✅ should withdraw LP FA2 token.
+
+15. `transfer`:
+
+    -
+
+16. `update_operators`:
+
+    -
+
+17. `balance_of`:
+
+    -
+
+18. `update_token_metadata`:
+
+    - ✅ should fail if not admit is trying to update token metadata;
+    - ✅ should fail if farm not found;
+    - ✅ should update token metadata.
 
 ## Burner
 

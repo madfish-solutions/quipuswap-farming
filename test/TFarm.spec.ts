@@ -11,6 +11,7 @@ import { UpdateOperatorParam, UserFA2Info, UserFA2LPInfo } from "./types/FA2";
 import { NewFarmParams, SetFeeParams, FarmData, Farm } from "./types/TFarm";
 import {
   WithdrawFarmDepoParams,
+  UpdTokMetaParams,
   PauseFarmParam,
   WithdrawParams,
   DepositParams,
@@ -534,6 +535,79 @@ describe("TFarm tests", async () => {
 
     await qsGov.updateOperators([updateOperatorParam]);
     await tFarm.deposit(depositParams);
+  });
+
+  it("should fail if not admit is trying to update token metadata", async () => {
+    const params: UpdTokMetaParams = {
+      token_id: 0,
+      token_info: [{ key: "A", value: Buffer.from("B").toString("hex") }],
+    };
+
+    await utils.setProvider(alice.sk);
+    await rejects(tFarm.updateTokenMetadata(params), (err: Error) => {
+      ok(err.message === "Not-admin");
+
+      return true;
+    });
+  });
+
+  it("should fail if farm not found", async () => {
+    const params: UpdTokMetaParams = {
+      token_id: 666,
+      token_info: [{ key: "A", value: Buffer.from("B").toString("hex") }],
+    };
+
+    await utils.setProvider(bob.sk);
+    await rejects(tFarm.updateTokenMetadata(params), (err: Error) => {
+      ok(err.message === "QSystem/farm-not-set");
+
+      return true;
+    });
+  });
+
+  it("should update token metadata", async () => {
+    const params: UpdTokMetaParams = {
+      token_id: 0,
+      token_info: [
+        { key: "A", value: Buffer.from("B").toString("hex") },
+        { key: "name", value: Buffer.from("TEST").toString("hex") },
+        { key: "decimals", value: Buffer.from("8").toString("hex") },
+      ],
+    };
+
+    await tFarm.updateTokenMetadata(params);
+    await tFarm.updateStorage({ token_metadata: [0] });
+
+    strictEqual(
+      Buffer.from(
+        await tFarm.storage.storage.token_metadata[0].token_info.get("A"),
+        "hex"
+      ).toString(),
+      "B"
+    );
+    strictEqual(
+      Buffer.from(
+        await tFarm.storage.storage.token_metadata[0].token_info.get("name"),
+        "hex"
+      ).toString(),
+      "TEST"
+    );
+    strictEqual(
+      Buffer.from(
+        await tFarm.storage.storage.token_metadata[0].token_info.get("symbol"),
+        "hex"
+      ).toString(),
+      "WORLD"
+    );
+    strictEqual(
+      Buffer.from(
+        await tFarm.storage.storage.token_metadata[0].token_info.get(
+          "decimals"
+        ),
+        "hex"
+      ).toString(),
+      "8"
+    );
   });
 
   it("should transfer correct amount of FA1.2 tokens to the contract as the rewards for users", async () => {

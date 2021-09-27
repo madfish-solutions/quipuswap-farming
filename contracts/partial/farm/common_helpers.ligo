@@ -7,6 +7,15 @@ function get_farm(
   | Some(farm) -> farm
   end
 
+function get_token_metadata(
+  const fid             : fid_type;
+  const s               : storage_type)
+                        : tok_meta_type is
+  case s.token_metadata[fid] of
+    None           -> (failwith("QSystem/farm-not-set") : tok_meta_type)
+  | Some(metadata) -> metadata
+  end
+
 function get_user_info(
   const fid             : fid_type;
   const user            : address;

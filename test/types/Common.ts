@@ -62,3 +62,13 @@ export type BanBakerParam = {
   baker: string;
   period: number;
 };
+
+export type Meta = {
+  key: string;
+  value: string;
+};
+
+export type UpdTokMetaParams = {
+  token_id: number;
+  token_info: Meta[];
+};

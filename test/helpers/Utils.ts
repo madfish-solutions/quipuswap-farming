@@ -63,7 +63,7 @@ export class Utils {
         arr.push(k);
       }
 
-      if (obj[k] instanceof MichelsonMap) {
+      if (obj[k] instanceof MichelsonMap || Array.isArray(obj[k])) {
         arr.push(obj[k]);
       } else if (
         typeof obj[k] === "object" &&

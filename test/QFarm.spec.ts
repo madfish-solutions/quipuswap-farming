@@ -12,6 +12,7 @@ import { QSFA2Dex } from "./helpers/QSFA2Dex";
 
 import {
   WithdrawFarmDepoParams,
+  UpdTokMetaParams,
   PauseFarmParam,
   WithdrawParams,
   DepositParams,
@@ -540,6 +541,79 @@ describe("QFarm tests", async () => {
     ok(
       Date.parse(qFarm.storage.storage.farms[0].start_time) >=
         +newFarmParams.start_time * 1000
+    );
+  });
+
+  it("should fail if not admit is trying to update token metadata", async () => {
+    const params: UpdTokMetaParams = {
+      token_id: 0,
+      token_info: [{ key: "A", value: Buffer.from("B").toString("hex") }],
+    };
+
+    await utils.setProvider(alice.sk);
+    await rejects(qFarm.updateTokenMetadata(params), (err: Error) => {
+      ok(err.message === "Not-admin");
+
+      return true;
+    });
+  });
+
+  it("should fail if farm not found", async () => {
+    const params: UpdTokMetaParams = {
+      token_id: 666,
+      token_info: [{ key: "A", value: Buffer.from("B").toString("hex") }],
+    };
+
+    await utils.setProvider(bob.sk);
+    await rejects(qFarm.updateTokenMetadata(params), (err: Error) => {
+      ok(err.message === "QSystem/farm-not-set");
+
+      return true;
+    });
+  });
+
+  it("should update token metadata", async () => {
+    const params: UpdTokMetaParams = {
+      token_id: 0,
+      token_info: [
+        { key: "A", value: Buffer.from("B").toString("hex") },
+        { key: "name", value: Buffer.from("TEST").toString("hex") },
+        { key: "decimals", value: Buffer.from("8").toString("hex") },
+      ],
+    };
+
+    await qFarm.updateTokenMetadata(params);
+    await qFarm.updateStorage({ token_metadata: [0] });
+
+    strictEqual(
+      Buffer.from(
+        await qFarm.storage.storage.token_metadata[0].token_info.get("A"),
+        "hex"
+      ).toString(),
+      "B"
+    );
+    strictEqual(
+      Buffer.from(
+        await qFarm.storage.storage.token_metadata[0].token_info.get("name"),
+        "hex"
+      ).toString(),
+      "TEST"
+    );
+    strictEqual(
+      Buffer.from(
+        await qFarm.storage.storage.token_metadata[0].token_info.get("symbol"),
+        "hex"
+      ).toString(),
+      "WORLD"
+    );
+    strictEqual(
+      Buffer.from(
+        await qFarm.storage.storage.token_metadata[0].token_info.get(
+          "decimals"
+        ),
+        "hex"
+      ).toString(),
+      "8"
     );
   });
 

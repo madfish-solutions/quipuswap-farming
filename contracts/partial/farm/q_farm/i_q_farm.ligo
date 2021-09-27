@@ -139,6 +139,7 @@ type action_type        is
 | Transfer                of list(fa2_send_type)
 | Update_operators        of list(upd_operator_type)
 | Balance_of              of balance_of_type
+| Update_token_metadata   of upd_tok_meta_type
 
 type return_type        is (list(operation) * storage_type)
 
@@ -167,4 +168,4 @@ type full_action_type   is
 | Setup_func              of setup_func_type
 | Default                 of unit
 
-[@inline] const q_farm_methods_max_index : nat = 18n;
+[@inline] const q_farm_methods_max_index : nat = 19n;

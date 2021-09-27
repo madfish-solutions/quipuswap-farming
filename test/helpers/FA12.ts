@@ -73,6 +73,20 @@ export class FA12 {
     }
   }
 
+  async transfer(
+    from: string,
+    to: string,
+    value: number
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .transfer(from, to, value)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
   async approve(spender: string, value: number): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .approve(spender, value)

@@ -10,10 +10,11 @@ import fs from "fs";
 import { confirmOperation } from "../../scripts/confirmation";
 
 import {
+  UpdateOperatorParam,
+  MintGovTokenParams,
+  TransferParam,
   FA2Storage,
   Minter,
-  MintGovTokenParams,
-  UpdateOperatorParam,
 } from "../types/FA2";
 
 export class FA2 {
@@ -76,6 +77,16 @@ export class FA2 {
         Promise.resolve({})
       );
     }
+  }
+
+  async transfer(params: TransferParam[]): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .transfer(params)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
   }
 
   async updateOperators(

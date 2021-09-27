@@ -21,6 +21,17 @@ export type UpdateOperatorParam =
   | { add_operator: OperatorParam }
   | { remove_operator: OperatorParam };
 
+export type TransferDst = {
+  to_: string;
+  token_id: number;
+  amount: number;
+};
+
+export type TransferParam = {
+  from_: string;
+  txs: TransferDst[];
+};
+
 export type Minter = {
   minter: string;
   share: number;

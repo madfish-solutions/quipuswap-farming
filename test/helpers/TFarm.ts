@@ -44,6 +44,7 @@ import {
   TFees,
   Farm,
 } from "../types/TFarm";
+import { TransferParam, UpdateOperatorParam } from "test/types/FA2";
 
 import { Utils, zeroAddress } from "./Utils";
 
@@ -286,6 +287,28 @@ export class TFarm {
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .withdraw_farm_depo(...Utils.destructObj(params))
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async transfer(params: TransferParam[]): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .transfer(params)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async updateOperators(
+    params: UpdateOperatorParam[]
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .update_operators(params)
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

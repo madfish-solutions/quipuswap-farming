@@ -7,7 +7,12 @@ import { BakerRegistry } from "./helpers/BakerRegistry";
 import { QSFA12Factory } from "./helpers/QSFA12Factory";
 import { QSFA2Factory } from "./helpers/QSFA2Factory";
 
-import { UpdateOperatorParam, UserFA2Info, UserFA2LPInfo } from "./types/FA2";
+import {
+  UpdateOperatorParam,
+  TransferParam,
+  UserFA2LPInfo,
+  UserFA2Info,
+} from "./types/FA2";
 import { NewFarmParams, SetFeeParams, FarmData, Farm } from "./types/TFarm";
 import {
   WithdrawFarmDepoParams,
@@ -24,6 +29,7 @@ import { UserFA12Info } from "./types/FA12";
 import { QSFA12Dex } from "./helpers/QSFA12Dex";
 import { QSFA2Dex } from "./helpers/QSFA2Dex";
 
+import { Contract, OriginationOperation, VIEW_LAMBDA } from "@taquito/taquito";
 import { MichelsonMap } from "@taquito/michelson-encoder";
 
 import { ok, rejects, strictEqual } from "assert";
@@ -608,6 +614,227 @@ describe("TFarm tests", async () => {
       ).toString(),
       "8"
     );
+  });
+
+  it("should fail if farm not found", async () => {
+    const params: TransferParam[] = [
+      {
+        from_: alice.pkh,
+        txs: [{ to_: bob.pkh, token_id: 666, amount: 0 }],
+      },
+    ];
+
+    await rejects(tFarm.transfer(params), (err: Error) => {
+      ok(err.message === "QSystem/farm-not-set");
+
+      return true;
+    });
+  });
+
+  it("should fail if self to self transfer", async () => {
+    const params: TransferParam[] = [
+      {
+        from_: alice.pkh,
+        txs: [{ to_: alice.pkh, token_id: 0, amount: 0 }],
+      },
+    ];
+
+    await rejects(tFarm.transfer(params), (err: Error) => {
+      ok(err.message === "FA2_SELF_TO_SELF_TRANSFER");
+
+      return true;
+    });
+  });
+
+  it("should fail if not operator is trying to transfer tokens", async () => {
+    const params: TransferParam[] = [
+      {
+        from_: alice.pkh,
+        txs: [{ to_: bob.pkh, token_id: 0, amount: 0 }],
+      },
+    ];
+
+    await utils.setProvider(bob.sk);
+    await rejects(tFarm.transfer(params), (err: Error) => {
+      ok(err.message === "FA2_NOT_OPERATOR");
+
+      return true;
+    });
+  });
+
+  it("should fail if insufficient balance", async () => {
+    const params: TransferParam[] = [
+      {
+        from_: alice.pkh,
+        txs: [{ to_: bob.pkh, token_id: 0, amount: 100_000_000 }],
+      },
+    ];
+
+    await utils.setProvider(alice.sk);
+    await rejects(tFarm.transfer(params), (err: Error) => {
+      ok(err.message === "FA2_INSUFFICIENT_BALANCE");
+
+      return true;
+    });
+  });
+
+  it("should fail if one transaction from a group fails", async () => {
+    const params: TransferParam[] = [
+      {
+        from_: alice.pkh,
+        txs: [
+          { to_: bob.pkh, token_id: 0, amount: 10 },
+          { to_: carol.pkh, token_id: 0, amount: 10 },
+        ],
+      },
+      {
+        from_: bob.pkh,
+        txs: [{ to_: bob.pkh, token_id: 0, amount: 100 }],
+      },
+    ];
+
+    await rejects(tFarm.transfer(params), (err: Error) => {
+      ok(err.message === "FA2_SELF_TO_SELF_TRANSFER");
+
+      return true;
+    });
+  });
+
+  it("should fail if not owner is trying to add operator", async () => {
+    const params: UpdateOperatorParam[] = [
+      {
+        add_operator: {
+          owner: bob.pkh,
+          operator: tFarm.contract.address,
+          token_id: 0,
+        },
+      },
+    ];
+
+    await rejects(tFarm.updateOperators(params), (err: Error) => {
+      ok(err.message === "FA2_NOT_OWNER");
+
+      return true;
+    });
+  });
+
+  it("should fail if not owner is trying to remove operator", async () => {
+    const params: UpdateOperatorParam[] = [
+      {
+        remove_operator: {
+          owner: bob.pkh,
+          operator: tFarm.contract.address,
+          token_id: 0,
+        },
+      },
+    ];
+
+    await rejects(tFarm.updateOperators(params), (err: Error) => {
+      ok(err.message === "FA2_NOT_OWNER");
+
+      return true;
+    });
+  });
+
+  it("should fail if one transaction from a group fails", async () => {
+    const params: UpdateOperatorParam[] = [
+      {
+        add_operator: {
+          owner: alice.pkh,
+          operator: tFarm.contract.address,
+          token_id: 0,
+        },
+      },
+      {
+        remove_operator: {
+          owner: bob.pkh,
+          operator: tFarm.contract.address,
+          token_id: 0,
+        },
+      },
+    ];
+
+    await rejects(tFarm.updateOperators(params), (err: Error) => {
+      ok(err.message === "FA2_NOT_OWNER");
+
+      return true;
+    });
+  });
+
+  it("should add operator", async () => {
+    const params: UpdateOperatorParam[] = [
+      {
+        add_operator: {
+          owner: alice.pkh,
+          operator: tFarm.contract.address,
+          token_id: 0,
+        },
+      },
+    ];
+
+    await tFarm.updateOperators(params);
+    await tFarm.updateStorage({ users_info: [[0, alice.pkh]] });
+
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${0},${alice.pkh}`];
+
+    strictEqual(finalFarmAliceRecord.allowances.length, 1);
+    strictEqual(finalFarmAliceRecord.allowances[0], tFarm.contract.address);
+  });
+
+  it("should remove operator", async () => {
+    const params: UpdateOperatorParam[] = [
+      {
+        remove_operator: {
+          owner: alice.pkh,
+          operator: tFarm.contract.address,
+          token_id: 0,
+        },
+      },
+    ];
+
+    await tFarm.updateOperators(params);
+    await tFarm.updateStorage({ users_info: [[0, alice.pkh]] });
+
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${0},${alice.pkh}`];
+
+    strictEqual(finalFarmAliceRecord.allowances.length, 0);
+  });
+
+  it("should add/remove operators per one transation", async () => {
+    const params: UpdateOperatorParam[] = [
+      {
+        add_operator: {
+          owner: alice.pkh,
+          operator: tFarm.contract.address,
+          token_id: 0,
+        },
+      },
+      {
+        remove_operator: {
+          owner: alice.pkh,
+          operator: tFarm.contract.address,
+          token_id: 0,
+        },
+      },
+      {
+        add_operator: {
+          owner: alice.pkh,
+          operator: bob.pkh,
+          token_id: 0,
+        },
+      },
+    ];
+
+    await tFarm.updateOperators(params);
+    await tFarm.updateStorage({ users_info: [[0, alice.pkh]] });
+
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${0},${alice.pkh}`];
+
+    strictEqual(finalFarmAliceRecord.allowances.length, 1);
+    strictEqual(finalFarmAliceRecord.allowances[0], bob.pkh);
   });
 
   it("should transfer correct amount of FA1.2 tokens to the contract as the rewards for users", async () => {
@@ -5095,6 +5322,305 @@ describe("TFarm tests", async () => {
     strictEqual(
       +finalTokenFarmRecord.frozen_balance,
       +initialTokenFarmRecord.frozen_balance
+    );
+  });
+
+  it("should transfer one token and update values correctly", async () => {
+    const amount: number = 50;
+    const depositParams: DepositParams = {
+      fid: 0,
+      amt: amount,
+      referrer: undefined,
+      rewards_receiver: bob.pkh,
+      candidate: zeroAddress,
+    };
+
+    await utils.setProvider(bob.sk);
+    await tFarm.deposit(depositParams);
+
+    const params: TransferParam[] = [
+      {
+        from_: alice.pkh,
+        txs: [{ to_: bob.pkh, token_id: 0, amount: amount }],
+      },
+    ];
+
+    await tFarm.updateStorage({
+      users_info: [
+        [0, alice.pkh],
+        [0, bob.pkh],
+      ],
+      farms: [0],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[0];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${0},${alice.pkh}`];
+    const initialFarmBobRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${0},${bob.pkh}`];
+
+    await utils.setProvider(alice.sk);
+    await tFarm.transfer(params);
+    await tFarm.updateStorage({
+      users_info: [
+        [0, alice.pkh],
+        [0, bob.pkh],
+      ],
+      farms: [0],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[0];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${0},${alice.pkh}`];
+    const finalFarmBobRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${0},${bob.pkh}`];
+    const resAlice: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+    const resBob: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmBobRecord,
+      finalFarmBobRecord,
+      precision,
+      feePrecision
+    );
+
+    strictEqual(+finalFarm.staked, +initialFarm.staked);
+    strictEqual(
+      +finalFarmAliceRecord.staked,
+      +initialFarmAliceRecord.staked - amount
+    );
+    strictEqual(
+      +finalFarmBobRecord.staked,
+      +initialFarmBobRecord.staked + amount
+    );
+
+    ok(finalFarm.upd > initialFarm.upd);
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        resAlice.expectedShareReward
+      )
+    );
+    ok(
+      new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
+        resAlice.expectedUserPrevEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
+        resAlice.expectedUserEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmBobRecord.prev_earned).isEqualTo(
+        resBob.expectedUserPrevEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmBobRecord.earned).isEqualTo(
+        resBob.expectedUserEarned
+      )
+    );
+  });
+
+  it("should transfer a group of tokens and update values correctly", async () => {
+    const amount: number = 50;
+    const depositParams: DepositParams = {
+      fid: 0,
+      amt: amount,
+      referrer: undefined,
+      rewards_receiver: carol.pkh,
+      candidate: zeroAddress,
+    };
+    const updateOperatorParam: UpdateOperatorParam = {
+      add_operator: {
+        owner: carol.pkh,
+        operator: tFarm.contract.address,
+        token_id: 0,
+      },
+    };
+    const transferParams: TransferParam[] = [
+      {
+        from_: alice.pkh,
+        txs: [{ to_: carol.pkh, token_id: 0, amount: depositParams.amt }],
+      },
+    ];
+
+    await qsGov.transfer(transferParams);
+    await utils.setProvider(carol.sk);
+    await qsGov.updateOperators([updateOperatorParam]);
+    await tFarm.deposit(depositParams);
+
+    const params: TransferParam[] = [
+      {
+        from_: alice.pkh,
+        txs: [
+          { to_: bob.pkh, token_id: 0, amount: amount },
+          { to_: carol.pkh, token_id: 0, amount: amount },
+        ],
+      },
+    ];
+
+    await tFarm.updateStorage({
+      users_info: [
+        [0, alice.pkh],
+        [0, bob.pkh],
+        [0, carol.pkh],
+      ],
+      farms: [0],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[0];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${0},${alice.pkh}`];
+    const initialFarmBobRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${0},${bob.pkh}`];
+    const initialFarmCarolRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${0},${carol.pkh}`];
+
+    await utils.setProvider(alice.sk);
+    await tFarm.transfer(params);
+    await tFarm.updateStorage({
+      users_info: [
+        [0, alice.pkh],
+        [0, bob.pkh],
+        [0, carol.pkh],
+      ],
+      farms: [0],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[0];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${0},${alice.pkh}`];
+    const finalFarmBobRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${0},${bob.pkh}`];
+    const finalFarmCarolRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${0},${carol.pkh}`];
+    const resAlice: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+    const resBob: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmBobRecord,
+      finalFarmBobRecord,
+      precision,
+      feePrecision
+    );
+    const resCarol: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmCarolRecord,
+      finalFarmCarolRecord,
+      precision,
+      feePrecision
+    );
+
+    strictEqual(+finalFarm.staked, +initialFarm.staked);
+    strictEqual(
+      +finalFarmAliceRecord.staked,
+      +initialFarmAliceRecord.staked - amount * 2
+    );
+    strictEqual(
+      +finalFarmBobRecord.staked,
+      +initialFarmBobRecord.staked + amount
+    );
+    strictEqual(
+      +finalFarmCarolRecord.staked,
+      +initialFarmCarolRecord.staked + amount
+    );
+
+    ok(finalFarm.upd > initialFarm.upd);
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        resAlice.expectedShareReward
+      )
+    );
+    ok(
+      new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
+        resAlice.expectedUserPrevEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
+        resAlice.expectedUserEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmBobRecord.prev_earned).isEqualTo(
+        resBob.expectedUserPrevEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmBobRecord.earned).isEqualTo(
+        resBob.expectedUserEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmCarolRecord.prev_earned).isEqualTo(
+        resCarol.expectedUserPrevEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmCarolRecord.earned).isEqualTo(
+        resCarol.expectedUserEarned
+      )
+    );
+  });
+
+  it("should return correct balance of staked tokens", async () => {
+    const operation: OriginationOperation =
+      await utils.tezos.contract.originate({
+        code: VIEW_LAMBDA.code,
+        storage: VIEW_LAMBDA.storage,
+      });
+    const lambdaContract: Contract = await operation.contract();
+    const balanceOfResult: Promise<any> = await tFarm.contract.views
+      .balance_of([
+        { owner: alice.pkh, token_id: 0 },
+        { owner: alice.pkh, token_id: 6 },
+        { owner: bob.pkh, token_id: 0 },
+      ])
+      .read(lambdaContract.address);
+
+    await tFarm.updateStorage({
+      users_info: [
+        [0, alice.pkh],
+        [6, alice.pkh],
+        [0, bob.pkh],
+      ],
+    });
+
+    const farmFirstAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${0},${alice.pkh}`];
+    const farmSecondAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${6},${alice.pkh}`];
+    const farmBobRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${0},${bob.pkh}`];
+
+    ok(
+      new BigNumber(+farmFirstAliceRecord.staked).isEqualTo(
+        balanceOfResult[2].balance
+      )
+    );
+    ok(
+      new BigNumber(+farmSecondAliceRecord.staked).isEqualTo(
+        balanceOfResult[1].balance
+      )
+    );
+    ok(
+      new BigNumber(+farmBobRecord.staked).isEqualTo(balanceOfResult[0].balance)
     );
   });
 });

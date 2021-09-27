@@ -46,6 +46,7 @@ export type UserInfoType = {
   earned: number;
   prev_earned: number;
   used_votes: number;
+  allowances: string[];
 };
 
 export type WithdrawData = {

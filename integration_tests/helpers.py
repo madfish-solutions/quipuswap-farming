@@ -58,20 +58,28 @@ def parse_as_fa12(value):
     }
 
 def parse_as_fa2(values):
+    result = []
     value = values[0]
-    args = value["args"][1][0]["args"]
+    transfers = value["args"][1]
+    for transfer in transfers:
+        args = transfer["args"]
 
-    amount = args[-1]["int"]
-    amount = int(amount)
+        amount = args[-1]["int"]
+        amount = int(amount)
 
-    dest = args[0]["string"]
+        token_id = args[1]["int"]
+        token_id = int(token_id)
 
-    return {
-        "type": "token",
-        "destination": dest,
-        "amount": amount,
-        
-    }
+        dest = args[0]["string"]
+
+        result.append({
+            "type": "token",
+            "token_id": token_id,
+            "destination": dest,
+            "amount": amount,
+        })
+
+    return result
 
 def parse_token_transfers(res):
     token_transfers = []
@@ -79,19 +87,22 @@ def parse_token_transfers(res):
         if op["kind"] == "transaction":
             entrypoint = op["parameters"]["entrypoint"]
             if entrypoint == "transfer":
-                tx = parse_token_transfer(op)
-                token_transfers.append(tx)
+                txs = parse_token_transfer(op)
+                token_transfers += txs
     return token_transfers
 
 def parse_token_transfer(op):
-    transfer = None
+    transfers = []
     if not isinstance(op["parameters"]["value"], list):
         transfer = parse_as_fa12(op["parameters"]["value"])
+        transfers.append(transfer)
     else:
-        transfer = parse_as_fa2(op["parameters"]["value"])
+        transfers += parse_as_fa2(op["parameters"]["value"])
 
-    transfer["token_address"] = op["destination"]
-    return transfer
+    for transfer in transfers:
+        transfer["token_address"] = op["destination"]
+
+    return transfers
 
 def parse_mint_list(op):
     list = []
@@ -165,7 +176,7 @@ def parse_ops(res):
                 result += mint
             elif entrypoint == "transfer":
                 tx = parse_token_transfer(op)
-                result.append(tx)
+                result += tx
             elif entrypoint == "use":
                 tx = parse_vote(op)
                 result.append(tx)
@@ -233,6 +244,7 @@ def operator_add(owner, operator, token_id=0):
         "add_operator": {"owner": owner, "operator": operator, "token_id": token_id}
     }
 
+import json
 
 class LocalChain:
     def __init__(self, storage=None):
@@ -258,6 +270,7 @@ class LocalChain:
 
         # calculate total xtz payouts from contract
         ops = parse_ops(res)
+        json.dump(ops, open("ops.json", "w"))
         for op in ops:
             if op["type"] == "tez":
                 dest = op["destination"]

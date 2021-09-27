@@ -46,7 +46,7 @@ def load_tfarm_lambdas():
         # HACK to extract the function from parameter
         # e.g. `initialize_exchange` part from `SetTokenFunction(initialize_exchange, 0n)`
         # their amount might be the value to tinker with if you get cryptic storage errors like `expected list got dict` and such
-        lambda_code = micheline["args"]
+        lambda_code = micheline["args"][0]["args"][1]
 
         michelson_code = micheline_to_michelson(lambda_code)
 

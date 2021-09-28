@@ -17,7 +17,10 @@ const network = env.network || defaultNetwork;
 export class Utils {
   tezos: TezosToolkit;
 
-  async init(providerSK: string): Promise<void> {
+  async init(
+    providerSK: string,
+    transferMutezToDev: boolean = false
+  ): Promise<void> {
     const networkConfig = env.networks[network];
 
     this.tezos = new TezosToolkit(networkConfig.rpc);
@@ -28,13 +31,15 @@ export class Utils {
       signer: await InMemorySigner.fromSecretKey(providerSK),
     });
 
-    const operation = await this.tezos.contract.transfer({
-      to: dev.pkh,
-      amount: 50000000,
-      mutez: true,
-    });
+    if (transferMutezToDev) {
+      const operation = await this.tezos.contract.transfer({
+        to: dev.pkh,
+        amount: 50000000,
+        mutez: true,
+      });
 
-    await confirmOperation(this.tezos, operation.hash);
+      await confirmOperation(this.tezos, operation.hash);
+    }
   }
 
   async setProvider(newProviderSK: string): Promise<void> {

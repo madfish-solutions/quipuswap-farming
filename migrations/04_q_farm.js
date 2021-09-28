@@ -4,7 +4,7 @@ const Burner = require("../build/burner.json");
 
 const { execSync } = require("child_process");
 
-const { TezosToolkit } = require("@taquito/taquito");
+const { TezosToolkit, OpKind } = require("@taquito/taquito");
 const { InMemorySigner } = require("@taquito/signer");
 
 const { migrate, getLigo } = require("../scripts/helpers");
@@ -45,13 +45,16 @@ module.exports = async (tezos) => {
   console.log(`QFarm: ${qFarmAddress}`);
 
   const ligo = getLigo(true);
+  let params = [];
 
   for (qFarmFunction of qFarmFunctions) {
     const stdout = execSync(
       `${ligo} compile-parameter --michelson-format=json $PWD/contracts/main/q_farm.ligo main 'Setup_func(record index=${qFarmFunction.index}n; func=${qFarmFunction.name}; end)'`,
       { maxBuffer: 1024 * 500 }
     );
-    const operation = await tezos.contract.transfer({
+
+    params.push({
+      kind: OpKind.TRANSACTION,
       to: qFarmAddress,
       amount: 0,
       parameter: {
@@ -60,16 +63,21 @@ module.exports = async (tezos) => {
       },
     });
 
-    await confirmOperation(tezos, operation.hash);
-
     console.log(
       qFarmFunction.index +
         1 +
         ". " +
         qFarmFunction.name +
-        " successfully installed."
+        " successfully compiled."
     );
   }
+
+  const batch = tezos.wallet.batch(params);
+  const operation = await batch.send();
+
+  await confirmOperation(tezos, operation.opHash);
+
+  console.log("Lambdas setup finished");
 
   const proxyMinter = await tezos.contract.at(
     ProxyMinter["networks"][env.network]["proxy_minter"]

@@ -77,7 +77,7 @@ describe("QFarm tests", async () => {
   before("setup", async () => {
     utils = new Utils();
 
-    await utils.init(alice.sk);
+    await utils.init(alice.sk, true);
 
     fa12 = await FA12.originate(utils.tezos, fa12Storage);
     fa2 = await FA2.originate(utils.tezos, fa2Storage);

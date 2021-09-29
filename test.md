@@ -337,6 +337,11 @@
     - ✅ should fail if farm not found;
     - ✅ should update token metadata.
 
+19. `integration tests`:
+
+    - should add new farm, stake and withdraw all rewards after farms lifetime finishing (without timelock);
+    -
+
 ## Burner
 
 1. `default`:

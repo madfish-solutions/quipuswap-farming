@@ -10,8 +10,6 @@ import {
   OpKind,
 } from "@taquito/taquito";
 
-import { execSync } from "child_process";
-
 import { BigNumber } from "bignumber.js";
 
 import fs from "fs";
@@ -20,9 +18,7 @@ import env from "../../env";
 
 import { confirmOperation } from "../../scripts/confirmation";
 
-import { getLigo } from "../../scripts/helpers";
-
-import qFarmFunctions from "../../storage/json/QFarmFunctions.json";
+import qFarmFunctions from "../../build/lambdas/q_farm_lambdas.json";
 
 import {
   WithdrawFarmDepoParams,
@@ -115,29 +111,19 @@ export class QFarm {
   }
 
   async setLambdas(): Promise<void> {
-    const ligo: string = getLigo(true);
     let params: WalletParamsWithKind[] = [];
 
     for (const qFarmFunction of qFarmFunctions) {
-      const stdout: Buffer = execSync(
-        `${ligo} compile-parameter --michelson-format=json $PWD/contracts/main/q_farm.ligo main 'Setup_func(record index=${qFarmFunction.index}n; func=${qFarmFunction.name}; end)'`,
-        { maxBuffer: 1024 * 500 }
-      );
-
       params.push({
         kind: OpKind.TRANSACTION,
         to: this.contract.address,
         amount: 0,
         parameter: {
           entrypoint: "setup_func",
-          value: JSON.parse(stdout.toString()).args[0].args[0],
+          value: qFarmFunction,
         },
       });
-
-      console.log(qFarmFunction.name);
     }
-
-    console.log();
 
     const batch: WalletOperationBatch = this.tezos.wallet.batch(params);
     const operation: WalletOperation = await batch.send();

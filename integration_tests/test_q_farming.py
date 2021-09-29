@@ -62,6 +62,7 @@ class FarmTest(TestCase):
             reward_per_second=100 * PRECISION,
             timelock=0,
             start_time=0,
+            token_info={"": ""}
         )
         for key, value in patch.items():
             params[key] = value
@@ -87,6 +88,7 @@ class FarmTest(TestCase):
             reward_per_second=101010101010101010,
             timelock=0,
             start_time=1,
+            token_info={"": ""}
         ), sender=admin)
 
         pprint(res.storage["storage"])
@@ -325,14 +327,10 @@ class FarmTest(TestCase):
 
         res = chain.execute(self.farm.deposit(0, 0, None, me, candidate))
         transfers = parse_token_transfers(res)
-        self.assertEqual(len(transfers), 1)
-        self.assertEqual(transfers[0]["destination"], contract_self_address)
-        self.assertEqual(transfers[0]["amount"], 0)
+        self.assertEqual(len(transfers), 0)
 
         res = chain.execute(self.farm.withdraw(0, 0, me, me))
         transfers = parse_token_transfers(res)
-        self.assertEqual(len(transfers), 2)
-        self.assertEqual(transfers[0]["destination"], julian)
+        self.assertEqual(len(transfers), 1)
+        self.assertEqual(transfers[0]["destination"], me)
         self.assertEqual(transfers[0]["amount"], 0)
-        self.assertEqual(transfers[1]["destination"], admin)
-        self.assertEqual(transfers[1]["amount"], 0)

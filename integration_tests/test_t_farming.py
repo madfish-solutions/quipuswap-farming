@@ -14,17 +14,20 @@ from pytezos import ContractInterface, pytezos, MichelsonRuntimeError
 
 from initial_storage import tfarm_lambdas
 
+reward_token_id = 7
+stake_token_id = 0
+
 fa2_token = {
     "fA2" : {
         "token": "KT18amZmM5W7qDWVt2pH6uj7sCEd3kbzLrHT",
-        "id": 0
+        "id": stake_token_id
     }
 }
 
 reward_token = {
     "fA2" : {
         "token": "KT1XRPEPXbZK25r3Htzp2o1x7xdMMmfocKNW",
-        "id": 1
+        "id": reward_token_id
     }
 }
 
@@ -74,7 +77,8 @@ class TFarmTest(TestCase):
             reward_per_second=100 * PRECISION,
             timelock=0,
             start_time=0,
-            end_time=1
+            end_time=1,
+            token_info={"": ""}
         )
         for key, value in patch.items():
             params[key] = value
@@ -93,7 +97,8 @@ class TFarmTest(TestCase):
             reward_per_second=100 * PRECISION,
             timelock=0,
             start_time=0,
-            end_time=1
+            end_time=1,
+            token_info={"": ""}
         ), sender=admin)
 
         pprint(res.storage["storage"])
@@ -102,6 +107,9 @@ class TFarmTest(TestCase):
         chain = self.create_with_new_farm()
 
         res = chain.execute(self.farm.deposit(0, 50, None, me, candidate))
+        transfers = parse_token_transfers(res)
+        self.assertEqual(transfers[0]["amount"], 50)
+        self.assertEqual(transfers[0]["destination"], contract_self_address)
 
         chain.advance_blocks(1)
     
@@ -120,56 +128,47 @@ class TFarmTest(TestCase):
         self.assertEqual(transfers[0]["destination"], me)
 
 
-    def test_tfarm_decreasing_rps_dont_increase_rewards(self):
-        chain = self.create_with_new_farm()
-
-        res = chain.execute(self.farm.deposit(0, 50, None, me, candidate))
-
-        chain.advance_blocks(1)
-    
-        res = chain.execute(self.farm.set_reward_per_second([{"fid": 0, "reward_per_second": 5 * PRECISION}]), sender=admin)
-
-        chain.advance_blocks(1)
-        res = chain.execute(self.farm.harvest(0, me))
-
-        mints = parse_mints(res)
-        self.assertEqual(mints[0]["amount"], 30 + 2)
-        self.assertEqual(mints[0]["destination"], burn_address)
-        self.assertEqual(mints[1]["amount"], 5970 + 298)
-        self.assertEqual(mints[1]["destination"], me)
-
-    def test_timelock_withdraw_burn(self):
-        chain = LocalChain(storage=self.storage_with_admin)
-        res = chain.execute(self.farm.add_new_farm(
-            fees=fees,
-            stake_params=stake_params,
-            paused=False,
-            reward_per_second=100 * PRECISION,
-            timelock=120,
-            start_time=0,
-        ), sender=admin)
+    def test_tfarm_timelock_withdraw_burn(self):
+        chain = self.create_with_new_farm({"timelock" : 120, "end_time": 180})
 
         res = chain.execute(self.farm.deposit(0, 50, None, me, candidate))
 
         chain.advance_blocks(1)
         
         res = chain.execute(self.farm.deposit(0, 1, None, me, candidate))
-        mints = parse_mints(res)
-        self.assertEqual(len(mints), 0)
+        transfers = parse_token_transfers(res)
+        self.assertEqual(len(transfers), 1)
+        self.assertEqual(transfers[0]["amount"], 1)
+        self.assertEqual(transfers[0]["destination"], contract_self_address)
 
         res = chain.execute(self.farm.withdraw(0, 50, me, me))
 
-        mints = parse_mints(res)
-        self.assertEqual(mints[0]["amount"], 6000)
-        self.assertEqual(mints[0]["destination"], burn_address)
+        transfers = parse_token_transfers(res)
+        self.assertEqual(len(transfers), 2)
+        self.assertEqual(transfers[0]["amount"], 49)
+        self.assertEqual(transfers[0]["destination"], me)
+        self.assertEqual(transfers[1]["amount"], 6000)
+        self.assertEqual(transfers[1]["destination"], admin)
+
+        chain.advance_blocks(1)
+
+        res = chain.execute(self.farm.deposit(0, 7_777_777, None, me, candidate))
 
         transfers = parse_token_transfers(res)
         self.assertEqual(len(transfers), 1)
-        self.assertEqual(transfers[0]["amount"], 50 - 1)
+        self.assertEqual(transfers[0]["amount"], 7_777_777)
+        self.assertEqual(transfers[0]["destination"], contract_self_address)
+
+        res = chain.execute(self.farm.withdraw(0, 7_777_777, me, me))
+        transfers = parse_token_transfers(res)
+        self.assertEqual(len(transfers), 2)
+        self.assertEqual(transfers[0]["amount"], 7_738_888)
         self.assertEqual(transfers[0]["destination"], me)
+        self.assertEqual(transfers[1]["amount"], 3_000)
+        self.assertEqual(transfers[1]["destination"], admin)
 
 
-    def test_fair_reward_distribution(self):
+    def test_tfarm_fair_reward_distribution(self):
         chain = self.create_with_new_farm()
 
         res = chain.execute(self.farm.deposit(0, 50, None, alice, candidate), sender=alice)
@@ -179,28 +178,28 @@ class TFarmTest(TestCase):
         chain.advance_blocks(1)
 
         res = chain.execute(self.farm.harvest(0, alice), sender=alice)
-        mints = parse_mints(res)
-        self.assertEqual(mints[1]["amount"], 1990)
-        self.assertEqual(mints[1]["destination"], alice)
+        transfers = parse_token_transfers(res)
+        self.assertEqual(transfers[1]["amount"], 1990)
+        self.assertEqual(transfers[1]["destination"], alice)
 
         res = chain.execute(self.farm.harvest(0, bob), sender=bob)
-        mints = parse_mints(res)
-        self.assertEqual(mints[1]["amount"], 1990)
-        self.assertEqual(mints[1]["destination"], bob)
+        transfers = parse_token_transfers(res)
+        self.assertEqual(transfers[1]["amount"], 1990)
+        self.assertEqual(transfers[1]["destination"], bob)
 
         chain.advance_blocks(1)
         
         res = chain.execute(self.farm.harvest(0, julian), sender=julian)
-        mints = parse_mints(res)
-        self.assertEqual(mints[1]["amount"], 1990 * 2)
-        self.assertEqual(mints[1]["destination"], julian)
+        transfers = parse_token_transfers(res)
+        self.assertEqual(transfers[1]["amount"], 1990 * 2)
+        self.assertEqual(transfers[1]["destination"], julian)
 
         res = chain.execute(self.farm.harvest(0, alice), sender=alice)
-        mints = parse_mints(res)
-        self.assertEqual(mints[1]["amount"], 1990)
-        self.assertEqual(mints[1]["destination"], alice)
+        transfers = parse_token_transfers(res)
+        self.assertEqual(transfers[1]["amount"], 1990)
+        self.assertEqual(transfers[1]["destination"], alice)
 
-    def test_reward_miniscule(self):
+    def test_tfarm_reward_miniscule(self):
         chain = self.create_with_new_farm()
 
         res = chain.execute(self.farm.deposit(0, 100_000_000, None, alice, candidate), sender=alice)
@@ -210,20 +209,20 @@ class TFarmTest(TestCase):
         chain.advance_blocks(500)
 
         res = chain.execute(self.farm.harvest(0, alice), sender=alice)
-        mints = parse_mints(res)
-        self.assertEqual(mints[1]["amount"], 2_984_701)
-        self.assertEqual(mints[1]["destination"], alice)
+        transfers = parse_token_transfers(res)
+        self.assertEqual(transfers[1]["amount"], 2_984_701)
+        self.assertEqual(transfers[1]["destination"], alice)
 
         res = chain.execute(self.farm.harvest(0, bob), sender=bob)
-        mints = parse_mints(res)
-        self.assertEqual(mints[1]["amount"], 297)
-        self.assertEqual(mints[1]["destination"], bob)
+        transfers = parse_token_transfers(res)
+        self.assertEqual(transfers[1]["amount"], 297)
+        self.assertEqual(transfers[1]["destination"], bob)
 
         res = chain.execute(self.farm.harvest(0, julian), sender=julian)
-        mints = parse_mints(res)
-        self.assertEqual(mints, [])
+        transfers = parse_token_transfers(res)
+        self.assertEqual(transfers, [])
 
-    def test_earn_doesnt_affect_others(self):
+    def test_tfarm_harvest_doesnt_affect_others(self):
         chain = self.create_with_new_farm()
 
         res = chain.execute(self.farm.deposit(0, 10_000, None, alice, candidate), sender=alice)
@@ -232,20 +231,20 @@ class TFarmTest(TestCase):
         chain.advance_blocks(1)
 
         res = chain.execute(self.farm.harvest(0, alice), sender=alice)
-        mints = parse_mints(res)
+        transfers = parse_token_transfers(res)
 
         # something was paid
-        self.assertGreater(mints[0]["amount"], 0)
+        self.assertGreater(transfers[0]["amount"], 0)
 
         storage_before = res.storage
 
-        # try calling earn once again in the same block
+        # try calling harvest once again in the same block
         res = chain.execute(self.farm.harvest(0, alice), sender=alice)
-        mints = parse_mints(res)
+        transfers = parse_token_transfers(res)
 
         self.assertEqual(res.storage, storage_before)
 
-    def test_rewards_in_time(self):
+    def test_tfarm_rewards_in_time(self):
         chain = self.create_with_new_farm()
 
         res = chain.execute(self.farm.deposit(0, 50, None, alice, candidate), sender=alice)
@@ -256,14 +255,14 @@ class TFarmTest(TestCase):
         for i in range(10):
             chain.advance_blocks(1)
             res = chain.execute(self.farm.harvest(0, alice), sender=alice)
-            mints = parse_mints(res)
-            total_fee += mints[0]["amount"]
-            total_alice_rewards += mints[1]["amount"]
+            transfers = parse_token_transfers(res)
+            total_fee += transfers[0]["amount"]
+            total_alice_rewards += transfers[1]["amount"]
 
         res = chain.execute(self.farm.harvest(0, bob), sender=bob)
 
-        mints = parse_mints(res)
-        bob_reward = mints[1]["amount"]
+        transfers = parse_token_transfers(res)
+        bob_reward = transfers[1]["amount"]
 
         self.assertEqual(total_alice_rewards, bob_reward)
 
@@ -291,7 +290,7 @@ class TFarmTest(TestCase):
 
 
     def test_tfarm_miniscule_withdrawal_fee(self):
-        chain = self.create_with_new_farm({"timelock": 100})
+        chain = self.create_with_new_farm({"timelock": 100, "end_time": 1_000})
 
         res = chain.execute(self.farm.deposit(0, 10_000, None, me, candidate))
         transfers = parse_token_transfers(res)
@@ -332,14 +331,43 @@ class TFarmTest(TestCase):
 
         res = chain.execute(self.farm.deposit(0, 0, None, me, candidate))
         transfers = parse_token_transfers(res)
-        self.assertEqual(len(transfers), 1)
-        self.assertEqual(transfers[0]["destination"], contract_self_address)
-        self.assertEqual(transfers[0]["amount"], 0)
+        self.assertEqual(len(transfers), 0)
 
         res = chain.execute(self.farm.withdraw(0, 0, me, me))
         transfers = parse_token_transfers(res)
-        self.assertEqual(len(transfers), 2)
-        self.assertEqual(transfers[0]["destination"], julian)
+        self.assertEqual(len(transfers), 1)
+        self.assertEqual(transfers[0]["destination"], me)
         self.assertEqual(transfers[0]["amount"], 0)
-        self.assertEqual(transfers[1]["destination"], admin)
-        self.assertEqual(transfers[1]["amount"], 0)
+
+    def test_tfarm_end_time(self):
+        chain = self.create_with_new_farm({"end_time": 120})
+
+        res = chain.execute(self.farm.deposit(0, 50, None, me, candidate))
+        transfers = parse_token_transfers(res)
+        self.assertEqual(len(transfers), 1)
+        self.assertEqual(transfers[0]["destination"], contract_self_address)
+        self.assertEqual(transfers[0]["amount"], 50)
+
+        res = chain.execute(self.farm.withdraw(0, 0, me, me))
+        transfers = parse_token_transfers(res)
+        self.assertEqual(len(transfers), 1)
+        self.assertEqual(transfers[0]["destination"], me)
+        self.assertEqual(transfers[0]["amount"], 0)
+
+        chain.advance_blocks(3)
+
+        res = chain.execute(self.farm.withdraw(0, 50, me, me))
+        transfers = parse_token_transfers(res)
+        pprint(transfers)
+        
+        # self.assertEqual(len(transfers), 3)
+        # self.assertEqual(transfers[0]["amount"], 50)
+        # self.assertEqual(transfers[0]["destination"], me)
+        # self.assertEqual(transfers[0]["token_id"], stake_token_id)
+        
+        # self.assertEqual(transfers[1]["amount"], 60)
+        # self.assertEqual(transfers[1]["destination"], burn_address)
+        # self.assertEqual(transfers[1]["token_id"], reward_token_id)
+        # self.assertEqual(transfers[2]["amount"], 11940)
+        # self.assertEqual(transfers[2]["destination"], me)
+        # self.assertEqual(transfers[2]["token_id"], reward_token_id)

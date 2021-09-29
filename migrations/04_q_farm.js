@@ -2,18 +2,16 @@ const BakerRegistry = require("../build/baker_registry.json");
 const ProxyMinter = require("../build/proxy_minter.json");
 const Burner = require("../build/burner.json");
 
-const { execSync } = require("child_process");
-
 const { TezosToolkit, OpKind } = require("@taquito/taquito");
 const { InMemorySigner } = require("@taquito/signer");
 
-const { migrate, getLigo } = require("../scripts/helpers");
+const { migrate } = require("../scripts/helpers");
 const { confirmOperation } = require("../scripts/confirmation");
 
 const { alice, dev } = require("../scripts/sandbox/accounts");
 
 const { qFarmStorage } = require("../storage/QFarm");
-const qFarmFunctions = require("../storage/json/QFarmFunctions.json");
+const qFarmFunctions = require("../build/lambdas/q_farm_lambdas.json");
 
 const env = require("../env");
 
@@ -44,40 +42,24 @@ module.exports = async (tezos) => {
 
   console.log(`QFarm: ${qFarmAddress}`);
 
-  const ligo = getLigo(true);
   let params = [];
 
   for (qFarmFunction of qFarmFunctions) {
-    const stdout = execSync(
-      `${ligo} compile-parameter --michelson-format=json $PWD/contracts/main/q_farm.ligo main 'Setup_func(record index=${qFarmFunction.index}n; func=${qFarmFunction.name}; end)'`,
-      { maxBuffer: 1024 * 500 }
-    );
-
     params.push({
       kind: OpKind.TRANSACTION,
       to: qFarmAddress,
       amount: 0,
       parameter: {
         entrypoint: "setup_func",
-        value: JSON.parse(stdout.toString()).args[0].args[0],
+        value: qFarmFunction,
       },
     });
-
-    console.log(
-      qFarmFunction.index +
-        1 +
-        ". " +
-        qFarmFunction.name +
-        " successfully compiled."
-    );
   }
 
   const batch = tezos.wallet.batch(params);
   const operation = await batch.send();
 
   await confirmOperation(tezos, operation.opHash);
-
-  console.log("Lambdas setup finished");
 
   const proxyMinter = await tezos.contract.at(
     ProxyMinter["networks"][env.network]["proxy_minter"]

@@ -1,18 +1,16 @@
 const BakerRegistry = require("../build/baker_registry.json");
 const Burner = require("../build/burner.json");
 
-const { execSync } = require("child_process");
-
 const { TezosToolkit, OpKind } = require("@taquito/taquito");
 const { InMemorySigner } = require("@taquito/signer");
 
-const { migrate, getLigo } = require("../scripts/helpers");
+const { migrate } = require("../scripts/helpers");
 const { confirmOperation } = require("../scripts/confirmation");
 
 const { alice, dev } = require("../scripts/sandbox/accounts");
 
 const { tFarmStorage } = require("../storage/TFarm");
-const tFarmFunctions = require("../storage/json/TFarmFunctions.json");
+const tFarmFunctions = require("../build/lambdas/t_farm_lambdas.json");
 
 const env = require("../env");
 
@@ -41,38 +39,22 @@ module.exports = async (tezos) => {
 
   console.log(`TFarm: ${tFarmAddress}`);
 
-  const ligo = getLigo(true);
   let params = [];
 
   for (tFarmFunction of tFarmFunctions) {
-    const stdout = execSync(
-      `${ligo} compile-parameter --michelson-format=json $PWD/contracts/main/t_farm.ligo main 'Setup_func(record index=${tFarmFunction.index}n; func=${tFarmFunction.name}; end)'`,
-      { maxBuffer: 1024 * 500 }
-    );
-
     params.push({
       kind: OpKind.TRANSACTION,
       to: tFarmAddress,
       amount: 0,
       parameter: {
         entrypoint: "setup_func",
-        value: JSON.parse(stdout.toString()).args[0],
+        value: tFarmFunction,
       },
     });
-
-    console.log(
-      tFarmFunction.index +
-        1 +
-        ". " +
-        tFarmFunction.name +
-        " successfully compiled."
-    );
   }
 
   const batch = tezos.wallet.batch(params);
   const operation = await batch.send();
 
   await confirmOperation(tezos, operation.opHash);
-
-  console.log("Lambdas setup finished");
 };

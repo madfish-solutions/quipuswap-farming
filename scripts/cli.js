@@ -1,6 +1,6 @@
 const yargs = require("yargs");
 
-const { compile, runMigrations } = require("./helpers");
+const { compile, compileLambdas, runMigrations } = require("./helpers");
 
 const argv = yargs
   .command(
@@ -43,6 +43,26 @@ const argv = yargs
           argv.ligo_version
         );
       }
+    }
+  )
+  .command(
+    "compile-lambda [json] [contract]",
+    "compile lambdas for the specified contract",
+    {
+      json: {
+        description:
+          "input file relative path (with lambdas indexes and names)",
+        alias: "j",
+        type: "string",
+      },
+      contract: {
+        description: "input file realtive path (with lambdas Ligo code)",
+        alias: "c",
+        type: "string",
+      },
+    },
+    async (argv) => {
+      compileLambdas(argv.json, argv.contract);
     }
   )
   .command(

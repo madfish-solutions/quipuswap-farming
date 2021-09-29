@@ -98,6 +98,56 @@ const compile = async (
   });
 };
 
+const compileLambdas = async (
+  json,
+  contract,
+  ligoVersion = env.ligoVersion
+) => {
+  const ligo = getLigo(true, ligoVersion);
+  const pwd = execSync("echo $PWD").toString();
+  const lambdas = JSON.parse(
+    fs.readFileSync(`${pwd.slice(0, pwd.length - 1)}/${json}`)
+  );
+  let res = [];
+
+  try {
+    for (const lambda of lambdas) {
+      const michelson = execSync(
+        `${ligo} compile-parameter --michelson-format=json $PWD/${contract} main 'Setup_func(record index=${lambda.index}n; func=${lambda.name}; end)'`,
+        { maxBuffer: 1024 * 500 }
+      ).toString();
+
+      if (contract.includes("q_farm")) {
+        res.push(JSON.parse(michelson).args[0].args[0]);
+      } else {
+        res.push(JSON.parse(michelson).args[0]);
+      }
+
+      console.log(
+        lambda.index + 1 + ". " + lambda.name + " successfully compiled."
+      );
+    }
+
+    if (!fs.existsSync(`${env.buildDir}/lambdas`)) {
+      fs.mkdirSync(`${env.buildDir}/lambdas`);
+    }
+
+    if (contract.includes("q_farm")) {
+      fs.writeFileSync(
+        `${env.buildDir}/lambdas/q_farm_lambdas.json`,
+        JSON.stringify(res)
+      );
+    } else {
+      fs.writeFileSync(
+        `${env.buildDir}/lambdas/t_farm_lambdas.json`,
+        JSON.stringify(res)
+      );
+    }
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 const migrate = async (tezos, contract, storage) => {
   try {
     const artifacts = JSON.parse(
@@ -180,6 +230,7 @@ module.exports = {
   getMigrationsList,
   getDeployedAddress,
   compile,
+  compileLambdas,
   migrate,
   runMigrations,
   env,

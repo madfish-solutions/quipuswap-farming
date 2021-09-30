@@ -13,6 +13,16 @@ import { DepositParams, HarvestParams } from "./types/Common";
 import { QSFA12Dex } from "./helpers/QSFA12Dex";
 import { QSFA2Dex } from "./helpers/QSFA2Dex";
 
+import {
+  WalletOperationBatch,
+  WalletOperation,
+  OpKind,
+} from "@taquito/taquito";
+
+import { ok } from "assert";
+
+import { BigNumber } from "bignumber.js";
+
 import { alice } from "../scripts/sandbox/accounts";
 
 import { fa12Storage } from "../storage/test/FA12";
@@ -23,6 +33,7 @@ import { bakerRegistryStorage } from "../storage/BakerRegistry";
 import { qsFA12FactoryStorage } from "../storage/test/QSFA12Factory";
 import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
 import { UserFA12Info } from "./types/FA12";
+import { confirmOperation } from "scripts/confirmation";
 
 describe.only("TFarm tests (section 2)", async () => {
   var fa12: FA12;
@@ -131,11 +142,10 @@ describe.only("TFarm tests (section 2)", async () => {
     await tFarm.setLambdas();
   });
 
-  it("should add new farm, stake and withdraw all rewards after farms lifetime finishing (without timelock)", async () => {
+  it("should add new farm, stake in the next block and withdraw all rewards (except the first block reward) after farms lifetime finishing (without timelock)", async () => {
     let newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
       utils
     );
-    const lifetime: number = 5; // 5 seconds
 
     newFarmParams.fees.harvest_fee = 10 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 15 * feePrecision;
@@ -145,26 +155,7 @@ describe.only("TFarm tests (section 2)", async () => {
     newFarmParams.stake_params.qs_pool = qsGovLP.contract.address;
     newFarmParams.reward_token = { fA12: fa12.contract.address };
     newFarmParams.timelock = 0;
-    newFarmParams.end_time = String(
-      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
-        lifetime
-    );
-    newFarmParams.reward_per_second = 1 * precision;
-
-    await fa12.approve(
-      tFarm.contract.address,
-      (lifetime * newFarmParams.reward_per_second) / precision
-    );
-    await tFarm.addNewFarm(newFarmParams);
-    await fa12.updateStorage({ ledger: [alice.pkh, tFarm.contract.address] });
-
-    const initialRewTokAliceRecord: UserFA12Info =
-      fa12.storage.ledger[alice.pkh];
-    const initialRewTokFarmRecord: UserFA12Info =
-      fa12.storage.ledger[tFarm.contract.address];
-
-    console.log(initialRewTokAliceRecord.balance);
-    console.log(initialRewTokFarmRecord.balance);
+    newFarmParams.reward_per_second = 100 * precision;
 
     const updateOperatorParam: UpdateOperatorParam = {
       add_operator: {
@@ -173,6 +164,30 @@ describe.only("TFarm tests (section 2)", async () => {
         token_id: 0,
       },
     };
+    const lifetime: number = 3; // 3 seconds
+    const rewAmount: number =
+      (lifetime * newFarmParams.reward_per_second) / precision;
+    const harvestFeePercent: number = newFarmParams.fees.harvest_fee / 10000;
+    const earnedPercent: number = 1 - harvestFeePercent;
+    const correctRewTokensReminder: number = 100;
+
+    await qsGov.updateOperators([updateOperatorParam]);
+    await fa12.approve(tFarm.contract.address, rewAmount);
+
+    newFarmParams.start_time = String(
+      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 + 1
+    );
+    newFarmParams.end_time = String(
+      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
+        lifetime +
+        1
+    );
+
+    await tFarm.addNewFarm(newFarmParams);
+    await fa12.updateStorage({ ledger: [alice.pkh] });
+
+    const initialRewTokAliceRecord: UserFA12Info =
+      fa12.storage.ledger[alice.pkh];
     const depositParams: DepositParams = {
       fid: 0,
       amt: 100,
@@ -181,25 +196,198 @@ describe.only("TFarm tests (section 2)", async () => {
       candidate: zeroAddress,
     };
     const harvestParams: HarvestParams = {
-      fid: 0,
+      fid: depositParams.fid,
       rewards_receiver: alice.pkh,
     };
 
-    await utils.setProvider(alice.sk);
-    await qsGov.updateOperators([updateOperatorParam]);
     await tFarm.deposit(depositParams);
-    console.log(1);
     await utils.bakeBlocks(lifetime);
-    console.log(1);
     await tFarm.harvest(harvestParams);
-    console.log(1);
-    await fa12.updateStorage({ ledger: [alice.pkh, tFarm.contract.address] });
+    await fa12.updateStorage({
+      ledger: [alice.pkh, tFarm.contract.address, zeroAddress],
+    });
+
+    const middleRewTokAliceRecord: UserFA12Info =
+      fa12.storage.ledger[alice.pkh];
+    const middleRewTokFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+    const middleRewTokZeroRecord: UserFA12Info =
+      fa12.storage.ledger[zeroAddress];
+
+    ok(
+      new BigNumber(middleRewTokAliceRecord.balance).isEqualTo(
+        new BigNumber(rewAmount)
+          .minus(correctRewTokensReminder)
+          .multipliedBy(earnedPercent)
+          .plus(initialRewTokAliceRecord.balance)
+      )
+    );
+    ok(
+      new BigNumber(middleRewTokZeroRecord.balance).isEqualTo(
+        new BigNumber(rewAmount)
+          .minus(correctRewTokensReminder)
+          .multipliedBy(harvestFeePercent)
+      )
+    );
+    ok(
+      new BigNumber(middleRewTokFarmRecord.balance).isEqualTo(
+        new BigNumber(correctRewTokensReminder)
+      )
+    );
+
+    await tFarm.harvest(harvestParams);
+    await fa12.updateStorage({
+      ledger: [alice.pkh, tFarm.contract.address, zeroAddress],
+    });
 
     const finalRewTokAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
     const finalRewTokFarmRecord: UserFA12Info =
       fa12.storage.ledger[tFarm.contract.address];
+    const finalRewTokZeroRecord: UserFA12Info =
+      fa12.storage.ledger[zeroAddress];
 
-    console.log(finalRewTokAliceRecord.balance);
-    console.log(finalRewTokFarmRecord.balance);
+    ok(
+      new BigNumber(finalRewTokAliceRecord.balance).isEqualTo(
+        new BigNumber(middleRewTokAliceRecord.balance)
+      )
+    );
+    ok(
+      new BigNumber(finalRewTokZeroRecord.balance).isEqualTo(
+        new BigNumber(middleRewTokZeroRecord.balance)
+      )
+    );
+    ok(
+      new BigNumber(finalRewTokFarmRecord.balance).isEqualTo(
+        new BigNumber(middleRewTokFarmRecord.balance)
+      )
+    );
+  });
+
+  it("should add new farm and stake in batch, withdraw all rewards after farms lifetime finishing (without timelock)", async () => {
+    let newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
+      utils
+    );
+
+    newFarmParams.fees.harvest_fee = 21 * feePrecision;
+    newFarmParams.fees.withdrawal_fee = 16 * feePrecision;
+    newFarmParams.stake_params.staked_token = {
+      fA2: { token: qsGov.contract.address, id: 0 },
+    };
+    newFarmParams.stake_params.qs_pool = qsGovLP.contract.address;
+    newFarmParams.reward_token = { fA12: fa12.contract.address };
+    newFarmParams.timelock = 0;
+    newFarmParams.reward_per_second = 100 * precision;
+
+    const lifetime: number = 3; // 3 seconds
+    const rewAmount: number =
+      (lifetime * newFarmParams.reward_per_second) / precision;
+    const harvestFeePercent: number = newFarmParams.fees.harvest_fee / 10000;
+    const earnedPercent: number = 1 - harvestFeePercent;
+
+    await fa12.approve(tFarm.contract.address, rewAmount);
+
+    newFarmParams.start_time = String(
+      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 + 1
+    );
+    newFarmParams.end_time = String(
+      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
+        lifetime +
+        1
+    );
+
+    const depositParams: DepositParams = {
+      fid: 1,
+      amt: 100,
+      referrer: undefined,
+      rewards_receiver: alice.pkh,
+      candidate: zeroAddress,
+    };
+    const harvestParams: HarvestParams = {
+      fid: depositParams.fid,
+      rewards_receiver: alice.pkh,
+    };
+    const batch: WalletOperationBatch = await utils.tezos.wallet.batch([
+      {
+        kind: OpKind.TRANSACTION,
+        ...tFarm.contract.methods
+          .add_new_farm(...Utils.destructObj(newFarmParams))
+          .toTransferParams(),
+      },
+      {
+        kind: OpKind.TRANSACTION,
+        ...tFarm.contract.methods
+          .deposit(...Utils.destructObj(depositParams))
+          .toTransferParams(),
+      },
+    ]);
+    const operation: WalletOperation = await batch.send();
+
+    await confirmOperation(utils.tezos, operation.opHash);
+    await fa12.updateStorage({ ledger: [alice.pkh, zeroAddress] });
+
+    const initialRewTokAliceRecord: UserFA12Info =
+      fa12.storage.ledger[alice.pkh];
+    const initialRewTokZeroRecord: UserFA12Info =
+      fa12.storage.ledger[zeroAddress];
+
+    await utils.bakeBlocks(lifetime);
+    await tFarm.harvest(harvestParams);
+    await fa12.updateStorage({
+      ledger: [alice.pkh, tFarm.contract.address, zeroAddress],
+    });
+
+    const middleRewTokAliceRecord: UserFA12Info =
+      fa12.storage.ledger[alice.pkh];
+    const middleRewTokFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+    const middleRewTokZeroRecord: UserFA12Info =
+      fa12.storage.ledger[zeroAddress];
+
+    ok(
+      new BigNumber(middleRewTokAliceRecord.balance).isEqualTo(
+        new BigNumber(rewAmount)
+          .multipliedBy(earnedPercent)
+          .plus(initialRewTokAliceRecord.balance)
+      )
+    );
+    ok(
+      new BigNumber(middleRewTokZeroRecord.balance).isEqualTo(
+        new BigNumber(rewAmount)
+          .multipliedBy(harvestFeePercent)
+          .plus(initialRewTokZeroRecord.balance)
+      )
+    );
+    ok(
+      new BigNumber(middleRewTokFarmRecord.balance).isEqualTo(
+        new BigNumber(100) // from previous test
+      )
+    );
+
+    await tFarm.harvest(harvestParams);
+    await fa12.updateStorage({
+      ledger: [alice.pkh, tFarm.contract.address, zeroAddress],
+    });
+
+    const finalRewTokAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
+    const finalRewTokFarmRecord: UserFA12Info =
+      fa12.storage.ledger[tFarm.contract.address];
+    const finalRewTokZeroRecord: UserFA12Info =
+      fa12.storage.ledger[zeroAddress];
+
+    ok(
+      new BigNumber(finalRewTokAliceRecord.balance).isEqualTo(
+        new BigNumber(middleRewTokAliceRecord.balance)
+      )
+    );
+    ok(
+      new BigNumber(finalRewTokZeroRecord.balance).isEqualTo(
+        new BigNumber(middleRewTokZeroRecord.balance)
+      )
+    );
+    ok(
+      new BigNumber(finalRewTokFarmRecord.balance).isEqualTo(
+        new BigNumber(middleRewTokFarmRecord.balance)
+      )
+    );
   });
 });

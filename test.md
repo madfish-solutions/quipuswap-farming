@@ -339,7 +339,8 @@
 
 19. `integration tests`:
 
-    - should add new farm, stake and withdraw all rewards after farms lifetime finishing (without timelock);
+    - ✅ should add new farm, stake in the next block and withdraw all rewards (except the first block reward) after farms lifetime finishing (without timelock);
+    - ✅ should add new farm and stake in batch, withdraw all rewards after farms lifetime finishing (without timelock);
     -
 
 ## Burner

@@ -1,3 +1,27 @@
+function update_farm_rewards(
+  var _farm             : farm_type;
+  var s                 : storage_type)
+                        : storage_type * farm_type is
+  block {
+    if Tezos.now >= _farm.start_time
+    then {
+      if _farm.staked =/= 0n
+      then {
+        const time_diff : nat = abs(Tezos.now - _farm.upd);
+        const reward : nat = time_diff * _farm.reward_per_second;
+
+        _farm.reward_per_share :=
+          _farm.reward_per_share + reward / _farm.staked;
+      }
+      else skip;
+
+      _farm.upd := Tezos.now;
+
+      s.farms[_farm.fid] := _farm;
+    }
+    else skip;
+  } with (s, _farm)
+
 function get_proxy_minter_mint_entrypoint(
   const proxy_minter    : address)
                         : contract(mint_gov_toks_type) is

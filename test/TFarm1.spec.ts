@@ -6,6 +6,8 @@ import { Burner } from "./helpers/Burner";
 import { BakerRegistry } from "./helpers/BakerRegistry";
 import { QSFA12Factory } from "./helpers/QSFA12Factory";
 import { QSFA2Factory } from "./helpers/QSFA2Factory";
+import { QSFA12Dex } from "./helpers/QSFA12Dex";
+import { QSFA2Dex } from "./helpers/QSFA2Dex";
 
 import {
   UpdateOperatorParam,
@@ -26,8 +28,6 @@ import {
   WithdrawData,
 } from "./types/Common";
 import { UserFA12Info } from "./types/FA12";
-import { QSFA12Dex } from "./helpers/QSFA12Dex";
-import { QSFA2Dex } from "./helpers/QSFA2Dex";
 
 import { Contract, OriginationOperation, VIEW_LAMBDA } from "@taquito/taquito";
 import { MichelsonMap } from "@taquito/michelson-encoder";

@@ -41,16 +41,16 @@ stake_params={
 
 class FarmTest(TestCase):
     @classmethod
-    def setUpClass(self):
-        self.maxDiff = None
+    def setUpClass(cls):
+        cls.maxDiff = None
 
         farm_code = open("./integration_tests/compiled/q_farm.tz", 'r').read()
-        self.farm = ContractInterface.from_michelson(farm_code)
+        cls.farm = ContractInterface.from_michelson(farm_code)
 
-        storage_with_admin = self.farm.storage.dummy()
+        storage_with_admin = cls.farm.storage.dummy()
         storage_with_admin["q_farm_lambdas"] = qfarm_lambdas
         storage_with_admin["storage"]["admin"] = admin
-        self.storage_with_admin = storage_with_admin
+        cls.storage_with_admin = storage_with_admin
 
 
     def create_with_new_farm(self, patch = {}):
@@ -142,6 +142,7 @@ class FarmTest(TestCase):
             reward_per_second=100 * PRECISION,
             timelock=120,
             start_time=0,
+            token_info={"": ""}
         ), sender=admin)
 
         res = chain.execute(self.farm.deposit(0, 50, None, me, candidate))
@@ -334,3 +335,33 @@ class FarmTest(TestCase):
         self.assertEqual(len(transfers), 1)
         self.assertEqual(transfers[0]["destination"], me)
         self.assertEqual(transfers[0]["amount"], 0)
+
+
+    def test_farms_dont_affect_each_other(self):
+        chain = self.create_with_new_farm()
+        
+        res = chain.execute(self.farm.add_new_farm(
+            fees=fees,
+            stake_params=stake_params,
+            paused=False,
+            reward_per_second=100 * PRECISION,
+            timelock=0,
+            start_time=0,
+            token_info={"": ""}), sender=admin)
+
+        res = chain.execute(self.farm.deposit(0, 50, None, alice, candidate), sender=alice)
+        res = chain.execute(self.farm.deposit(1, 50, None, bob, candidate), sender=bob)
+
+        farm0_before = res.storage["storage"]["farms"][0]
+        chain.advance_blocks(1)
+        res = chain.execute(self.farm.withdraw(1, 25, bob, bob), sender=bob)
+        farm0_after = res.storage["storage"]["farms"][0]
+        self.assertDictEqual(farm0_before, farm0_after)
+        
+        farm1_before = res.storage["storage"]["farms"][1]
+        chain.advance_blocks(1)
+        res = chain.execute(self.farm.harvest(0, alice), sender=alice)
+        farm1_after = res.storage["storage"]["farms"][1]
+        self.assertDictEqual(farm1_before, farm1_after)
+
+

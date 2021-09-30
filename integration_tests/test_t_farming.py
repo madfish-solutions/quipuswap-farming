@@ -77,7 +77,7 @@ class TFarmTest(TestCase):
             reward_per_second=100 * PRECISION,
             timelock=0,
             start_time=0,
-            end_time=1,
+            end_time=60 * 60 * 24,
             token_info={"": ""}
         )
         for key, value in patch.items():
@@ -339,35 +339,31 @@ class TFarmTest(TestCase):
         self.assertEqual(transfers[0]["destination"], me)
         self.assertEqual(transfers[0]["amount"], 0)
 
-    def test_tfarm_end_time(self):
-        chain = self.create_with_new_farm({"end_time": 120})
-
-        res = chain.execute(self.farm.deposit(0, 50, None, me, candidate))
-        transfers = parse_token_transfers(res)
-        self.assertEqual(len(transfers), 1)
-        self.assertEqual(transfers[0]["destination"], contract_self_address)
-        self.assertEqual(transfers[0]["amount"], 50)
-
-        res = chain.execute(self.farm.withdraw(0, 0, me, me))
-        transfers = parse_token_transfers(res)
-        self.assertEqual(len(transfers), 1)
-        self.assertEqual(transfers[0]["destination"], me)
-        self.assertEqual(transfers[0]["amount"], 0)
-
-        chain.advance_blocks(3)
-
-        res = chain.execute(self.farm.withdraw(0, 50, me, me))
-        transfers = parse_token_transfers(res)
-        pprint(transfers)
+    def test_tfarms_dont_affect_each_other(self):
+        chain = self.create_with_new_farm()
         
-        # self.assertEqual(len(transfers), 3)
-        # self.assertEqual(transfers[0]["amount"], 50)
-        # self.assertEqual(transfers[0]["destination"], me)
-        # self.assertEqual(transfers[0]["token_id"], stake_token_id)
+        res = chain.execute(self.farm.add_new_farm(
+            fees=fees,
+            stake_params=stake_params,
+            reward_token=reward_token,
+            paused=False,
+            reward_per_second=100 * PRECISION,
+            timelock=0,
+            start_time=0,
+            end_time=240,
+            token_info={"": ""}), sender=admin)
+
+        res = chain.execute(self.farm.deposit(0, 50, None, alice, candidate), sender=alice)
+        res = chain.execute(self.farm.deposit(1, 50, None, bob, candidate), sender=bob)
+
+        farm0_before = res.storage["storage"]["farms"][0]
+        chain.advance_blocks(1)
+        res = chain.execute(self.farm.withdraw(1, 25, bob, bob), sender=bob)
+        farm0_after = res.storage["storage"]["farms"][0]
+        self.assertDictEqual(farm0_before, farm0_after)
         
-        # self.assertEqual(transfers[1]["amount"], 60)
-        # self.assertEqual(transfers[1]["destination"], burn_address)
-        # self.assertEqual(transfers[1]["token_id"], reward_token_id)
-        # self.assertEqual(transfers[2]["amount"], 11940)
-        # self.assertEqual(transfers[2]["destination"], me)
-        # self.assertEqual(transfers[2]["token_id"], reward_token_id)
+        farm1_before = res.storage["storage"]["farms"][1]
+        chain.advance_blocks(1)
+        res = chain.execute(self.farm.harvest(0, alice), sender=alice)
+        farm1_after = res.storage["storage"]["farms"][1]
+        self.assertDictEqual(farm1_before, farm1_after)

@@ -26,6 +26,10 @@ for i in    0,set_admin \
             11,burn_xtz_rewards \
             12,claim_farm_rewards \
             13,withdraw_farm_depo \
+            14,transfer \
+            15,update_operators \
+            16,balance_of \
+            17,update_token_metadata \
          ; do 
 
     IDX=${i%,*};
@@ -53,6 +57,10 @@ for i in    0,set_admin \
             13,burn_xtz_rewards \
             14,burn_farm_rewards \
             15,withdraw_farm_depo \
+            16,transfer \
+            17,update_operators \
+            18,balance_of \
+            19,update_token_metadata \
          ; do 
 
     IDX=${i%,*};

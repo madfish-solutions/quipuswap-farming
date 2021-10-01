@@ -11,11 +11,6 @@ type token_type         is
   FA12                    of fa12_type
 | FA2                     of fa2_type
 
-type get_balance_type   is [@layout:comb] record [
-  balance                 : nat; (* GOV token balance *)
-  flag                    : bool; (* GOV token was found in response or not *)
-];
-
 [@inline] const zero_address : address =
   ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
 

@@ -39,14 +39,12 @@ function add_new_farm(
           fid               = s.farms_count;
         ];
 
-        function copy_map(const _key : string; const value : bytes) : bytes is
-          value;
-
-        s.token_metadata[s.farms_count] := record [
+        const tok_meta : tok_meta_type = record [
           token_id   = s.farms_count;
-          token_info = Map.map(copy_map, params.token_info);
+          token_info = params.token_info;
         ];
 
+        s.token_metadata[s.farms_count] := tok_meta;
         s.farms_count := s.farms_count + 1n;
 
         const rew_amt : nat = abs(params.end_time - params.start_time) *

@@ -1,13 +1,15 @@
 function iterate_transfer(
-  const s               : storage_type;
+  const result          : return_type;
   const params          : fa2_send_type)
-                        : storage_type is
+                        : return_type is
   block {
     function make_transfer(
-      var s             : storage_type;
+      var result        : return_type;
       const dst         : transfer_dst_type)
-                        : storage_type is
+                        : return_type is
       block {
+        var operations : list(operation) := result.0;
+        var s : storage_type := result.1;
         var farm : farm_type := get_farm(dst.token_id, s);
         const upd_res : (storage_type * farm_type) =
           update_farm_rewards(farm, s);
@@ -23,7 +25,7 @@ function iterate_transfer(
           get_user_info(dst.token_id, params.from_, s);
 
         if params.from_ =/= Tezos.sender
-          and not (src_user.allowances contains Tezos.sender)
+          and not (Set.mem(Tezos.sender, src_user.allowances))
         then failwith("FA2_NOT_OPERATOR")
         else skip;
 
@@ -33,6 +35,27 @@ function iterate_transfer(
 
         src_user.earned := src_user.earned +
           abs(src_user.staked * farm.reward_per_share - src_user.prev_earned);
+
+        var claim_res_1 : claim_return_type := record [
+          operations = operations;
+          user       = src_user;
+          farm       = farm;
+        ];
+
+        if abs(Tezos.now - src_user.last_staked) >= farm.timelock
+        then claim_res_1 := claim_rewards(
+          src_user,
+          operations,
+          farm,
+          params.from_,
+          s
+        )
+        else failwith("FA2_TIMELOCK_NOT_FINISHED");
+
+        operations := claim_res_1.operations;
+        src_user := claim_res_1.user;
+        farm := claim_res_1.farm;
+
         src_user.staked := abs(src_user.staked - dst.amount);
         src_user.prev_earned := src_user.staked * farm.reward_per_share;
 
@@ -43,14 +66,35 @@ function iterate_transfer(
 
         dst_user.earned := dst_user.earned +
           abs(dst_user.staked * farm.reward_per_share - dst_user.prev_earned);
+
+        var claim_res_2 : claim_return_type := record [
+          operations = operations;
+          user       = dst_user;
+          farm       = farm;
+        ];
+
+        if abs(Tezos.now - dst_user.last_staked) >= farm.timelock
+        then claim_res_2 := claim_rewards(
+          dst_user,
+          operations,
+          farm,
+          dst.to_,
+          s
+        )
+        else skip;
+
+        operations := claim_res_2.operations;
+        dst_user := claim_res_2.user;
+        farm := claim_res_2.farm;
+
         dst_user.staked := dst_user.staked + dst.amount;
         dst_user.prev_earned := dst_user.staked * farm.reward_per_share;
 
         s.users_info[(dst.token_id, dst.to_)] := dst_user;
 
         s.farms[dst.token_id] := farm;
-    } with s
-} with List.fold(make_transfer, params.txs, s)
+    } with (operations, s)
+} with List.fold(make_transfer, params.txs, result)
 
 function iterate_update_operators(
   var s                 : storage_type;
@@ -141,10 +185,12 @@ function transfer(
   var s                 : storage_type)
                         : return_type is
   block {
+    var result : return_type := (no_operations, s);
+
     case action of
       Transfer(params)                  -> {
-        s := List.fold(iterate_transfer, params, s);
+        result := List.fold(iterate_transfer, params, (no_operations, s));
       }
     | _                                 -> skip
     end
-  } with (no_operations, s)
+  } with result

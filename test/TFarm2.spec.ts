@@ -35,7 +35,7 @@ import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
 import { UserFA12Info } from "./types/FA12";
 import { confirmOperation } from "scripts/confirmation";
 
-describe.only("TFarm tests (section 2)", async () => {
+describe("TFarm tests (section 2)", async () => {
   var fa12: FA12;
   var fa12LP: QSFA12Dex;
   var fa2: FA2;
@@ -359,7 +359,7 @@ describe.only("TFarm tests (section 2)", async () => {
     );
     ok(
       new BigNumber(middleRewTokFarmRecord.balance).isEqualTo(
-        new BigNumber(100) // from previous test
+        new BigNumber(100) // from the previous test
       )
     );
 
@@ -390,4 +390,132 @@ describe.only("TFarm tests (section 2)", async () => {
       )
     );
   });
+
+  // it("should claim rewards in time of depositing after farms finishing when timelock is not finished", async () => {
+  //   let newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
+  //     utils
+  //   );
+
+  //   newFarmParams.fees.harvest_fee = 21 * feePrecision;
+  //   newFarmParams.fees.withdrawal_fee = 16 * feePrecision;
+  //   newFarmParams.stake_params.staked_token = {
+  //     fA2: { token: qsGov.contract.address, id: 0 },
+  //   };
+  //   newFarmParams.stake_params.qs_pool = qsGovLP.contract.address;
+  //   newFarmParams.reward_token = { fA12: fa12.contract.address };
+  //   newFarmParams.timelock = 4;
+  //   newFarmParams.reward_per_second = 100 * precision;
+
+  //   const lifetime: number = 5; // 3 seconds
+  //   const rewAmount: number =
+  //     (lifetime * newFarmParams.reward_per_second) / precision;
+  //   const harvestFeePercent: number = newFarmParams.fees.harvest_fee / 10000;
+  //   const earnedPercent: number = 1 - harvestFeePercent;
+
+  //   await fa12.approve(tFarm.contract.address, rewAmount);
+
+  //   newFarmParams.start_time = String(
+  //     Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 + 1
+  //   );
+  //   newFarmParams.end_time = String(
+  //     Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
+  //       lifetime +
+  //       1
+  //   );
+
+  //   const depositParams: DepositParams = {
+  //     fid: 2,
+  //     amt: 100,
+  //     referrer: undefined,
+  //     rewards_receiver: alice.pkh,
+  //     candidate: zeroAddress,
+  //   };
+  //   const harvestParams: HarvestParams = {
+  //     fid: depositParams.fid,
+  //     rewards_receiver: alice.pkh,
+  //   };
+  //   const batch: WalletOperationBatch = await utils.tezos.wallet.batch([
+  //     {
+  //       kind: OpKind.TRANSACTION,
+  //       ...tFarm.contract.methods
+  //         .add_new_farm(...Utils.destructObj(newFarmParams))
+  //         .toTransferParams(),
+  //     },
+  //     {
+  //       kind: OpKind.TRANSACTION,
+  //       ...tFarm.contract.methods
+  //         .deposit(...Utils.destructObj(depositParams))
+  //         .toTransferParams(),
+  //     },
+  //   ]);
+  //   const operation: WalletOperation = await batch.send();
+
+  //   await confirmOperation(utils.tezos, operation.opHash);
+  //   await fa12.updateStorage({ ledger: [alice.pkh, zeroAddress] });
+
+  //   const initialRewTokAliceRecord: UserFA12Info =
+  //     fa12.storage.ledger[alice.pkh];
+  //   const initialRewTokZeroRecord: UserFA12Info =
+  //     fa12.storage.ledger[zeroAddress];
+
+  //   await utils.bakeBlocks(lifetime);
+  //   await tFarm.harvest(harvestParams);
+  //   await fa12.updateStorage({
+  //     ledger: [alice.pkh, tFarm.contract.address, zeroAddress],
+  //   });
+
+  //   const middleRewTokAliceRecord: UserFA12Info =
+  //     fa12.storage.ledger[alice.pkh];
+  //   const middleRewTokFarmRecord: UserFA12Info =
+  //     fa12.storage.ledger[tFarm.contract.address];
+  //   const middleRewTokZeroRecord: UserFA12Info =
+  //     fa12.storage.ledger[zeroAddress];
+
+  //   ok(
+  //     new BigNumber(middleRewTokAliceRecord.balance).isEqualTo(
+  //       new BigNumber(rewAmount)
+  //         .multipliedBy(earnedPercent)
+  //         .plus(initialRewTokAliceRecord.balance)
+  //     )
+  //   );
+  //   ok(
+  //     new BigNumber(middleRewTokZeroRecord.balance).isEqualTo(
+  //       new BigNumber(rewAmount)
+  //         .multipliedBy(harvestFeePercent)
+  //         .plus(initialRewTokZeroRecord.balance)
+  //     )
+  //   );
+  //   ok(
+  //     new BigNumber(middleRewTokFarmRecord.balance).isEqualTo(
+  //       new BigNumber(100) // from the previous test
+  //     )
+  //   );
+
+  //   await tFarm.harvest(harvestParams);
+  //   await fa12.updateStorage({
+  //     ledger: [alice.pkh, tFarm.contract.address, zeroAddress],
+  //   });
+
+  //   const finalRewTokAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
+  //   const finalRewTokFarmRecord: UserFA12Info =
+  //     fa12.storage.ledger[tFarm.contract.address];
+  //   const finalRewTokZeroRecord: UserFA12Info =
+  //     fa12.storage.ledger[zeroAddress];
+
+  //   ok(
+  //     new BigNumber(finalRewTokAliceRecord.balance).isEqualTo(
+  //       new BigNumber(middleRewTokAliceRecord.balance)
+  //     )
+  //   );
+  //   ok(
+  //     new BigNumber(finalRewTokZeroRecord.balance).isEqualTo(
+  //       new BigNumber(middleRewTokZeroRecord.balance)
+  //     )
+  //   );
+  //   ok(
+  //     new BigNumber(finalRewTokFarmRecord.balance).isEqualTo(
+  //       new BigNumber(middleRewTokFarmRecord.balance)
+  //     )
+  //   );
+  // });
 });

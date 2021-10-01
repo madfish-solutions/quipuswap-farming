@@ -5623,4 +5623,20 @@ describe("TFarm tests (section 1)", async () => {
       new BigNumber(+farmBobRecord.staked).isEqualTo(balanceOfResult[0].balance)
     );
   });
+
+  it("should fail if timelock for the sender is not finished (in farms with timelock)", async () => {
+    const params: TransferParam[] = [
+      {
+        from_: bob.pkh,
+        txs: [{ to_: alice.pkh, token_id: 0, amount: 10 }],
+      },
+    ];
+
+    await utils.setProvider(bob.sk);
+    await rejects(tFarm.transfer(params), (err: Error) => {
+      ok(err.message === "FA2_TIMELOCK_NOT_FINISHED");
+
+      return true;
+    });
+  });
 });

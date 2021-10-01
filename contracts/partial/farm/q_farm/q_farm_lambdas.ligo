@@ -75,14 +75,12 @@ function add_new_farm(
           fid               = s.farms_count;
         ];
 
-        function copy_map(const _key : string; const value : bytes) : bytes is
-          value;
-
-        s.token_metadata[s.farms_count] := record [
+        const tok_meta : tok_meta_type = record [
           token_id   = s.farms_count;
-          token_info = Map.map(copy_map, params.token_info);
+          token_info = params.token_info;
         ];
 
+        s.token_metadata[s.farms_count] := tok_meta;
         s.farms_count := s.farms_count + 1n;
       }
     | _                                 -> skip
@@ -116,15 +114,22 @@ function deposit(
           abs(user.staked * farm.reward_per_share - user.prev_earned);
 
         var res : claim_return_type := record [
-          op   = (None : option(operation));
-          user = user;
-          farm = farm;
+          operations = operations;
+          user       = user;
+          farm       = farm;
         ];
 
         if abs(Tezos.now - user.last_staked) >= farm.timelock
-        then res := claim_rewards(user, farm, params.rewards_receiver, s)
+        then res := claim_rewards(
+          user,
+          operations,
+          farm,
+          params.rewards_receiver,
+          s
+        )
         else skip;
 
+        operations := res.operations;
         user := res.user;
         farm := res.farm;
 
@@ -175,11 +180,6 @@ function deposit(
           ) # operations;
         }
         else skip;
-
-        case res.op of
-          Some(op) -> operations := op # operations
-        | None     -> skip
-        end;
       }
     | _                                 -> skip
     end
@@ -214,15 +214,21 @@ function withdraw(
           abs(user.staked * farm.reward_per_share - user.prev_earned);
 
         var res : claim_return_type := record [
-          op   = (None : option(operation));
-          user = user;
-          farm = farm;
+          operations = operations;
+          user       = user;
+          farm       = farm;
         ];
 
         if abs(Tezos.now - user.last_staked) >= farm.timelock
-        then res := claim_rewards(user, farm, params.rewards_receiver, s)
+        then res := claim_rewards(
+          user,
+          operations,
+          farm,
+          params.rewards_receiver,
+          s
+        )
         else {
-          res := burn_rewards(user, farm, False, s);
+          res := burn_rewards(user, operations, farm, False, s);
 
           value_without_fee := value *
             abs(fee_precision - farm.fees.withdrawal_fee) / fee_precision;
@@ -246,6 +252,7 @@ function withdraw(
           else skip;
         };
 
+        operations := res.operations;
         user := res.user;
         farm := res.farm;
 
@@ -279,11 +286,6 @@ function withdraw(
           s := revote_res.1;
         }
         else skip;
-
-        case res.op of
-          Some(op) -> operations := op # operations
-        | None     -> skip
-        end;
       }
     | _                                 -> skip
     end
@@ -311,22 +313,24 @@ function harvest(
           abs(user.staked * farm.reward_per_share - user.prev_earned);
 
         var res : claim_return_type := record [
-          op   = (None : option(operation));
-          user = user;
-          farm = farm;
+          operations = operations;
+          user       = user;
+          farm       = farm;
         ];
 
         if abs(Tezos.now - user.last_staked) >= farm.timelock
-        then res := claim_rewards(user, farm, params.rewards_receiver, s)
+        then res := claim_rewards(
+          user,
+          operations,
+          farm,
+          params.rewards_receiver,
+          s
+        )
         else failwith("QFarm/timelock-is-not-finished");
 
+        operations := res.operations;
         user := res.user;
         farm := res.farm;
-
-        case res.op of
-          Some(op) -> operations := op # operations
-        | None     -> skip
-        end;
 
         user.prev_earned := user.staked * farm.reward_per_share;
 
@@ -359,15 +363,12 @@ function burn_farm_rewards(
         user.earned := user.earned +
           abs(user.staked * farm.reward_per_share - user.prev_earned);
 
-        var res : claim_return_type := burn_rewards(user, farm, True, s);
+        var res : claim_return_type :=
+          burn_rewards(user, operations, farm, True, s);
 
+        operations := res.operations;
         user := res.user;
         farm := res.farm;
-
-        case res.op of
-          Some(op) -> operations := op # operations
-        | None     -> skip
-        end;
 
         user.prev_earned := user.staked * farm.reward_per_share;
 

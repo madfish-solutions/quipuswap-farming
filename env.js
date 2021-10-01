@@ -1,7 +1,6 @@
 const { alice, dev } = require("./scripts/sandbox/accounts");
 
 module.exports = {
-  outputFile: "output.txt",
   confirmationPollingTimeoutSecond: 500000,
   syncInterval: 0, // 0 for tests, 5000 for deploying
   confirmTimeout: 90000, // 90000 for tests, 180000 for deploying

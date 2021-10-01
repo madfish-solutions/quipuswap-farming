@@ -56,7 +56,7 @@ import { bakerRegistryStorage } from "../storage/BakerRegistry";
 import { qsFA12FactoryStorage } from "../storage/test/QSFA12Factory";
 import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
 
-describe.only("QFarm tests", async () => {
+describe("QFarm tests", async () => {
   var fa12: FA12;
   var fa12LP: QSFA12Dex;
   var fa2: FA2;
@@ -4528,22 +4528,23 @@ describe.only("QFarm tests", async () => {
   });
 
   it("should claim sender's rewards if timelock is finished (in farms with timelock)", async () => {
+    const tokenId: number = 8;
     const params: TransferParam[] = [
       {
         from_: alice.pkh,
-        txs: [{ to_: bob.pkh, token_id: 8, amount: 10 }],
+        txs: [{ to_: bob.pkh, token_id: tokenId, amount: 10 }],
       },
     ];
 
     await qFarm.updateStorage({
-      users_info: [[8, alice.pkh]],
-      farms: [8],
+      users_info: [[tokenId, alice.pkh]],
+      farms: [tokenId],
     });
     await qsGov.updateStorage({ account_info: [alice.pkh, bob.pkh] });
 
-    const initialFarm: Farm = qFarm.storage.storage.farms[8];
+    const initialFarm: Farm = qFarm.storage.storage.farms[tokenId];
     const initialFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${8},${alice.pkh}`];
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
     const initialRewTokAliceRecord: UserFA2Info =
       qsGov.storage.account_info[alice.pkh];
     const initialRewTokBobRecord: UserFA2Info =
@@ -4552,14 +4553,14 @@ describe.only("QFarm tests", async () => {
     await utils.setProvider(alice.sk);
     await qFarm.transfer(params);
     await qFarm.updateStorage({
-      users_info: [[8, alice.pkh]],
-      farms: [8],
+      users_info: [[tokenId, alice.pkh]],
+      farms: [tokenId],
     });
     await qsGov.updateStorage({ account_info: [alice.pkh, bob.pkh] });
 
-    const finalFarm: Farm = qFarm.storage.storage.farms[8];
+    const finalFarm: Farm = qFarm.storage.storage.farms[tokenId];
     const finalFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${8},${alice.pkh}`];
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
     const finalRewTokAliceRecord: UserFA2Info =
       qsGov.storage.account_info[alice.pkh];
     const finalRewTokBobRecord: UserFA2Info =
@@ -4592,22 +4593,23 @@ describe.only("QFarm tests", async () => {
   });
 
   it("should claim sender's rewards (in farms without timelock)", async () => {
+    const tokenId: number = 6;
     const params: TransferParam[] = [
       {
         from_: alice.pkh,
-        txs: [{ to_: bob.pkh, token_id: 6, amount: 10 }],
+        txs: [{ to_: bob.pkh, token_id: tokenId, amount: 10 }],
       },
     ];
 
     await qFarm.updateStorage({
-      users_info: [[6, alice.pkh]],
-      farms: [6],
+      users_info: [[tokenId, alice.pkh]],
+      farms: [tokenId],
     });
     await qsGov.updateStorage({ account_info: [alice.pkh, bob.pkh] });
 
-    const initialFarm: Farm = qFarm.storage.storage.farms[6];
+    const initialFarm: Farm = qFarm.storage.storage.farms[tokenId];
     const initialFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${6},${alice.pkh}`];
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
     const initialRewTokAliceRecord: UserFA2Info =
       qsGov.storage.account_info[alice.pkh];
     const initialRewTokBobRecord: UserFA2Info =
@@ -4615,14 +4617,14 @@ describe.only("QFarm tests", async () => {
 
     await qFarm.transfer(params);
     await qFarm.updateStorage({
-      users_info: [[6, alice.pkh]],
-      farms: [6],
+      users_info: [[tokenId, alice.pkh]],
+      farms: [tokenId],
     });
     await qsGov.updateStorage({ account_info: [alice.pkh, bob.pkh] });
 
-    const finalFarm: Farm = qFarm.storage.storage.farms[6];
+    const finalFarm: Farm = qFarm.storage.storage.farms[tokenId];
     const finalFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${6},${alice.pkh}`];
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
     const finalRewTokAliceRecord: UserFA2Info =
       qsGov.storage.account_info[alice.pkh];
     const finalRewTokBobRecord: UserFA2Info =
@@ -4655,6 +4657,7 @@ describe.only("QFarm tests", async () => {
   });
 
   it("should not claim recipient's rewards if timelock is not finished (in farms with timelock)", async () => {
+    const tokenId: number = 8;
     const updateOperatorParam: UpdateOperatorParam = {
       add_operator: {
         owner: bob.pkh,
@@ -4663,7 +4666,7 @@ describe.only("QFarm tests", async () => {
       },
     };
     const depositParams: DepositParams = {
-      fid: 8,
+      fid: tokenId,
       amt: 100,
       referrer: undefined,
       rewards_receiver: alice.pkh,
@@ -4672,7 +4675,7 @@ describe.only("QFarm tests", async () => {
     const params: TransferParam[] = [
       {
         from_: alice.pkh,
-        txs: [{ to_: bob.pkh, token_id: 8, amount: 10 }],
+        txs: [{ to_: bob.pkh, token_id: tokenId, amount: 10 }],
       },
     ];
 
@@ -4680,28 +4683,28 @@ describe.only("QFarm tests", async () => {
     await fa2.updateOperators([updateOperatorParam]);
     await qFarm.deposit(depositParams);
     await qFarm.updateStorage({
-      users_info: [[8, alice.pkh]],
-      farms: [8],
+      users_info: [[tokenId, alice.pkh]],
+      farms: [tokenId],
     });
     await qsGov.updateStorage({ account_info: [bob.pkh] });
 
-    const initialFarm: Farm = qFarm.storage.storage.farms[8];
+    const initialFarm: Farm = qFarm.storage.storage.farms[tokenId];
     const initialFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${8},${alice.pkh}`];
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
     const initialRewTokBobRecord: UserFA2Info =
       qsGov.storage.account_info[bob.pkh];
 
     await utils.setProvider(alice.sk);
     await qFarm.transfer(params);
     await qFarm.updateStorage({
-      users_info: [[8, alice.pkh]],
-      farms: [8],
+      users_info: [[tokenId, alice.pkh]],
+      farms: [tokenId],
     });
     await qsGov.updateStorage({ account_info: [bob.pkh] });
 
-    const finalFarm: Farm = qFarm.storage.storage.farms[8];
+    const finalFarm: Farm = qFarm.storage.storage.farms[tokenId];
     const finalFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${8},${alice.pkh}`];
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
     const finalRewTokBobRecord: UserFA2Info =
       qsGov.storage.account_info[bob.pkh];
     const resAlice: FarmData = QFarmUtils.getFarmData(
@@ -4723,6 +4726,7 @@ describe.only("QFarm tests", async () => {
   });
 
   it("should claim recipient's rewards (in farms without timelock)", async () => {
+    const tokenId: number = 6;
     const transferParams: TransferParam[] = [
       {
         from_: alice.pkh,
@@ -4737,7 +4741,7 @@ describe.only("QFarm tests", async () => {
       },
     };
     const depositParams: DepositParams = {
-      fid: 6,
+      fid: tokenId,
       amt: 100,
       referrer: undefined,
       rewards_receiver: bob.pkh,
@@ -4746,7 +4750,7 @@ describe.only("QFarm tests", async () => {
     const params: TransferParam[] = [
       {
         from_: alice.pkh,
-        txs: [{ to_: bob.pkh, token_id: 6, amount: 10 }],
+        txs: [{ to_: bob.pkh, token_id: tokenId, amount: 10 }],
       },
     ];
 
@@ -4756,18 +4760,18 @@ describe.only("QFarm tests", async () => {
     await qFarm.deposit(depositParams);
     await qFarm.updateStorage({
       users_info: [
-        [6, alice.pkh],
-        [6, bob.pkh],
+        [tokenId, alice.pkh],
+        [tokenId, bob.pkh],
       ],
-      farms: [6],
+      farms: [tokenId],
     });
     await qsGov.updateStorage({ account_info: [bob.pkh] });
 
-    const initialFarm: Farm = qFarm.storage.storage.farms[6];
+    const initialFarm: Farm = qFarm.storage.storage.farms[tokenId];
     const initialFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${6},${alice.pkh}`];
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
     const initialFarmBobRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${6},${bob.pkh}`];
+      qFarm.storage.storage.users_info[`${tokenId},${bob.pkh}`];
     const initialRewTokBobRecord: UserFA2Info =
       qsGov.storage.account_info[bob.pkh];
 
@@ -4775,18 +4779,18 @@ describe.only("QFarm tests", async () => {
     await qFarm.transfer(params);
     await qFarm.updateStorage({
       users_info: [
-        [6, alice.pkh],
-        [6, bob.pkh],
+        [tokenId, alice.pkh],
+        [tokenId, bob.pkh],
       ],
-      farms: [6],
+      farms: [tokenId],
     });
     await qsGov.updateStorage({ account_info: [bob.pkh] });
 
-    const finalFarm: Farm = qFarm.storage.storage.farms[6];
+    const finalFarm: Farm = qFarm.storage.storage.farms[tokenId];
     const finalFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${6},${alice.pkh}`];
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
     const finalFarmBobRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${6},${bob.pkh}`];
+      qFarm.storage.storage.users_info[`${tokenId},${bob.pkh}`];
     const finalRewTokBobRecord: UserFA2Info =
       qsGov.storage.account_info[bob.pkh];
     const resAlice: FarmData = QFarmUtils.getFarmData(
@@ -4816,49 +4820,50 @@ describe.only("QFarm tests", async () => {
   });
 
   it("should claim recipient's rewards if timelock is finished (in farms with timelock)", async () => {
+    const tokenId: number = 8;
     const params: TransferParam[] = [
       {
         from_: alice.pkh,
-        txs: [{ to_: bob.pkh, token_id: 8, amount: 10 }],
+        txs: [{ to_: bob.pkh, token_id: tokenId, amount: 10 }],
       },
     ];
 
     await qFarm.updateStorage({
       users_info: [
-        [8, alice.pkh],
-        [8, bob.pkh],
+        [tokenId, alice.pkh],
+        [tokenId, bob.pkh],
       ],
-      farms: [8],
+      farms: [tokenId],
     });
     await qsGov.updateStorage({
       account_info: [bob.pkh],
     });
 
-    const initialFarm: Farm = qFarm.storage.storage.farms[8];
+    const initialFarm: Farm = qFarm.storage.storage.farms[tokenId];
     const initialFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${8},${alice.pkh}`];
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
     const initialFarmBobRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${8},${bob.pkh}`];
+      qFarm.storage.storage.users_info[`${tokenId},${bob.pkh}`];
     const initialRewTokBobRecord: UserFA2Info =
       qsGov.storage.account_info[bob.pkh];
 
     await qFarm.transfer(params);
     await qFarm.updateStorage({
       users_info: [
-        [8, alice.pkh],
-        [8, bob.pkh],
+        [tokenId, alice.pkh],
+        [tokenId, bob.pkh],
       ],
-      farms: [8],
+      farms: [tokenId],
     });
     await qsGov.updateStorage({
       account_info: [bob.pkh],
     });
 
-    const finalFarm: Farm = qFarm.storage.storage.farms[8];
+    const finalFarm: Farm = qFarm.storage.storage.farms[tokenId];
     const finalFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${8},${alice.pkh}`];
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
     const finalFarmBobRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${8},${bob.pkh}`];
+      qFarm.storage.storage.users_info[`${tokenId},${bob.pkh}`];
     const finalRewTokBobRecord: UserFA2Info =
       qsGov.storage.account_info[bob.pkh];
     const resAlice: FarmData = QFarmUtils.getFarmData(

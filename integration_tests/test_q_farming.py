@@ -285,7 +285,54 @@ class FarmTest(TestCase):
         votes = parse_votes(res)
         self.assertEqual(votes[0]["amount"], 10)
 
+    def test_farm_vote_candidate_switch(self):
+        chain = self.create_with_new_farm()
 
+        res = chain.execute(self.farm.deposit(0, 50, None, alice, carol), sender=alice)
+        votes = parse_votes(res)
+        self.assertEqual(votes[0]["delegate"], carol)
+        self.assertEqual(votes[0]["amount"], 50 + 0)
+
+        res = chain.execute(self.farm.deposit(0, 60, None, bob, dave), sender=bob)
+        votes = parse_votes(res)
+        self.assertEqual(votes[0]["delegate"], dave)
+        self.assertEqual(votes[0]["amount"], 50 + 60) # first votes for carol, second for dave
+
+        res = chain.execute(self.farm.deposit(0, 50, None, alice, carol), sender=alice)
+        votes = parse_votes(res)
+        self.assertEqual(votes[0]["delegate"], carol)
+        self.assertEqual(votes[0]["amount"], 100 + 60)
+
+        res = chain.execute(self.farm.deposit(0, 10, None, bob, dave), sender=bob)
+        votes = parse_votes(res)
+        self.assertEqual(votes[0]["delegate"], carol)
+        self.assertEqual(votes[0]["amount"], 100 + 70)
+
+        res = chain.execute(self.farm.withdraw(0, 10, alice, alice), sender=alice)
+        votes = parse_votes(res)
+        self.assertEqual(votes[0]["delegate"], carol)
+        self.assertEqual(votes[0]["amount"], 90 + 70)
+
+        res = chain.execute(self.farm.withdraw(0, 30, alice, alice), sender=alice)
+        votes = parse_votes(res)
+        self.assertEqual(votes[0]["delegate"], dave)
+        self.assertEqual(votes[0]["amount"], 60 + 70)
+
+    def test_farm_vote_counting(self):
+        chain = self.create_with_new_farm()
+
+        res = chain.execute(self.farm.deposit(0, 50, None, alice, carol), sender=alice)
+        votes = parse_votes(res)
+        self.assertEqual(votes[0]["delegate"], carol)
+
+        res = chain.execute(self.farm.deposit(0, 30, None, alice, dave), sender=alice)
+        votes = parse_votes(res)
+        self.assertEqual(votes[0]["delegate"], dave)
+        
+        res = chain.execute(self.farm.withdraw(0, 40, alice, alice), sender=alice)
+        votes = parse_votes(res)
+        self.assertEqual(votes[0]["delegate"], dave)
+        
     def test_farm_miniscule_withdrawal_fee(self):
         chain = self.create_with_new_farm({"timelock": 100})
 
@@ -352,16 +399,45 @@ class FarmTest(TestCase):
         res = chain.execute(self.farm.deposit(0, 50, None, alice, candidate), sender=alice)
         res = chain.execute(self.farm.deposit(1, 50, None, bob, candidate), sender=bob)
 
-        farm0_before = res.storage["storage"]["farms"][0]
+        farm0_before = res.storage["storage"]["farms"][0].copy()
         chain.advance_blocks(1)
         res = chain.execute(self.farm.withdraw(1, 25, bob, bob), sender=bob)
         farm0_after = res.storage["storage"]["farms"][0]
         self.assertDictEqual(farm0_before, farm0_after)
         
-        farm1_before = res.storage["storage"]["farms"][1]
+        farm1_before = res.storage["storage"]["farms"][1].copy()
         chain.advance_blocks(1)
         res = chain.execute(self.farm.harvest(0, alice), sender=alice)
         farm1_after = res.storage["storage"]["farms"][1]
         self.assertDictEqual(farm1_before, farm1_after)
+
+
+    def test_burn_farm_rewards(self):
+        chain = self.create_with_new_farm({"timelock": 120})
+
+        res = chain.execute(self.farm.deposit(0, 50_000_000, None, me, candidate))
+        res = chain.execute(self.farm.withdraw(0, 5_000_000, me, me))
+
+        chain.advance_blocks(1)
+
+        res = chain.execute(self.farm.burn_farm_rewards(0))
+        mints = parse_mints(res)
+        
+        self.assertEqual(mints[0]["amount"], 1)
+        self.assertEqual(mints[1]["amount"], 2)
+
+        # total_me_mints = 0
+        # total_farm_mints = 0
+        # for i in range(10):
+        #     chain.advance_blocks(1)
+
+        #     res = chain.execute(self.farm.burn_farm_rewards(0))
+        #     mints = parse_mints(res)
+
+        #     total_me_mints += mints[0]["amount"]
+        #     total_farm_mints += mints[1]["amount"]
+
+        # print("me", total_me_mints, "farm", total_farm_mints)
+
 
 

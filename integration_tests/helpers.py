@@ -7,10 +7,13 @@ PRECISION = pow(10, 18)
 
 TOKEN_ADDRESS = "KT1VHd7ysjnvxEzwtjBAmYAmasvVCfPpSkiG"
 
-alice = "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb"
-bob = "tz1aSkwEot3L2kmUvcoxzjMomb9mvBNuzFK6"
+alice = "tz1iA1iceA1iceA1iceA1iceA1ice9ydjsaW"
+bob = "tz1iBobBobBobBobBobBobBobBobBodTWLCX"
 
-julian = "tz1MDhGTfMQjtMYFXeasKzRWzkQKPtXEkSEw"
+carol = "tz1iCaro1Caro1Caro1Caro1Caro1CbMUKN1"
+dave = "tz1iDaveDaveDaveDaveDaveDaveDatFC4So"
+
+julian = "tz1iJu1ianJu1ianJu1ianJu1ianJtvTftP8"
 
 admin = "tz1TfRXkAxbQ2BFqKV2dF4kE17yZ5BmJqSAP"
 

@@ -38,13 +38,14 @@ function get_proxy_minter_mint_entrypoint(
 
 function claim_rewards(
   var user              : user_info_type;
+  var operations        : list(operation);
   var farm              : farm_type;
+  const user_addr       : address;
   const receiver        : address;
   const s               : storage_type)
                         : claim_return_type is
   block {
     const earned : nat = user.earned / precision;
-    var op : option(operation) := (None : option(operation));
 
     if earned =/= 0n
     then {
@@ -64,7 +65,7 @@ function claim_rewards(
 
       if harvest_fee =/= 0n
       then {
-        const fee_receiver : address = case s.referrers[Tezos.sender] of
+        const fee_receiver : address = case s.referrers[user_addr] of
           None           -> zero_address
         | Some(referrer) -> referrer
         end;
@@ -77,30 +78,28 @@ function claim_rewards(
       }
       else skip;
 
-      op := Some(
-        Tezos.transaction(
-          mint_data,
-          0mutez,
-          get_proxy_minter_mint_entrypoint(s.proxy_minter)
-        )
-      );
+      operations := Tezos.transaction(
+        mint_data,
+        0mutez,
+        get_proxy_minter_mint_entrypoint(s.proxy_minter)
+      ) # operations;
     }
     else skip;
   } with (record [
-    op   = op;
-    user = user;
-    farm = farm;
+    operations = operations;
+    user       = user;
+    farm       = farm;
   ])
 
 function burn_rewards(
   var user              : user_info_type;
+  var operations        : list(operation);
   var farm              : farm_type;
   const pay_burn_reward : bool;
   const s               : storage_type)
                         : claim_return_type is
   block {
     const earned : nat = user.earned / precision;
-    var op : option(operation) := (None : option(operation));
 
     if earned =/= 0n
     then {
@@ -142,19 +141,17 @@ function burn_rewards(
         mint_data := dst # mint_data;
       };
 
-      op := Some(
-        Tezos.transaction(
-          mint_data,
-          0mutez,
-          get_proxy_minter_mint_entrypoint(s.proxy_minter)
-        )
-      );
+      operations := Tezos.transaction(
+        mint_data,
+        0mutez,
+        get_proxy_minter_mint_entrypoint(s.proxy_minter)
+      ) # operations;
     }
     else skip;
   } with (record [
-    op   = op;
-    user = user;
-    farm = farm;
+    operations = operations;
+    user       = user;
+    farm       = farm;
   ])
 
 function get_baker_registry_validate_entrypoint(

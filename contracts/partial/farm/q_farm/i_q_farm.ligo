@@ -111,8 +111,8 @@ type add_new_farm_type  is [@layout:comb] record [
 type burn_farm_rew_type is nat (* Farm ID *)
 
 type claim_return_type  is [@layout:comb] record [
-  (* Claim rewards operation *)
-  op                      : option(operation);
+  (* Claim rewards operations *)
+  operations              : list(operation);
   (* Updated user (after claiminig ) *)
   user                    : user_info_type;
   (* Updated farm (after claiming) *)

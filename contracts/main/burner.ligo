@@ -6,6 +6,7 @@
 #include "../partial/common.ligo"
 
 #include "../partial/burner/i_burner.ligo"
+#include "../partial/burner/burner_helpers.ligo"
 #include "../partial/burner/burner_methods.ligo"
 
 function main(

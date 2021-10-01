@@ -353,9 +353,9 @@
 
     - ✅ should add new farm, stake in the next block and withdraw all rewards (except the first block reward) after farms lifetime finishing (without timelock);
     - ✅ should add new farm and stake in batch, withdraw all rewards after farms lifetime finishing (without timelock);
-    - should claim rewards in time of depositing after farms finishing when timelock is not finished;
-    - should claim rewards in time of withdrawing after farms finishing when timelock is not finished;
-    - should claim rewards in time of claiming after farms finishing when timelock is not finished.
+    - ✅ should claim rewards in time of depositing after farms finishing when timelock is not finished;
+    - ✅ should claim rewards in time of withdrawing after farms finishing when timelock is not finished;
+    - ✅ should claim rewards in time of claiming after farms finishing when timelock is not finished.
 
 ## Burner
 

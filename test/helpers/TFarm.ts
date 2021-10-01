@@ -356,8 +356,19 @@ export class TFarmUtils {
     precision: number,
     feePrecision: number
   ): FarmData {
-    const timeLeft: number =
-      (Date.parse(finalFarm.upd) - Date.parse(initialFarm.upd)) / 1000;
+    let timeLeft: number = 0;
+
+    if (
+      Date.parse(finalFarm.upd) / 1000 >
+      Date.parse(finalFarm.end_time) / 1000
+    ) {
+      timeLeft =
+        (Date.parse(finalFarm.end_time) - Date.parse(initialFarm.upd)) / 1000;
+    } else {
+      timeLeft =
+        (Date.parse(finalFarm.upd) - Date.parse(initialFarm.upd)) / 1000;
+    }
+
     const newReward: BigNumber = new BigNumber(
       timeLeft * finalFarm.reward_per_second
     );

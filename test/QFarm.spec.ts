@@ -3652,7 +3652,7 @@ describe("QFarm tests", async () => {
       qsGov.storage.account_info[zeroAddress];
 
     await utils.setProvider(alice.sk);
-    await fa12LP.approve(qFarm.contract.address, 100);
+    await fa12LP.approve(qFarm.contract.address, depositParams.amt);
     await qFarm.deposit(depositParams);
     await utils.setProvider(bob.sk);
 
@@ -4049,7 +4049,7 @@ describe("QFarm tests", async () => {
     };
     newFarmParams.stake_params.qs_pool = fa2LP.contract.address;
     newFarmParams.reward_per_second = 2 * precision;
-    newFarmParams.timelock = 10;
+    newFarmParams.timelock = 5;
 
     await utils.setProvider(bob.sk);
     await qFarm.addNewFarm(newFarmParams);
@@ -4067,7 +4067,7 @@ describe("QFarm tests", async () => {
 
     const withdrawParams1: WithdrawParams = {
       fid: depositParams.fid,
-      amt: depositParams.amt,
+      amt: depositParams.amt / 2,
       receiver: alice.pkh,
       rewards_receiver: alice.pkh,
     };
@@ -4314,7 +4314,7 @@ describe("QFarm tests", async () => {
     );
     ok(
       new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
-        resAlice.expectedUserEarned
+        resAlice.expectedUserEarnedAfterHarvest
       )
     );
     ok(
@@ -4441,7 +4441,7 @@ describe("QFarm tests", async () => {
     );
     ok(
       new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
-        resAlice.expectedUserEarned
+        resAlice.expectedUserEarnedAfterHarvest
       )
     );
     ok(
@@ -4508,6 +4508,387 @@ describe("QFarm tests", async () => {
     );
     ok(
       new BigNumber(+farmBobRecord.staked).isEqualTo(balanceOfResult[0].balance)
+    );
+  });
+
+  it("should fail if timelock for the sender is not finished (in farms with timelock)", async () => {
+    const params: TransferParam[] = [
+      {
+        from_: bob.pkh,
+        txs: [{ to_: alice.pkh, token_id: 0, amount: 10 }],
+      },
+    ];
+
+    await utils.setProvider(bob.sk);
+    await rejects(qFarm.transfer(params), (err: Error) => {
+      ok(err.message === "FA2_TIMELOCK_NOT_FINISHED");
+
+      return true;
+    });
+  });
+
+  it("should claim sender's rewards if timelock is finished (in farms with timelock)", async () => {
+    const tokenId: number = 8;
+    const params: TransferParam[] = [
+      {
+        from_: alice.pkh,
+        txs: [{ to_: bob.pkh, token_id: tokenId, amount: 10 }],
+      },
+    ];
+
+    await qFarm.updateStorage({
+      users_info: [[tokenId, alice.pkh]],
+      farms: [tokenId],
+    });
+    await qsGov.updateStorage({ account_info: [alice.pkh, bob.pkh] });
+
+    const initialFarm: Farm = qFarm.storage.storage.farms[tokenId];
+    const initialFarmAliceRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
+    const initialRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const initialRewTokBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+
+    await utils.setProvider(alice.sk);
+    await qFarm.transfer(params);
+    await qFarm.updateStorage({
+      users_info: [[tokenId, alice.pkh]],
+      farms: [tokenId],
+    });
+    await qsGov.updateStorage({ account_info: [alice.pkh, bob.pkh] });
+
+    const finalFarm: Farm = qFarm.storage.storage.farms[tokenId];
+    const finalFarmAliceRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
+    const finalRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const finalRewTokBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+    const resAlice: FarmData = QFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(
+      new BigNumber(
+        +(await finalRewTokAliceRecord.balances.get("0"))
+      ).isEqualTo(
+        new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
+          resAlice.actualUserEarned
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalRewTokBobRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokBobRecord.balances.get("0"))).plus(
+          resAlice.referralCommission
+        )
+      )
+    );
+  });
+
+  it("should claim sender's rewards (in farms without timelock)", async () => {
+    const tokenId: number = 6;
+    const params: TransferParam[] = [
+      {
+        from_: alice.pkh,
+        txs: [{ to_: bob.pkh, token_id: tokenId, amount: 10 }],
+      },
+    ];
+
+    await qFarm.updateStorage({
+      users_info: [[tokenId, alice.pkh]],
+      farms: [tokenId],
+    });
+    await qsGov.updateStorage({ account_info: [alice.pkh, bob.pkh] });
+
+    const initialFarm: Farm = qFarm.storage.storage.farms[tokenId];
+    const initialFarmAliceRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
+    const initialRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const initialRewTokBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+
+    await qFarm.transfer(params);
+    await qFarm.updateStorage({
+      users_info: [[tokenId, alice.pkh]],
+      farms: [tokenId],
+    });
+    await qsGov.updateStorage({ account_info: [alice.pkh, bob.pkh] });
+
+    const finalFarm: Farm = qFarm.storage.storage.farms[tokenId];
+    const finalFarmAliceRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
+    const finalRewTokAliceRecord: UserFA2Info =
+      qsGov.storage.account_info[alice.pkh];
+    const finalRewTokBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+    const resAlice: FarmData = QFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(
+      new BigNumber(
+        +(await finalRewTokAliceRecord.balances.get("0"))
+      ).isEqualTo(
+        new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
+          resAlice.actualUserEarned
+        )
+      )
+    );
+    ok(
+      new BigNumber(+(await finalRewTokBobRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokBobRecord.balances.get("0"))).plus(
+          resAlice.referralCommission
+        )
+      )
+    );
+  });
+
+  it("should not claim recipient's rewards if timelock is not finished (in farms with timelock)", async () => {
+    const tokenId: number = 8;
+    const updateOperatorParam: UpdateOperatorParam = {
+      add_operator: {
+        owner: bob.pkh,
+        operator: qFarm.contract.address,
+        token_id: 0,
+      },
+    };
+    const depositParams: DepositParams = {
+      fid: tokenId,
+      amt: 100,
+      referrer: undefined,
+      rewards_receiver: alice.pkh,
+      candidate: bob.pkh,
+    };
+    const params: TransferParam[] = [
+      {
+        from_: alice.pkh,
+        txs: [{ to_: bob.pkh, token_id: tokenId, amount: 10 }],
+      },
+    ];
+
+    await utils.setProvider(bob.sk);
+    await fa2.updateOperators([updateOperatorParam]);
+    await qFarm.deposit(depositParams);
+    await qFarm.updateStorage({
+      users_info: [[tokenId, alice.pkh]],
+      farms: [tokenId],
+    });
+    await qsGov.updateStorage({ account_info: [bob.pkh] });
+
+    const initialFarm: Farm = qFarm.storage.storage.farms[tokenId];
+    const initialFarmAliceRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
+    const initialRewTokBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+
+    await utils.setProvider(alice.sk);
+    await qFarm.transfer(params);
+    await qFarm.updateStorage({
+      users_info: [[tokenId, alice.pkh]],
+      farms: [tokenId],
+    });
+    await qsGov.updateStorage({ account_info: [bob.pkh] });
+
+    const finalFarm: Farm = qFarm.storage.storage.farms[tokenId];
+    const finalFarmAliceRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
+    const finalRewTokBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+    const resAlice: FarmData = QFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(
+      new BigNumber(+(await finalRewTokBobRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokBobRecord.balances.get("0"))).plus(
+          resAlice.referralCommission
+        )
+      )
+    );
+  });
+
+  it("should claim recipient's rewards (in farms without timelock)", async () => {
+    const tokenId: number = 6;
+    const transferParams: TransferParam[] = [
+      {
+        from_: alice.pkh,
+        txs: [{ to_: bob.pkh, token_id: 0, amount: 100 }],
+      },
+    ];
+    const updateOperatorParam: UpdateOperatorParam = {
+      add_operator: {
+        owner: bob.pkh,
+        operator: qFarm.contract.address,
+        token_id: 0,
+      },
+    };
+    const depositParams: DepositParams = {
+      fid: tokenId,
+      amt: 100,
+      referrer: undefined,
+      rewards_receiver: bob.pkh,
+      candidate: alice.pkh,
+    };
+    const params: TransferParam[] = [
+      {
+        from_: alice.pkh,
+        txs: [{ to_: bob.pkh, token_id: tokenId, amount: 10 }],
+      },
+    ];
+
+    await fa2LP.transfer(transferParams);
+    await utils.setProvider(bob.sk);
+    await fa2LP.updateOperators([updateOperatorParam]);
+    await qFarm.deposit(depositParams);
+    await qFarm.updateStorage({
+      users_info: [
+        [tokenId, alice.pkh],
+        [tokenId, bob.pkh],
+      ],
+      farms: [tokenId],
+    });
+    await qsGov.updateStorage({ account_info: [bob.pkh] });
+
+    const initialFarm: Farm = qFarm.storage.storage.farms[tokenId];
+    const initialFarmAliceRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
+    const initialFarmBobRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${tokenId},${bob.pkh}`];
+    const initialRewTokBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+
+    await utils.setProvider(alice.sk);
+    await qFarm.transfer(params);
+    await qFarm.updateStorage({
+      users_info: [
+        [tokenId, alice.pkh],
+        [tokenId, bob.pkh],
+      ],
+      farms: [tokenId],
+    });
+    await qsGov.updateStorage({ account_info: [bob.pkh] });
+
+    const finalFarm: Farm = qFarm.storage.storage.farms[tokenId];
+    const finalFarmAliceRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
+    const finalFarmBobRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${tokenId},${bob.pkh}`];
+    const finalRewTokBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+    const resAlice: FarmData = QFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+    const resBob: FarmData = QFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmBobRecord,
+      finalFarmBobRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(
+      new BigNumber(+(await finalRewTokBobRecord.balances.get("0"))).isEqualTo(
+        new BigNumber(+(await initialRewTokBobRecord.balances.get("0")))
+          .plus(resAlice.referralCommission)
+          .plus(resBob.actualUserEarned)
+      )
+    );
+  });
+
+  it("should claim recipient's rewards if timelock is finished (in farms with timelock)", async () => {
+    const tokenId: number = 8;
+    const params: TransferParam[] = [
+      {
+        from_: alice.pkh,
+        txs: [{ to_: bob.pkh, token_id: tokenId, amount: 10 }],
+      },
+    ];
+
+    await qFarm.updateStorage({
+      users_info: [
+        [tokenId, alice.pkh],
+        [tokenId, bob.pkh],
+      ],
+      farms: [tokenId],
+    });
+    await qsGov.updateStorage({
+      account_info: [bob.pkh],
+    });
+
+    const initialFarm: Farm = qFarm.storage.storage.farms[tokenId];
+    const initialFarmAliceRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
+    const initialFarmBobRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${tokenId},${bob.pkh}`];
+    const initialRewTokBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+
+    await qFarm.transfer(params);
+    await qFarm.updateStorage({
+      users_info: [
+        [tokenId, alice.pkh],
+        [tokenId, bob.pkh],
+      ],
+      farms: [tokenId],
+    });
+    await qsGov.updateStorage({
+      account_info: [bob.pkh],
+    });
+
+    const finalFarm: Farm = qFarm.storage.storage.farms[tokenId];
+    const finalFarmAliceRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
+    const finalFarmBobRecord: UserInfoType =
+      qFarm.storage.storage.users_info[`${tokenId},${bob.pkh}`];
+    const finalRewTokBobRecord: UserFA2Info =
+      qsGov.storage.account_info[bob.pkh];
+    const resAlice: FarmData = QFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+    const resBob: FarmData = QFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmBobRecord,
+      finalFarmBobRecord,
+      precision,
+      feePrecision
+    );
+
+    ok(
+      ((await finalRewTokBobRecord.balances.get("0")) as BigNumber).isEqualTo(
+        ((await initialRewTokBobRecord.balances.get("0")) as BigNumber)
+          .plus(resBob.actualUserEarned)
+          .plus(resAlice.referralCommission)
+      )
     );
   });
 });

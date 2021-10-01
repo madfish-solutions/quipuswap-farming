@@ -113,44 +113,6 @@ function get_quipuswap_use_entrypoint(
   )
   end
 
-(* Util to get FA2 token balance by ID and owner *)
-function get_fa2_token_balance(
-  const response        : list(bal_response_type);
-  const owner           : address;
-  const token_id        : token_id_type)
-                        : nat is
-  block {
-    (* Get balance of FA2 token with specified ID *)
-    function get_balance(
-      var tmp           : get_balance_type;
-      const v           : bal_response_type)
-                        : get_balance_type is
-      block {
-        const request : bal_request_type = record [
-          token_id = token_id;
-          owner    = owner;
-        ];
-
-        (* Check if response data has specified token balance  *)
-        if not tmp.flag and v.request = request
-        then {
-          tmp.balance := v.balance;
-          tmp.flag := True;
-        }
-        else skip;
-      } with tmp;
-
-    (* Get specified FA2 token balance in list of %balance_of responses *)
-    const tmp : get_balance_type = List.fold(
-      get_balance,
-      response,
-      record [
-        balance = 0n;
-        flag    = False;
-      ]
-    );
-  } with tmp.balance
-
 function wrap_fa12_transfer_trx(
   const from_           : address;
   const to_             : address;

@@ -3,7 +3,7 @@ import { TezosToolkit, Contract, TransactionOperation } from "@taquito/taquito";
 import { confirmOperation } from "scripts/confirmation";
 
 import { QSFA2DexStorage } from "../types/QSFA2Dex";
-import { UpdateOperatorParam } from "../types/FA2";
+import { TransferParam, UpdateOperatorParam } from "../types/FA2";
 
 export class QSFA2Dex {
   contract: Contract;
@@ -45,6 +45,16 @@ export class QSFA2Dex {
         Promise.resolve({})
       );
     }
+  }
+
+  async transfer(params: TransferParam[]): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .transfer(params)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
   }
 
   async updateOperators(

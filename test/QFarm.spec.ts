@@ -4830,20 +4830,17 @@ describe.only("QFarm tests", async () => {
       ],
       farms: [8],
     });
-    await qsGov.updateStorage({ account_info: [alice.pkh, bob.pkh] });
+    await qsGov.updateStorage({
+      account_info: [bob.pkh],
+    });
 
     const initialFarm: Farm = qFarm.storage.storage.farms[8];
     const initialFarmAliceRecord: UserInfoType =
       qFarm.storage.storage.users_info[`${8},${alice.pkh}`];
     const initialFarmBobRecord: UserInfoType =
       qFarm.storage.storage.users_info[`${8},${bob.pkh}`];
-    const initialRewTokAliceRecord: UserFA2Info =
-      qsGov.storage.account_info[alice.pkh];
     const initialRewTokBobRecord: UserFA2Info =
       qsGov.storage.account_info[bob.pkh];
-
-    console.log(+initialFarmBobRecord.earned);
-    console.log(+initialFarmBobRecord.prev_earned);
 
     await qFarm.transfer(params);
     await qFarm.updateStorage({
@@ -4853,15 +4850,15 @@ describe.only("QFarm tests", async () => {
       ],
       farms: [8],
     });
-    await qsGov.updateStorage({ account_info: [alice.pkh, bob.pkh] });
+    await qsGov.updateStorage({
+      account_info: [bob.pkh],
+    });
 
     const finalFarm: Farm = qFarm.storage.storage.farms[8];
     const finalFarmAliceRecord: UserInfoType =
       qFarm.storage.storage.users_info[`${8},${alice.pkh}`];
     const finalFarmBobRecord: UserInfoType =
       qFarm.storage.storage.users_info[`${8},${bob.pkh}`];
-    const finalRewTokAliceRecord: UserFA2Info =
-      qsGov.storage.account_info[alice.pkh];
     const finalRewTokBobRecord: UserFA2Info =
       qsGov.storage.account_info[bob.pkh];
     const resAlice: FarmData = QFarmUtils.getFarmData(
@@ -4881,46 +4878,9 @@ describe.only("QFarm tests", async () => {
       feePrecision
     );
 
-    console.log(+finalFarmBobRecord.earned);
-    console.log(+finalFarmBobRecord.prev_earned);
-
-    console.log(resAlice.referralCommission.toString());
-    console.log(resAlice.actualUserEarned.toString());
-    console.log(resAlice.expectedUserEarned.toString());
-    console.log(resAlice.expectedUserEarnedAfterHarvest.toString());
-    console.log(resBob.referralCommission.toString());
-    console.log(resBob.actualUserEarned.toString());
-    console.log(resBob.expectedUserEarned.toString());
-    console.log(resBob.expectedUserEarnedAfterHarvest.toString());
-
-    console.log(
-      new BigNumber(
-        +(await initialRewTokBobRecord.balances.get("0"))
-      ).toString()
-    );
-    console.log(
-      new BigNumber(+(await finalRewTokBobRecord.balances.get("0"))).toString()
-    );
-    console.log(
-      new BigNumber(+(await initialRewTokBobRecord.balances.get("0")))
-        .plus(resAlice.referralCommission)
-        .plus(resBob.actualUserEarned)
-        .toString()
-    );
-
     ok(
-      new BigNumber(
-        +(await finalRewTokAliceRecord.balances.get("0"))
-      ).isEqualTo(
-        new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
-          resAlice.actualUserEarned
-        )
-      )
-    );
-
-    ok(
-      new BigNumber(+(await finalRewTokBobRecord.balances.get("0"))).isEqualTo(
-        new BigNumber(+(await initialRewTokBobRecord.balances.get("0")))
+      ((await finalRewTokBobRecord.balances.get("0")) as BigNumber).isEqualTo(
+        ((await initialRewTokBobRecord.balances.get("0")) as BigNumber)
           .plus(resBob.actualUserEarned)
           .plus(resAlice.referralCommission)
       )

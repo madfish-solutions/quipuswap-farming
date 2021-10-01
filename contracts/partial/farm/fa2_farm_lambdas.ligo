@@ -48,6 +48,7 @@ function iterate_transfer(
           operations,
           farm,
           params.from_,
+          params.from_,
           s
         )
         else failwith("FA2_TIMELOCK_NOT_FINISHED");
@@ -78,6 +79,7 @@ function iterate_transfer(
           dst_user,
           operations,
           farm,
+          dst.to_,
           dst.to_,
           s
         )

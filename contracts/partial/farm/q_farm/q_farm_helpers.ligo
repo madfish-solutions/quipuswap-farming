@@ -40,6 +40,7 @@ function claim_rewards(
   var user              : user_info_type;
   var operations        : list(operation);
   var farm              : farm_type;
+  const user_addr       : address;
   const receiver        : address;
   const s               : storage_type)
                         : claim_return_type is
@@ -64,7 +65,7 @@ function claim_rewards(
 
       if harvest_fee =/= 0n
       then {
-        const fee_receiver : address = case s.referrers[Tezos.sender] of
+        const fee_receiver : address = case s.referrers[user_addr] of
           None           -> zero_address
         | Some(referrer) -> referrer
         end;

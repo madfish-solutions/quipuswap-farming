@@ -100,6 +100,7 @@ function deposit(
             user,
             operations,
             farm,
+            Tezos.sender,
             params.rewards_receiver,
             s
           )
@@ -203,6 +204,7 @@ function withdraw(
             user,
             operations,
             farm,
+            Tezos.sender,
             params.rewards_receiver,
             s
           )
@@ -311,6 +313,7 @@ function harvest(
             user,
             operations,
             farm,
+            Tezos.sender,
             params.rewards_receiver,
             s
           )

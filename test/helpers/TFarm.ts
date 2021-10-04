@@ -130,6 +130,16 @@ export class TFarm {
     await confirmOperation(this.tezos, operation.opHash);
   }
 
+  async default(mutezAmount: number): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .default([])
+      .send({ amount: mutezAmount, mutez: true });
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
   async setAdmin(newAdmin: string): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .set_admin(newAdmin)
@@ -248,9 +258,9 @@ export class TFarm {
     return operation;
   }
 
-  async burnXTZRewards(fid: number): Promise<TransactionOperation> {
+  async burnTEZRewards(fid: number): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
-      .burn_xtz_rewards(fid)
+      .burn_tez_rewards(fid)
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

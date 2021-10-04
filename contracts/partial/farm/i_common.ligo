@@ -88,7 +88,7 @@ type harvest_type       is [@layout:comb] record [
   rewards_receiver        : address;
 ]
 
-type burn_xtz_rew_type  is nat (* Farm ID *)
+type burn_tez_rew_type  is nat (* Farm ID *)
 
 type withdraw_farm_type is [@layout:comb] record [
   (* Farm ID *)
@@ -117,3 +117,5 @@ type upd_tok_meta_type  is [@layout:comb] record [
   (* Token metadata *)
   token_info              : list(meta_pair_type);
 ]
+
+type default_type       is unit

@@ -363,6 +363,56 @@ describe("TFarm tests (section 1)", async () => {
     );
   });
 
+  it("should transfer received TEZ to the burner, swap for QUIPU and burn them (1)", async () => {
+    await qsGov.updateStorage({
+      account_info: [zeroAddress],
+    });
+
+    const initialQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+    const initialBalance: number =
+      initialQsGovZeroRecord === undefined
+        ? 0
+        : +(await initialQsGovZeroRecord.balances.get("0"));
+    const operation = await utils.tezos.contract.transfer({
+      to: tFarm.contract.address,
+      amount: 500,
+      mutez: true,
+    });
+
+    await confirmOperation(utils.tezos, operation.hash);
+    await qsGov.updateStorage({
+      account_info: [zeroAddress],
+    });
+
+    const finalQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+
+    ok(+(await finalQsGovZeroRecord.balances.get("0")) > initialBalance);
+  });
+
+  it("should transfer received TEZ to the burner, swap for QUIPU and burn them (2)", async () => {
+    await qsGov.updateStorage({
+      account_info: [zeroAddress],
+    });
+
+    const initialQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+
+    await tFarm.default(1000);
+    await qsGov.updateStorage({
+      account_info: [zeroAddress],
+    });
+
+    const finalQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+
+    ok(
+      +(await finalQsGovZeroRecord.balances.get("0")) >
+        +(await initialQsGovZeroRecord.balances.get("0"))
+    );
+  });
+
   it("should fail if not admin is trying to add new farm", async () => {
     const newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
       utils
@@ -2254,12 +2304,14 @@ describe("TFarm tests (section 1)", async () => {
       farms: [depositParams.fid],
     });
     await qsGov.updateStorage({
-      account_info: [alice.pkh, tFarm.contract.address],
+      account_info: [alice.pkh, tFarm.contract.address, zeroAddress],
     });
 
     const initialFarm: Farm = tFarm.storage.storage.farms[depositParams.fid];
     const initialFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${depositParams.fid},${alice.pkh}`];
+    const initialQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
     const initialRewTokAliceRecord: UserFA2Info =
       qsGov.storage.account_info[alice.pkh];
     const initialRewTokFarmRecord: UserFA2Info =
@@ -2303,7 +2355,9 @@ describe("TFarm tests (section 1)", async () => {
     );
     ok(
       new BigNumber(+(await finalRewTokZeroRecord.balances.get("0"))).isEqualTo(
-        res.referralCommission
+        new BigNumber(+(await initialQsGovZeroRecord.balances.get("0"))).plus(
+          res.referralCommission
+        )
       )
     );
     ok(
@@ -4739,8 +4793,8 @@ describe("TFarm tests (section 1)", async () => {
     strictEqual(+finalFarmBobVotes, +initialFarmBobVotes);
   });
 
-  it("should fail if not admin is trying to burn XTZ rewards", async () => {
-    await rejects(tFarm.burnXTZRewards(0), (err: Error) => {
+  it("should fail if not admin is trying to burn TEZ rewards", async () => {
+    await rejects(tFarm.burnTEZRewards(0), (err: Error) => {
       ok(err.message === "Not-admin");
 
       return true;
@@ -4749,7 +4803,7 @@ describe("TFarm tests (section 1)", async () => {
 
   it("should fail if farm not found", async () => {
     await utils.setProvider(bob.sk);
-    await rejects(tFarm.burnXTZRewards(666), (err: Error) => {
+    await rejects(tFarm.burnTEZRewards(666), (err: Error) => {
       ok(err.message === "QSystem/farm-not-set");
 
       return true;
@@ -4757,14 +4811,14 @@ describe("TFarm tests (section 1)", async () => {
   });
 
   it("should fail if not LP token is staked on the farm", async () => {
-    await rejects(tFarm.burnXTZRewards(0), (err: Error) => {
+    await rejects(tFarm.burnTEZRewards(0), (err: Error) => {
       ok(err.message === "QSystem/not-LP-farm");
 
       return true;
     });
   });
 
-  it("should withdraw bakers rewards in XTZ from the QS pool, swap for QS GOV tokens and burn them", async () => {
+  it("should withdraw bakers rewards in TEZ from the QS pool, swap for QS GOV tokens and burn them", async () => {
     await fa12LP.updateStorage({
       ledger: [alice.pkh],
     });
@@ -4795,7 +4849,7 @@ describe("TFarm tests (section 1)", async () => {
 
     await confirmOperation(utils.tezos, operation.hash);
     await utils.bakeBlocks(1);
-    await tFarm.burnXTZRewards(depositParams.fid);
+    await tFarm.burnTEZRewards(depositParams.fid);
     await qsGov.updateStorage({
       account_info: [zeroAddress],
     });

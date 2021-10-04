@@ -16,7 +16,7 @@ type farm_type          is [@layout:comb] record [
   reward_token            : token_type;
   (* Timelock in seconds, 0 for farms without timelock *)
   timelock                : nat;
-  (* The account XTZ are currently delegated for *)
+  (* The account TEZ are currently delegated for *)
   current_delegated       : key_hash;
   (* The best candidate to become next delegated *)
   next_candidate          : key_hash;
@@ -122,7 +122,7 @@ type action_type        is
 | Deposit                 of deposit_type
 | Withdraw                of withdraw_type
 | Harvest                 of harvest_type
-| Burn_xtz_rewards        of burn_xtz_rew_type
+| Burn_tez_rewards        of burn_tez_rew_type
 | Claim_farm_rewards      of claim_farm_type
 | Withdraw_farm_depo      of withdraw_farm_type
 | Transfer                of list(fa2_send_type)
@@ -153,5 +153,6 @@ type setup_func_type    is [@layout:comb] record [
 type full_action_type   is
   Use                     of action_type
 | Setup_func              of setup_func_type
+| Default                 of default_type
 
 [@inline] const t_farm_methods_max_index : nat = 17n;

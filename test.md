@@ -115,12 +115,12 @@
     - ✅ should mint QS GOV tokens as harvest fee to zero address (in case when user does not have referrer);
     - ✅ should calculate and mint QS GOV tokens as harvest fee with decimals (like 4.2%).
 
-14. `burn_xtz_rewards`:
+14. `burn_tez_rewards`:
 
-    - ✅ should fail if not admin is trying to burn XTZ rewards;
+    - ✅ should fail if not admin is trying to burn TEZ rewards;
     - ✅ should fail if farm not found;
     - ✅ should fail if not LP token is staked on the farm;
-    - ✅ should withdraw bakers rewards in XTZ from the QS pool, swap for QS GOV tokens and burn them.
+    - ✅ should withdraw bakers rewards in TEZ from the QS pool, swap for QS GOV tokens and burn them.
 
 15. `burn_farm_rewards`:
 
@@ -172,6 +172,11 @@
     - ✅ should fail if not admit is trying to update token metadata;
     - ✅ should fail if farm not found;
     - ✅ should update token metadata.
+
+21. `default`:
+
+    - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn them (1);
+    - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn them (2).
 
 ## TFarm
 
@@ -290,12 +295,12 @@
     - ✅ should transfer FA2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
     - ✅ should calculate and transfer reward tokens as harvest fee with decimals (like 4.2%).
 
-12. `burn_xtz_rewards`:
+12. `burn_tez_rewards`:
 
-    - ✅ should fail if not admin is trying to burn XTZ rewards;
+    - ✅ should fail if not admin is trying to burn TEZ rewards;
     - ✅ should fail if farm not found;
     - ✅ should fail if not LP token is staked on the farm;
-    - ✅ should withdraw bakers rewards in XTZ from the QS pool, swap for QS GOV tokens and burn them.
+    - ✅ should withdraw bakers rewards in TEZ from the QS pool, swap for QS GOV tokens and burn them.
 
 13. `claim_farm_rewards`:
 
@@ -349,7 +354,12 @@
     - ✅ should fail if farm not found;
     - ✅ should update token metadata.
 
-19. `integration tests`:
+19. `default`:
+
+    - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn them (1);
+    - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn them (2).
+
+20. `integration tests`:
 
     - ✅ should add new farm, stake in the next block and withdraw all rewards (except the first block reward) after farms lifetime finishing (without timelock);
     - ✅ should add new farm and stake in batch, withdraw all rewards after farms lifetime finishing (without timelock);
@@ -361,8 +371,8 @@
 
 1. `default`:
 
-   - ✅ should swap all XTZ from contract for QS GOV tokens and burn them;
-   - ✅ should fail if zero XTZ amount have been sent;
+   - ✅ should swap all TEZ from contract for QS GOV tokens and burn them;
+   - ✅ should fail if zero TEZ amount have been sent;
    - ✅ should fail if small liquidity amount in the pool.
 
 2. `burn_callback`:

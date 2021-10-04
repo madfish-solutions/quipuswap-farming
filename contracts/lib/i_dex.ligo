@@ -10,7 +10,7 @@ type tez_to_tok_type    is record [
 type tok_to_tez_type    is record [
   (* Amount of tokens to be exchanged *)
   amount                  : nat;
-  (* Min amount of XTZ received to accept exchange *)
+  (* Min amount of TEZ received to accept exchange *)
   min_out                 : nat;
   (* Tokens receiver *)
   receiver                : address;
@@ -19,7 +19,7 @@ type tok_to_tez_type    is record [
 type invest_liq_type    is nat (* Amount of tokens to remove from liquidity *)
 
 type divest_liq_type    is record [
-  (* Min amount of XTZ received to accept the divestment *)
+  (* Min amount of TEZ received to accept the divestment *)
   min_tez                 : nat;
   (* Min amount of tokens received to accept the divestment *)
   min_tokens              : nat;

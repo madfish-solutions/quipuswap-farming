@@ -149,7 +149,7 @@ function pause_farms(
     end
   } with (no_operations, s)
 
-function burn_xtz_rewards(
+function burn_tez_rewards(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
@@ -157,7 +157,7 @@ function burn_xtz_rewards(
     var operations : list(operation) := no_operations;
 
     case action of
-      Burn_xtz_rewards(fid)             -> {
+      Burn_tez_rewards(fid)             -> {
         only_admin(s.admin);
 
         const farm : farm_type = get_farm(fid, s);

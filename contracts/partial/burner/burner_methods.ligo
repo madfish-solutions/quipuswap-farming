@@ -1,4 +1,4 @@
-(* Swap XTZ to QS GOV tokens and get balance of output tokens to burn them *)
+(* Swap TEZ to QS GOV tokens and get balance of output tokens to burn them *)
 function burn(
   const s             : storage_type)
                       : return_type is
@@ -16,7 +16,7 @@ function burn(
     ];
 
     const operations : list(operation) = list [
-      (* Swap all XTZ from burner to QS GOV tokens *)
+      (* Swap all TEZ from burner to QS GOV tokens *)
       Tezos.transaction(
         TezToTokenPayment(record [
           min_out  = 1n;

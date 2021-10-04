@@ -15,7 +15,7 @@
     | Deposit(_)               -> 8n
     | Withdraw(_)              -> 9n
     | Harvest(_)               -> 10n
-    | Burn_xtz_rewards(_)      -> 11n
+    | Burn_tez_rewards(_)      -> 11n
     | Claim_farm_rewards(_)    -> 12n
     | Withdraw_farm_depo(_)    -> 13n
     | Transfer(_)              -> 14n

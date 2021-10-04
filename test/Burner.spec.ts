@@ -61,7 +61,7 @@ describe("Burner tests", async () => {
     burner = await Burner.originate(utils.tezos, burnerStorage);
   });
 
-  it("should swap all XTZ from contract for QS GOV tokens and burn them", async () => {
+  it("should swap all TEZ from contract for QS GOV tokens and burn them", async () => {
     await qsGov.updateStorage({
       account_info: [burner.contract.address, zeroAddress],
     });
@@ -89,7 +89,7 @@ describe("Burner tests", async () => {
     );
   });
 
-  it("should fail if zero XTZ amount have been sent", async () => {
+  it("should fail if zero TEZ amount have been sent", async () => {
     await rejects(burner.burn(0), (err: Error) => {
       ok(err.message === "Dex/zero-amount-in");
 

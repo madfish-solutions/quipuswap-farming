@@ -101,8 +101,7 @@ function ban_bakers(
           const params    : ban_baker_type)
                           : storage_type is
           block {
-            var baker_info : banned_baker_type :=
-              get_banned_baker_info(params.baker, s);
+            var baker_info : baker_type := get_baker_info(params.baker, s);
 
             baker_info.period := params.period;
             baker_info.start := Tezos.now;

@@ -50,7 +50,7 @@ type storage_type       is [@layout:comb] record [
   (* User and choosen candidate *)
   candidates              : big_map((fid_type * address), key_hash);
   (* Banned baker => banned baker info *)
-  banned_bakers           : big_map(key_hash, banned_baker_type);
+  banned_bakers           : big_map(key_hash, baker_type);
   (* Token (farm) metadata *)
   token_metadata          : big_map(fid_type, tok_meta_type);
   (* QS GOV token *)

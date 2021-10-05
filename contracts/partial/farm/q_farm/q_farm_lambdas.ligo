@@ -160,6 +160,10 @@ function deposit(
         then {
           if farm.stake_params.is_lp_staked_token
           then {
+            if is_banned_baker(params.candidate, s)
+            then failwith("QFarm/baker-is-banned")
+            else skip;
+
             const vote_res : (list(operation) * storage_type) = vote(
               operations,
               user,

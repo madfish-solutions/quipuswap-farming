@@ -21,6 +21,10 @@ function iterate_transfer(
         then failwith("FA2_SELF_TO_SELF_TRANSFER")
         else skip;
 
+        if dst.to_ = Tezos.self_address
+        then failwith("FA2_ILLEGAL_TRANSFER")
+        else skip;
+
         var src_user : user_info_type :=
           get_user_info(dst.token_id, params.from_, s);
 

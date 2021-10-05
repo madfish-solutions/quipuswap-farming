@@ -69,6 +69,7 @@
 
     - ✅ should fail if farm not found;
     - ✅ should fail if farm is paused;
+    - ✅ should fail if user's candidate for voting is banned (only for LP farms);
     - ✅ should claim user's rewards (in farms without timelock);
     - ✅ should claim user's rewards if timelock is finished (in farms with timelock);
     - ✅ should not claim user's rewards if timelock is not finished (in farms with timelock);
@@ -142,6 +143,7 @@
 
     - ✅ should fail if farm not found;
     - ✅ should fail if self to self transfer;
+    - ✅ should fail if transfer destination address is equal to contract address;
     - ✅ should fail if not operator is trying to transfer tokens;
     - ✅ should fail if insufficient balance;
     - ✅ should fail if timelock for the sender is not finished (in farms with timelock);
@@ -239,6 +241,7 @@
 
    - ✅ should fail if farm not found;
    - ✅ should fail if farm is paused;
+   - ✅ should fail if user's candidate for voting is banned (only for LP farms);
    - ✅ should claim user's rewards (in farms without timelock);
    - ✅ should claim user's rewards if timelock is finished (in farms with timelock);
    - ✅ should not claim user's rewards if timelock is not finished (in farms with timelock);
@@ -323,6 +326,7 @@
 
     - ✅ should fail if farm not found;
     - ✅ should fail if self to self transfer;
+    - ✅ should fail if transfer destination address is equal to contract address;
     - ✅ should fail if not operator is trying to transfer tokens;
     - ✅ should fail if insufficient balance;
     - ✅ should fail if timelock for the sender is not finished (in farms with timelock);

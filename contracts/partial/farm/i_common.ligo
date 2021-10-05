@@ -32,7 +32,7 @@ type set_burner_type    is address (* New burner contract address *)
 
 type set_registry_type  is address (* New baker registry contract address *)
 
-type banned_baker_type  is [@layout:comb] record [
+type baker_type         is [@layout:comb] record [
   (* Period during which baker will be banned (in seconds)*)
   period                  : nat;
   (* Banning start time *)

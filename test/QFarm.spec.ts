@@ -703,6 +703,21 @@ describe("QFarm tests", async () => {
     });
   });
 
+  it("should fail if transfer destination address is equal to contract address", async () => {
+    const params: TransferParam[] = [
+      {
+        from_: alice.pkh,
+        txs: [{ to_: qFarm.contract.address, token_id: 0, amount: 0 }],
+      },
+    ];
+
+    await rejects(qFarm.transfer(params), (err: Error) => {
+      ok(err.message === "FA2_ILLEGAL_TRANSFER");
+
+      return true;
+    });
+  });
+
   it("should fail if not operator is trying to transfer tokens", async () => {
     const params: TransferParam[] = [
       {
@@ -1369,6 +1384,28 @@ describe("QFarm tests", async () => {
     );
     strictEqual(+finalTokenFarmRecord.balance, 0);
     strictEqual(+finalTokenFarmRecord.frozen_balance, depositParams.amt);
+  });
+
+  it("should fail if user's candidate for voting is banned (only for LP farms)", async () => {
+    const banParams: BanBakerParam[] = [{ baker: alice.pkh, period: 5 }];
+
+    await utils.setProvider(bob.sk);
+    await qFarm.banBakers(banParams);
+
+    const depositParams: DepositParams = {
+      fid: 4,
+      amt: 500,
+      referrer: bob.pkh,
+      rewards_receiver: alice.pkh,
+      candidate: alice.pkh,
+    };
+
+    await utils.setProvider(alice.sk);
+    await rejects(qFarm.deposit(depositParams), (err: Error) => {
+      ok(err.message === "QFarm/baker-is-banned");
+
+      return true;
+    });
   });
 
   it("should deposit single FA2 token", async () => {

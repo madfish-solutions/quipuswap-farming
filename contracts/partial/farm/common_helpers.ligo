@@ -33,10 +33,10 @@ function get_user_info(
     ]
     end
 
-function get_banned_baker_info(
+function get_baker_info(
   const baker           : key_hash;
   const s               : storage_type)
-                        : banned_baker_type is
+                        : baker_type is
     case s.banned_bakers[baker] of
       Some(info) -> info
     | None       -> record [
@@ -44,3 +44,11 @@ function get_banned_baker_info(
       start  = (0 : timestamp);
     ]
     end
+
+function is_banned_baker(
+  const baker           : key_hash;
+  const s               : storage_type)
+                        : bool is
+  block {
+    const baker_info : baker_type = get_baker_info(baker, s);
+  } with baker_info.start + int(baker_info.period) > Tezos.now

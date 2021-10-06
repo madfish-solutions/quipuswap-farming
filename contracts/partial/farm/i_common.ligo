@@ -9,8 +9,8 @@ type user_info_type     is [@layout:comb] record [
   earned                  : nat;
   (* Previous earned amount of tokens by user *)
   prev_earned             : nat;
-  (* Amount of used votes for the preferred baker *)
-  used_votes              : nat;
+  (* Total amount of tokens staked by user in previous contract call *)
+  prev_staked             : nat;
   (* Set of user's allowances for staked tokens transfer *)
   allowances              : set(address);
 ]

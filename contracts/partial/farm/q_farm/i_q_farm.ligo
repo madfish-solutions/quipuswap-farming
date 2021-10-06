@@ -149,7 +149,7 @@ type full_storage_type  is [@layout:comb] record [
   (* Contract's real storage *)
   storage                 : storage_type;
   (* Lambdas *)
-  q_farm_lambdas          : big_map(nat, q_farm_func_type);
+  q_farm_lambdas          : big_map(nat, bytes);
 ]
 
 type full_return_type   is (list(operation) * full_storage_type)
@@ -158,7 +158,7 @@ type setup_func_type    is [@layout:comb] record [
   (* Index (ID) of the function *)
   index                   : nat;
   (* Function's lambda *)
-  func                    : q_farm_func_type;
+  func                    : bytes;
 ]
 
 type full_action_type   is

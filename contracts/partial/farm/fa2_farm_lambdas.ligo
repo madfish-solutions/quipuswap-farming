@@ -99,6 +99,34 @@ function iterate_transfer(
         s.users_info[(dst.token_id, dst.to_)] := dst_user;
 
         s.farms[dst.token_id] := farm;
+
+        if farm.stake_params.is_lp_staked_token
+        then {
+          const vote_res_1 : (list(operation) * storage_type) = vote(
+            get_user_candidate(farm, params.from_, s),
+            params.from_,
+            operations,
+            src_user,
+            farm,
+            s
+          );
+
+          operations := vote_res_1.0;
+          s := vote_res_1.1;
+
+          const vote_res_2 : (list(operation) * storage_type) = vote(
+            get_user_candidate(farm, dst.to_, s),
+            dst.to_,
+            operations,
+            dst_user,
+            farm,
+            s
+          );
+
+          operations := vote_res_2.0;
+          s := vote_res_2.1;
+        }
+        else skip;
     } with (operations, s)
 } with List.fold(make_transfer, params.txs, result)
 

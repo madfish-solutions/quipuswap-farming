@@ -2099,12 +2099,6 @@ describe("QFarm tests", async () => {
       candidate: bob.pkh,
     };
 
-    await qFarm.updateStorage({
-      users_info: [[depositParams.fid, dev.pkh]],
-      candidates: [[depositParams.fid, dev.pkh]],
-      votes: [[depositParams.fid, bob.pkh]],
-      farms: [depositParams.fid],
-    });
     await fa12LP.transfer(alice.pkh, dev.pkh, transferAmt);
     await utils.setProvider(dev.sk);
     await fa12LP.approve(qFarm.contract.address, depositParams.amt);
@@ -2126,7 +2120,7 @@ describe("QFarm tests", async () => {
 
     strictEqual(finalFarm.current_delegated, depositParams.candidate);
     strictEqual(finalFarm.next_candidate, depositParams.candidate);
-    strictEqual(+finalFarmDevRecord.used_votes, depositParams.amt);
+    strictEqual(+finalFarmDevRecord.prev_staked, depositParams.amt);
     strictEqual(finalFarmDevCandidate, depositParams.candidate);
     strictEqual(+finalFarmBobVotes, +finalFarm.staked);
   });
@@ -2176,12 +2170,12 @@ describe("QFarm tests", async () => {
 
     strictEqual(finalFarm.current_delegated, depositParams.candidate);
     strictEqual(finalFarm.next_candidate, bob.pkh);
-    strictEqual(+finalFarmDevRecord.used_votes, depositParams.amt * 2);
+    strictEqual(+finalFarmDevRecord.prev_staked, depositParams.amt * 2);
     strictEqual(finalFarmDevCandidate, depositParams.candidate);
     strictEqual(+finalFarmAliceVotes, depositParams.amt * 2);
     strictEqual(
       +finalFarmBobVotes,
-      +initialFarmBobVotes - initialFarmDevRecord.used_votes
+      +initialFarmBobVotes - initialFarmDevRecord.prev_staked
     );
   });
 
@@ -3696,11 +3690,11 @@ describe("QFarm tests", async () => {
 
     strictEqual(finalFarm.current_delegated, initialFarm.next_candidate);
     strictEqual(finalFarm.next_candidate, initialFarm.current_delegated);
-    strictEqual(+finalFarmDevRecord.used_votes, 0);
-    strictEqual(finalFarmDevCandidate, finalFarm.next_candidate);
+    strictEqual(+finalFarmDevRecord.prev_staked, 0);
+    strictEqual(finalFarmDevCandidate, undefined);
     strictEqual(
       +finalFarmAliceVotes,
-      +initialFarmAliceVotes - initialFarmDevRecord.used_votes
+      +initialFarmAliceVotes - initialFarmDevRecord.prev_staked
     );
     strictEqual(+finalFarmBobVotes, +initialFarmBobVotes);
   });
@@ -4123,10 +4117,10 @@ describe("QFarm tests", async () => {
       +initialFarmFarmRecord.staked - withdrawParams2.amt
     );
     strictEqual(+finalTokenBobRecord.balance, withdrawParams2.amt);
-    strictEqual(+finalTokenFarmRecord.balance, 1090);
+    strictEqual(+finalTokenFarmRecord.balance, 1100);
     strictEqual(
       +finalTokenFarmRecord.frozen_balance,
-      +initialTokenFarmRecord.frozen_balance
+      +initialTokenFarmRecord.frozen_balance - withdrawParams2.amt
     );
   });
 

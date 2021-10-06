@@ -37,30 +37,12 @@ function iterate_transfer(
         then failwith("FA2_INSUFFICIENT_BALANCE")
         else skip;
 
+        if abs(Tezos.now - src_user.last_staked) < farm.timelock
+        then failwith("FA2_TIMELOCK_NOT_FINISHED")
+        else skip;
+
         src_user.earned := src_user.earned +
           abs(src_user.staked * farm.reward_per_share - src_user.prev_earned);
-
-        var claim_res_1 : claim_return_type := record [
-          operations = operations;
-          user       = src_user;
-          farm       = farm;
-        ];
-
-        if abs(Tezos.now - src_user.last_staked) >= farm.timelock
-        then claim_res_1 := claim_rewards(
-          src_user,
-          operations,
-          farm,
-          params.from_,
-          params.from_,
-          s
-        )
-        else failwith("FA2_TIMELOCK_NOT_FINISHED");
-
-        operations := claim_res_1.operations;
-        src_user := claim_res_1.user;
-        farm := claim_res_1.farm;
-
         src_user.staked := abs(src_user.staked - dst.amount);
         src_user.prev_earned := src_user.staked * farm.reward_per_share;
 
@@ -71,28 +53,6 @@ function iterate_transfer(
 
         dst_user.earned := dst_user.earned +
           abs(dst_user.staked * farm.reward_per_share - dst_user.prev_earned);
-
-        var claim_res_2 : claim_return_type := record [
-          operations = operations;
-          user       = dst_user;
-          farm       = farm;
-        ];
-
-        if abs(Tezos.now - dst_user.last_staked) >= farm.timelock
-        then claim_res_2 := claim_rewards(
-          dst_user,
-          operations,
-          farm,
-          dst.to_,
-          dst.to_,
-          s
-        )
-        else skip;
-
-        operations := claim_res_2.operations;
-        dst_user := claim_res_2.user;
-        farm := claim_res_2.farm;
-
         dst_user.staked := dst_user.staked + dst.amount;
         dst_user.prev_earned := dst_user.staked * farm.reward_per_share;
 

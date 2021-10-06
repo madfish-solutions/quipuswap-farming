@@ -8,3 +8,5 @@ venv/
 .DS_Store
 yarn.lock
 .pytest_cache
+__pycache__
+integration_tests/compiled

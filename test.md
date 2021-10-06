@@ -149,7 +149,8 @@
     - ✅ should fail if timelock for the sender is not finished (in farms with timelock);
     - ✅ should fail if one transaction from a group fails;
     - ✅ should transfer one token and update values correctly;
-    - ✅ should transfer a group of tokens and update values correctly.
+    - ✅ should transfer a group of tokens and update values correctly;
+    - ✅ should claim rewards after transfer correctly.
 
 18. `update_operators`:
 
@@ -327,7 +328,8 @@
     - ✅ should fail if timelock for the sender is not finished (in farms with timelock);
     - ✅ should fail if one transaction from a group fails;
     - ✅ should transfer one token and update values correctly;
-    - ✅ should transfer a group of tokens and update values correctly.
+    - ✅ should transfer a group of tokens and update values correctly;
+    - ✅ should claim rewards after transfer correctly.
 
 16. `update_operators`:
 

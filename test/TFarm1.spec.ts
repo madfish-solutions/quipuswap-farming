@@ -48,7 +48,7 @@ import { bakerRegistryStorage } from "../storage/BakerRegistry";
 import { qsFA12FactoryStorage } from "../storage/test/QSFA12Factory";
 import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
 
-describe("TFarm tests (section 1)", async () => {
+describe.only("TFarm tests (section 1)", async () => {
   var fa12: FA12;
   var fa12LP: QSFA12Dex;
   var fa2: FA2;
@@ -5723,5 +5723,144 @@ describe("TFarm tests (section 1)", async () => {
 
       return true;
     });
+  });
+
+  it("should claim rewards after transfer correctly", async () => {
+    const harvestParams: HarvestParams = {
+      fid: 0,
+      rewards_receiver: alice.pkh,
+    };
+
+    await utils.bakeBlocks(5);
+    await tFarm.updateStorage({
+      users_info: [
+        [harvestParams.fid, alice.pkh],
+        [harvestParams.fid, bob.pkh],
+        [harvestParams.fid, carol.pkh],
+      ],
+      farms: [harvestParams.fid],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
+    const initialFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
+    const initialFarmBobRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${bob.pkh}`];
+    const initialFarmCarolRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${carol.pkh}`];
+
+    await utils.setProvider(alice.sk);
+    await tFarm.harvest(harvestParams);
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, alice.pkh]],
+      farms: [harvestParams.fid],
+    });
+
+    let finalFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
+    const finalFarmAliceRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
+    const resAlice: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmAliceRecord,
+      finalFarmAliceRecord,
+      precision,
+      feePrecision
+    );
+
+    console.log(new BigNumber(finalFarm.reward_per_share).toString());
+    console.log(new BigNumber(resAlice.expectedShareReward).toString());
+
+    harvestParams.rewards_receiver = bob.pkh;
+
+    await utils.setProvider(bob.sk);
+    await tFarm.harvest(harvestParams);
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, bob.pkh]],
+      farms: [harvestParams.fid],
+    });
+
+    finalFarm = tFarm.storage.storage.farms[harvestParams.fid];
+
+    const finalFarmBobRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${bob.pkh}`];
+    const resBob: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmBobRecord,
+      finalFarmBobRecord,
+      precision,
+      feePrecision
+    );
+
+    console.log(new BigNumber(finalFarm.reward_per_share).toString());
+    console.log(new BigNumber(resBob.expectedShareReward).toString());
+
+    harvestParams.rewards_receiver = carol.pkh;
+
+    await utils.setProvider(carol.sk);
+    await tFarm.harvest(harvestParams);
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, carol.pkh]],
+      farms: [harvestParams.fid],
+    });
+
+    finalFarm = tFarm.storage.storage.farms[harvestParams.fid];
+
+    const finalFarmCarolRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${carol.pkh}`];
+    const resCarol: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmCarolRecord,
+      finalFarmCarolRecord,
+      precision,
+      feePrecision
+    );
+
+    console.log(new BigNumber(finalFarm.reward_per_share).toString());
+    console.log(new BigNumber(resCarol.expectedShareReward).toString());
+
+    strictEqual(+finalFarm.staked, +initialFarm.staked);
+    strictEqual(+finalFarmAliceRecord.staked, +initialFarmAliceRecord.staked);
+    strictEqual(+finalFarmBobRecord.staked, +initialFarmBobRecord.staked);
+    strictEqual(+finalFarmCarolRecord.staked, +initialFarmCarolRecord.staked);
+
+    ok(finalFarm.upd > initialFarm.upd);
+    ok(
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        resCarol.expectedShareReward
+      )
+    );
+    ok(
+      new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
+        resAlice.expectedUserPrevEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
+        resAlice.expectedUserEarnedAfterHarvest
+      )
+    );
+    ok(
+      new BigNumber(finalFarmBobRecord.prev_earned).isEqualTo(
+        resBob.expectedUserPrevEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmBobRecord.earned).isEqualTo(
+        resBob.expectedUserEarnedAfterHarvest
+      )
+    );
+    ok(
+      new BigNumber(finalFarmCarolRecord.prev_earned).isEqualTo(
+        resCarol.expectedUserPrevEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmCarolRecord.earned).isEqualTo(
+        resCarol.expectedUserEarnedAfterHarvest
+      )
+    );
   });
 });

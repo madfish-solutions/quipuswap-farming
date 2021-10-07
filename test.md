@@ -142,7 +142,6 @@
 17. `transfer`:
 
     - ✅ should fail if farm not found;
-    - ✅ should fail if self to self transfer;
     - ✅ should fail if transfer destination address is equal to contract address;
     - ✅ should fail if not operator is trying to transfer tokens;
     - ✅ should fail if insufficient balance;
@@ -321,7 +320,6 @@
 15. `transfer`:
 
     - ✅ should fail if farm not found;
-    - ✅ should fail if self to self transfer;
     - ✅ should fail if transfer destination address is equal to contract address;
     - ✅ should fail if not operator is trying to transfer tokens;
     - ✅ should fail if insufficient balance;

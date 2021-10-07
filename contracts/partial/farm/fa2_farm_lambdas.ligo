@@ -17,10 +17,6 @@ function iterate_transfer(
         s := upd_res.0;
         farm := upd_res.1;
 
-        if params.from_ = dst.to_
-        then failwith("FA2_SELF_TO_SELF_TRANSFER")
-        else skip;
-
         if dst.to_ = Tezos.self_address
         then failwith("FA2_ILLEGAL_TRANSFER")
         else skip;

@@ -110,22 +110,40 @@ export class TFarm {
   }
 
   async setLambdas(): Promise<void> {
-    let params: WalletParamsWithKind[] = [];
+    let batch1: WalletParamsWithKind[] = [];
+    let batch2: WalletParamsWithKind[] = [];
 
-    for (const tFarmFunction of tFarmFunctions) {
-      params.push({
+    for (let i = 0; i < tFarmFunctions.length / 2; ++i) {
+      batch1.push({
         kind: OpKind.TRANSACTION,
         to: this.contract.address,
         amount: 0,
         parameter: {
           entrypoint: "setup_func",
-          value: tFarmFunction,
+          value: tFarmFunctions[i],
         },
       });
     }
 
-    const batch: WalletOperationBatch = this.tezos.wallet.batch(params);
-    const operation: WalletOperation = await batch.send();
+    for (let i = tFarmFunctions.length / 2; i < tFarmFunctions.length; ++i) {
+      batch2.push({
+        kind: OpKind.TRANSACTION,
+        to: this.contract.address,
+        amount: 0,
+        parameter: {
+          entrypoint: "setup_func",
+          value: tFarmFunctions[i],
+        },
+      });
+    }
+
+    let batch: WalletOperationBatch = this.tezos.wallet.batch(batch1);
+    let operation: WalletOperation = await batch.send();
+
+    await confirmOperation(this.tezos, operation.opHash);
+
+    batch = this.tezos.wallet.batch(batch2);
+    operation = await batch.send();
 
     await confirmOperation(this.tezos, operation.opHash);
   }

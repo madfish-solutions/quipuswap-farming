@@ -180,16 +180,43 @@ function vote(
     }
     end;
 
-    s.farms[farm.fid] := farm;
+    if is_banned_baker(farm.current_delegated, s)
+    then {
+      if is_banned_baker(farm.next_candidate, s)
+      then {
+         operations := get_vote_operation(
+          farm.stake_params.qs_pool,
+          farm.current_delegated,
+          0n
+        ) # operations;
 
-    operations := get_vote_operation(
-      farm.stake_params.qs_pool,
-      farm.current_delegated,
-      farm.staked
-    ) # operations;
+        farm.current_delegated := zero_key_hash;
+        farm.next_candidate := zero_key_hash;
+      }
+      else {
+        farm.current_delegated := farm.next_candidate;
+        farm.next_candidate := zero_key_hash;
+
+        operations := get_vote_operation(
+          farm.stake_params.qs_pool,
+          farm.current_delegated,
+          farm.staked
+        ) # operations;
+      };
+    }
+    else {
+      operations := get_vote_operation(
+        farm.stake_params.qs_pool,
+        farm.current_delegated,
+        farm.staked
+      ) # operations;
+    };
+
     operations := Tezos.transaction(
       candidate,
       0mutez,
       get_baker_registry_validate_entrypoint(s.baker_registry)
     ) # operations;
+
+    s.farms[farm.fid] := farm;
   } with (operations, s)

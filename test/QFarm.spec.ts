@@ -688,21 +688,6 @@ describe("QFarm tests", async () => {
     });
   });
 
-  it("should fail if self to self transfer", async () => {
-    const params: TransferParam[] = [
-      {
-        from_: alice.pkh,
-        txs: [{ to_: alice.pkh, token_id: 0, amount: 0 }],
-      },
-    ];
-
-    await rejects(qFarm.transfer(params), (err: Error) => {
-      ok(err.message === "FA2_SELF_TO_SELF_TRANSFER");
-
-      return true;
-    });
-  });
-
   it("should fail if transfer destination address is equal to contract address", async () => {
     const params: TransferParam[] = [
       {
@@ -4576,7 +4561,7 @@ describe("QFarm tests", async () => {
       rewards_receiver: alice.pkh,
     };
 
-    await utils.bakeBlocks(8);
+    await utils.bakeBlocks(6);
     await qFarm.updateStorage({
       users_info: [
         [harvestParams.fid, alice.pkh],
@@ -4586,7 +4571,7 @@ describe("QFarm tests", async () => {
       farms: [harvestParams.fid],
     });
 
-    const initialFarm: Farm = qFarm.storage.storage.farms[harvestParams.fid];
+    let initialFarm: Farm = qFarm.storage.storage.farms[harvestParams.fid];
     const initialFarmAliceRecord: UserInfoType =
       qFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
     const initialFarmBobRecord: UserInfoType =
@@ -4613,6 +4598,8 @@ describe("QFarm tests", async () => {
       feePrecision
     );
 
+    initialFarm = qFarm.storage.storage.farms[harvestParams.fid];
+
     await utils.setProvider(bob.sk);
     await qFarm.harvest(harvestParams);
     await qFarm.updateStorage({
@@ -4632,6 +4619,8 @@ describe("QFarm tests", async () => {
       precision,
       feePrecision
     );
+
+    initialFarm = qFarm.storage.storage.farms[harvestParams.fid];
 
     await utils.setProvider(carol.sk);
     await qFarm.harvest(harvestParams);

@@ -42,31 +42,48 @@ module.exports = async (tezos) => {
 
   console.log(`QFarm: ${qFarmAddress}`);
 
-  let params = [];
+  let batch1 = [];
+  let batch2 = [];
 
-  for (qFarmFunction of qFarmFunctions) {
-    params.push({
+  for (let i = 0; i < qFarmFunctions.length / 2; ++i) {
+    batch1.push({
       kind: OpKind.TRANSACTION,
       to: qFarmAddress,
       amount: 0,
       parameter: {
         entrypoint: "setup_func",
-        value: qFarmFunction,
+        value: qFarmFunctions[i],
       },
     });
   }
 
-  const batch = tezos.wallet.batch(params);
-  const operation = await batch.send();
+  for (let i = qFarmFunctions.length / 2; i < qFarmFunctions.length; ++i) {
+    batch2.push({
+      kind: OpKind.TRANSACTION,
+      to: qFarmAddress,
+      amount: 0,
+      parameter: {
+        entrypoint: "setup_func",
+        value: qFarmFunctions[i],
+      },
+    });
+  }
+
+  let batch = tezos.wallet.batch(batch1);
+  let operation = await batch.send();
+
+  await confirmOperation(tezos, operation.opHash);
+
+  batch = tezos.wallet.batch(batch2);
+  operation = await batch.send();
 
   await confirmOperation(tezos, operation.opHash);
 
   const proxyMinter = await tezos.contract.at(
     ProxyMinter["networks"][env.network]["proxy_minter"]
   );
-  const operation = await proxyMinter.methods
-    .add_minter(qFarmAddress, true)
-    .send();
+
+  operation = await proxyMinter.methods.add_minter(qFarmAddress, true).send();
 
   await confirmOperation(tezos, operation.hash);
 };

@@ -48,7 +48,7 @@ import { bakerRegistryStorage } from "../storage/BakerRegistry";
 import { qsFA12FactoryStorage } from "../storage/test/QSFA12Factory";
 import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
 
-describe.only("TFarm tests (section 1)", async () => {
+describe("TFarm tests (section 1)", async () => {
   var fa12: FA12;
   var fa12LP: QSFA12Dex;
   var fa2: FA2;
@@ -676,21 +676,6 @@ describe.only("TFarm tests (section 1)", async () => {
 
     await rejects(tFarm.transfer(params), (err: Error) => {
       ok(err.message === "QSystem/farm-not-set");
-
-      return true;
-    });
-  });
-
-  it("should fail if self to self transfer", async () => {
-    const params: TransferParam[] = [
-      {
-        from_: alice.pkh,
-        txs: [{ to_: alice.pkh, token_id: 0, amount: 0 }],
-      },
-    ];
-
-    await rejects(tFarm.transfer(params), (err: Error) => {
-      ok(err.message === "FA2_SELF_TO_SELF_TRANSFER");
 
       return true;
     });
@@ -5741,7 +5726,7 @@ describe.only("TFarm tests (section 1)", async () => {
       farms: [harvestParams.fid],
     });
 
-    const initialFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
+    let initialFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
     const initialFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
     const initialFarmBobRecord: UserInfoType =
@@ -5768,10 +5753,7 @@ describe.only("TFarm tests (section 1)", async () => {
       feePrecision
     );
 
-    console.log(new BigNumber(finalFarm.reward_per_share).toString());
-    console.log(new BigNumber(resAlice.expectedShareReward).toString());
-
-    harvestParams.rewards_receiver = bob.pkh;
+    initialFarm = tFarm.storage.storage.farms[harvestParams.fid];
 
     await utils.setProvider(bob.sk);
     await tFarm.harvest(harvestParams);
@@ -5793,10 +5775,7 @@ describe.only("TFarm tests (section 1)", async () => {
       feePrecision
     );
 
-    console.log(new BigNumber(finalFarm.reward_per_share).toString());
-    console.log(new BigNumber(resBob.expectedShareReward).toString());
-
-    harvestParams.rewards_receiver = carol.pkh;
+    initialFarm = tFarm.storage.storage.farms[harvestParams.fid];
 
     await utils.setProvider(carol.sk);
     await tFarm.harvest(harvestParams);
@@ -5817,9 +5796,6 @@ describe.only("TFarm tests (section 1)", async () => {
       precision,
       feePrecision
     );
-
-    console.log(new BigNumber(finalFarm.reward_per_share).toString());
-    console.log(new BigNumber(resCarol.expectedShareReward).toString());
 
     strictEqual(+finalFarm.staked, +initialFarm.staked);
     strictEqual(+finalFarmAliceRecord.staked, +initialFarmAliceRecord.staked);

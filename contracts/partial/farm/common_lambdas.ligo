@@ -217,6 +217,22 @@ function withdraw_farm_depo(
 
         s.farms[farm.fid] := farm;
 
+        if farm.stake_params.is_lp_staked_token
+        then {
+          const vote_res : (list(operation) * storage_type) = vote(
+            get_user_candidate(farm, Tezos.self_address, s),
+            Tezos.self_address,
+            operations,
+            user,
+            farm,
+            s
+          );
+
+          operations := vote_res.0;
+          s := vote_res.1;
+        }
+        else skip;
+
         operations := transfer_token(
           Tezos.self_address,
           s.admin,

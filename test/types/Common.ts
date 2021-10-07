@@ -45,7 +45,7 @@ export type UserInfoType = {
   staked: number;
   earned: number;
   prev_earned: number;
-  used_votes: number;
+  prev_staked: number;
   allowances: string[];
 };
 

@@ -142,7 +142,6 @@
 17. `transfer`:
 
     - ✅ should fail if farm not found;
-    - ✅ should fail if self to self transfer;
     - ✅ should fail if transfer destination address is equal to contract address;
     - ✅ should fail if not operator is trying to transfer tokens;
     - ✅ should fail if insufficient balance;
@@ -150,11 +149,7 @@
     - ✅ should fail if one transaction from a group fails;
     - ✅ should transfer one token and update values correctly;
     - ✅ should transfer a group of tokens and update values correctly;
-    - ✅ should claim sender's rewards if timelock is finished (in farms with timelock);
-    - ✅ should claim sender's rewards (in farms without timelock);
-    - ✅ should not claim recipient's rewards if timelock is not finished (in farms with timelock);
-    - ✅ should claim recipient's rewards if timelock is finished (in farms with timelock);
-    - ✅ should claim recipient's rewards (in farms without timelock).
+    - ✅ should claim rewards after transfer correctly.
 
 18. `update_operators`:
 
@@ -325,7 +320,6 @@
 15. `transfer`:
 
     - ✅ should fail if farm not found;
-    - ✅ should fail if self to self transfer;
     - ✅ should fail if transfer destination address is equal to contract address;
     - ✅ should fail if not operator is trying to transfer tokens;
     - ✅ should fail if insufficient balance;
@@ -333,11 +327,7 @@
     - ✅ should fail if one transaction from a group fails;
     - ✅ should transfer one token and update values correctly;
     - ✅ should transfer a group of tokens and update values correctly;
-    - ✅ should claim sender's rewards if timelock is finished (in farms with timelock);
-    - ✅ should claim sender's rewards (in farms without timelock);
-    - ✅ should not claim recipient's rewards if timelock is not finished (in farms with timelock);
-    - ✅ should claim recipient's rewards if timelock is finished (in farms with timelock);
-    - ✅ should claim recipient's rewards (in farms without timelock).
+    - ✅ should claim rewards after transfer correctly.
 
 16. `update_operators`:
 

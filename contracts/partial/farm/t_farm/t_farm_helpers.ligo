@@ -38,6 +38,7 @@ function claim_rewards(
     if earned =/= 0n
     then {
       user.earned := abs(user.earned - earned * precision);
+      user.claimed := user.claimed + earned;
 
       const actual_earned : nat = earned *
         abs(fee_precision - farm.fees.harvest_fee) / fee_precision;
@@ -123,6 +124,7 @@ function transfer_rewards_to_admin(
     if earned =/= 0n
     then {
       user.earned := abs(user.earned - earned * precision);
+      user.claimed := user.claimed + earned;
 
       farm.claimed := farm.claimed + earned;
 

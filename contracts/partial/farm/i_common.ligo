@@ -7,6 +7,8 @@ type user_info_type     is [@layout:comb] record [
   staked                  : nat;
   (* Earned amount of tokens by user *)
   earned                  : nat;
+  (* Claimed by user amount of tokens per all time *)
+  claimed                 : nat;
   (* Previous earned amount of tokens by user *)
   prev_earned             : nat;
   (* Total amount of tokens staked by user in previous contract call *)

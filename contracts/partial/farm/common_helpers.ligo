@@ -164,7 +164,7 @@ function vote(
       }
       else {
         case s.votes[(farm.fid, farm.next_candidate)] of
-          None    -> skip
+          None    -> farm.next_candidate := candidate
         | Some(_) -> {
           if next_candidate_votes > current_delegated_votes
           then {

@@ -137,12 +137,17 @@ function deposit(
         then {
           if farm.stake_params.is_lp_staked_token
           then {
+            if is_banned_baker(params.candidate, s)
+            then failwith("TFarm/baker-is-banned")
+            else skip;
+
             const vote_res : (list(operation) * storage_type) = vote(
+              params.candidate,
+              Tezos.sender,
               operations,
               user,
               farm,
-              s,
-              params
+              s
             );
 
             operations := vote_res.0;
@@ -262,16 +267,29 @@ function withdraw(
 
         if farm.stake_params.is_lp_staked_token
         then {
-          const revote_res : (list(operation) * storage_type) = revote(
+          const vote_res_1 : (list(operation) * storage_type) = vote(
+            get_user_candidate(farm, Tezos.self_address, s),
+            Tezos.self_address,
+            operations,
+            get_user_info(farm.fid, Tezos.self_address, s),
+            farm,
+            s
+          );
+
+          operations := vote_res_1.0;
+          s := vote_res_1.1;
+
+          const vote_res_2 : (list(operation) * storage_type) = vote(
+            get_user_candidate(farm, Tezos.sender, s),
+            Tezos.sender,
             operations,
             user,
             farm,
-            s,
-            value
+            s
           );
 
-          operations := revote_res.0;
-          s := revote_res.1;
+          operations := vote_res_2.0;
+          s := vote_res_2.1;
         }
         else skip;
       }

@@ -363,6 +363,56 @@ describe("TFarm tests (section 1)", async () => {
     );
   });
 
+  it("should transfer received TEZ to the burner, swap for QUIPU and burn them (1)", async () => {
+    await qsGov.updateStorage({
+      account_info: [zeroAddress],
+    });
+
+    const initialQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+    const initialBalance: number =
+      initialQsGovZeroRecord === undefined
+        ? 0
+        : +(await initialQsGovZeroRecord.balances.get("0"));
+    const operation = await utils.tezos.contract.transfer({
+      to: tFarm.contract.address,
+      amount: 500,
+      mutez: true,
+    });
+
+    await confirmOperation(utils.tezos, operation.hash);
+    await qsGov.updateStorage({
+      account_info: [zeroAddress],
+    });
+
+    const finalQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+
+    ok(+(await finalQsGovZeroRecord.balances.get("0")) > initialBalance);
+  });
+
+  it("should transfer received TEZ to the burner, swap for QUIPU and burn them (2)", async () => {
+    await qsGov.updateStorage({
+      account_info: [zeroAddress],
+    });
+
+    const initialQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+
+    await tFarm.default(1000);
+    await qsGov.updateStorage({
+      account_info: [zeroAddress],
+    });
+
+    const finalQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
+
+    ok(
+      +(await finalQsGovZeroRecord.balances.get("0")) >
+        +(await initialQsGovZeroRecord.balances.get("0"))
+    );
+  });
+
   it("should fail if not admin is trying to add new farm", async () => {
     const newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
       utils
@@ -631,16 +681,16 @@ describe("TFarm tests (section 1)", async () => {
     });
   });
 
-  it("should fail if self to self transfer", async () => {
+  it("should fail if transfer destination address is equal to contract address", async () => {
     const params: TransferParam[] = [
       {
         from_: alice.pkh,
-        txs: [{ to_: alice.pkh, token_id: 0, amount: 0 }],
+        txs: [{ to_: tFarm.contract.address, token_id: 0, amount: 0 }],
       },
     ];
 
     await rejects(tFarm.transfer(params), (err: Error) => {
-      ok(err.message === "FA2_SELF_TO_SELF_TRANSFER");
+      ok(err.message === "FA2_ILLEGAL_TRANSFER");
 
       return true;
     });
@@ -1370,6 +1420,28 @@ describe("TFarm tests (section 1)", async () => {
     );
     strictEqual(+finalTokenFarmRecord.balance, 0);
     strictEqual(+finalTokenFarmRecord.frozen_balance, depositParams.amt);
+  });
+
+  it("should fail if user's candidate for voting is banned (only for LP farms)", async () => {
+    const banParams: BanBakerParam[] = [{ baker: alice.pkh, period: 5 }];
+
+    await utils.setProvider(bob.sk);
+    await tFarm.banBakers(banParams);
+
+    const depositParams: DepositParams = {
+      fid: 3,
+      amt: 500,
+      referrer: bob.pkh,
+      rewards_receiver: alice.pkh,
+      candidate: alice.pkh,
+    };
+
+    await utils.setProvider(alice.sk);
+    await rejects(tFarm.deposit(depositParams), (err: Error) => {
+      ok(err.message === "TFarm/baker-is-banned");
+
+      return true;
+    });
   });
 
   it("should deposit single FA2 token", async () => {
@@ -2254,12 +2326,14 @@ describe("TFarm tests (section 1)", async () => {
       farms: [depositParams.fid],
     });
     await qsGov.updateStorage({
-      account_info: [alice.pkh, tFarm.contract.address],
+      account_info: [alice.pkh, tFarm.contract.address, zeroAddress],
     });
 
     const initialFarm: Farm = tFarm.storage.storage.farms[depositParams.fid];
     const initialFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${depositParams.fid},${alice.pkh}`];
+    const initialQsGovZeroRecord: UserFA2Info =
+      qsGov.storage.account_info[zeroAddress];
     const initialRewTokAliceRecord: UserFA2Info =
       qsGov.storage.account_info[alice.pkh];
     const initialRewTokFarmRecord: UserFA2Info =
@@ -2303,7 +2377,9 @@ describe("TFarm tests (section 1)", async () => {
     );
     ok(
       new BigNumber(+(await finalRewTokZeroRecord.balances.get("0"))).isEqualTo(
-        res.referralCommission
+        new BigNumber(+(await initialQsGovZeroRecord.balances.get("0"))).plus(
+          res.referralCommission
+        )
       )
     );
     ok(
@@ -2419,12 +2495,6 @@ describe("TFarm tests (section 1)", async () => {
       candidate: bob.pkh,
     };
 
-    await tFarm.updateStorage({
-      users_info: [[depositParams.fid, dev.pkh]],
-      candidates: [[depositParams.fid, dev.pkh]],
-      votes: [[depositParams.fid, bob.pkh]],
-      farms: [depositParams.fid],
-    });
     await fa12LP.transfer(alice.pkh, dev.pkh, transferAmt);
     await utils.setProvider(dev.sk);
     await fa12LP.approve(tFarm.contract.address, depositParams.amt);
@@ -2446,7 +2516,7 @@ describe("TFarm tests (section 1)", async () => {
 
     strictEqual(finalFarm.current_delegated, depositParams.candidate);
     strictEqual(finalFarm.next_candidate, depositParams.candidate);
-    strictEqual(+finalFarmDevRecord.used_votes, depositParams.amt);
+    strictEqual(+finalFarmDevRecord.prev_staked, depositParams.amt);
     strictEqual(finalFarmDevCandidate, depositParams.candidate);
     strictEqual(+finalFarmBobVotes, +finalFarm.staked);
   });
@@ -2496,12 +2566,12 @@ describe("TFarm tests (section 1)", async () => {
 
     strictEqual(finalFarm.current_delegated, depositParams.candidate);
     strictEqual(finalFarm.next_candidate, bob.pkh);
-    strictEqual(+finalFarmDevRecord.used_votes, depositParams.amt * 2);
+    strictEqual(+finalFarmDevRecord.prev_staked, depositParams.amt * 2);
     strictEqual(finalFarmDevCandidate, depositParams.candidate);
     strictEqual(+finalFarmAliceVotes, depositParams.amt * 2);
     strictEqual(
       +finalFarmBobVotes,
-      +initialFarmBobVotes - initialFarmDevRecord.used_votes
+      +initialFarmBobVotes - initialFarmDevRecord.prev_staked
     );
   });
 
@@ -4730,17 +4800,17 @@ describe("TFarm tests (section 1)", async () => {
 
     strictEqual(finalFarm.current_delegated, initialFarm.next_candidate);
     strictEqual(finalFarm.next_candidate, initialFarm.current_delegated);
-    strictEqual(+finalFarmDevRecord.used_votes, 0);
-    strictEqual(finalFarmDevCandidate, finalFarm.next_candidate);
+    strictEqual(+finalFarmDevRecord.prev_staked, 0);
+    strictEqual(finalFarmDevCandidate, undefined);
     strictEqual(
       +finalFarmAliceVotes,
-      +initialFarmAliceVotes - initialFarmDevRecord.used_votes
+      +initialFarmAliceVotes - initialFarmDevRecord.prev_staked
     );
     strictEqual(+finalFarmBobVotes, +initialFarmBobVotes);
   });
 
-  it("should fail if not admin is trying to burn XTZ rewards", async () => {
-    await rejects(tFarm.burnXTZRewards(0), (err: Error) => {
+  it("should fail if not admin is trying to burn TEZ rewards", async () => {
+    await rejects(tFarm.burnTEZRewards(0), (err: Error) => {
       ok(err.message === "Not-admin");
 
       return true;
@@ -4749,7 +4819,7 @@ describe("TFarm tests (section 1)", async () => {
 
   it("should fail if farm not found", async () => {
     await utils.setProvider(bob.sk);
-    await rejects(tFarm.burnXTZRewards(666), (err: Error) => {
+    await rejects(tFarm.burnTEZRewards(666), (err: Error) => {
       ok(err.message === "QSystem/farm-not-set");
 
       return true;
@@ -4757,14 +4827,14 @@ describe("TFarm tests (section 1)", async () => {
   });
 
   it("should fail if not LP token is staked on the farm", async () => {
-    await rejects(tFarm.burnXTZRewards(0), (err: Error) => {
+    await rejects(tFarm.burnTEZRewards(0), (err: Error) => {
       ok(err.message === "QSystem/not-LP-farm");
 
       return true;
     });
   });
 
-  it("should withdraw bakers rewards in XTZ from the QS pool, swap for QS GOV tokens and burn them", async () => {
+  it("should withdraw bakers rewards in TEZ from the QS pool, swap for QS GOV tokens and burn them", async () => {
     await fa12LP.updateStorage({
       ledger: [alice.pkh],
     });
@@ -4795,7 +4865,7 @@ describe("TFarm tests (section 1)", async () => {
 
     await confirmOperation(utils.tezos, operation.hash);
     await utils.bakeBlocks(1);
-    await tFarm.burnXTZRewards(depositParams.fid);
+    await tFarm.burnTEZRewards(depositParams.fid);
     await qsGov.updateStorage({
       account_info: [zeroAddress],
     });
@@ -5159,10 +5229,10 @@ describe("TFarm tests (section 1)", async () => {
       +initialFarmFarmRecord.staked - withdrawParams2.amt
     );
     strictEqual(+finalTokenBobRecord.balance, withdrawParams2.amt);
-    strictEqual(+finalTokenFarmRecord.balance, 5090);
+    strictEqual(+finalTokenFarmRecord.balance, 5100);
     strictEqual(
       +finalTokenFarmRecord.frozen_balance,
-      +initialTokenFarmRecord.frozen_balance
+      +initialTokenFarmRecord.frozen_balance - withdrawParams2.amt
     );
   });
 
@@ -5414,7 +5484,7 @@ describe("TFarm tests (section 1)", async () => {
     );
     ok(
       new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
-        resAlice.expectedUserEarnedAfterHarvest
+        resAlice.expectedUserEarned
       )
     );
     ok(
@@ -5554,7 +5624,7 @@ describe("TFarm tests (section 1)", async () => {
     );
     ok(
       new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
-        resAlice.expectedUserEarnedAfterHarvest
+        resAlice.expectedUserEarned
       )
     );
     ok(
@@ -5564,7 +5634,7 @@ describe("TFarm tests (section 1)", async () => {
     );
     ok(
       new BigNumber(finalFarmBobRecord.earned).isEqualTo(
-        resBob.expectedUserEarnedAfterHarvest
+        resBob.expectedUserEarned
       )
     );
     ok(
@@ -5574,7 +5644,7 @@ describe("TFarm tests (section 1)", async () => {
     );
     ok(
       new BigNumber(finalFarmCarolRecord.earned).isEqualTo(
-        resCarol.expectedUserEarnedAfterHarvest
+        resCarol.expectedUserEarned
       )
     );
   });
@@ -5640,265 +5710,40 @@ describe("TFarm tests (section 1)", async () => {
     });
   });
 
-  it("should claim sender's rewards if timelock is finished (in farms with timelock)", async () => {
-    const tokenId: number = 0;
-    const params: TransferParam[] = [
-      {
-        from_: alice.pkh,
-        txs: [{ to_: bob.pkh, token_id: tokenId, amount: 10 }],
-      },
-    ];
-
-    await tFarm.updateStorage({
-      users_info: [[tokenId, alice.pkh]],
-      farms: [tokenId],
-    });
-    await fa12.updateStorage({ ledger: [alice.pkh, bob.pkh] });
-
-    const initialFarm: Farm = tFarm.storage.storage.farms[tokenId];
-    const initialFarmAliceRecord: UserInfoType =
-      tFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
-    const initialRewTokAliceRecord: UserFA12Info =
-      fa12.storage.ledger[alice.pkh];
-    const initialRewTokBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
-
-    await utils.setProvider(alice.sk);
-    await tFarm.transfer(params);
-    await tFarm.updateStorage({
-      users_info: [[tokenId, alice.pkh]],
-      farms: [tokenId],
-    });
-    await fa12.updateStorage({ ledger: [alice.pkh, bob.pkh] });
-
-    const finalFarm: Farm = tFarm.storage.storage.farms[tokenId];
-    const finalFarmAliceRecord: UserInfoType =
-      tFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
-    const finalRewTokAliceRecord: UserFA12Info = fa12.storage.ledger[alice.pkh];
-    const finalRewTokBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
-    const resAlice: FarmData = TFarmUtils.getFarmData(
-      initialFarm,
-      finalFarm,
-      initialFarmAliceRecord,
-      finalFarmAliceRecord,
-      precision,
-      feePrecision
-    );
-
-    ok(
-      new BigNumber(finalRewTokAliceRecord.balance).isEqualTo(
-        new BigNumber(initialRewTokAliceRecord.balance).plus(
-          resAlice.actualUserEarned
-        )
-      )
-    );
-    ok(
-      new BigNumber(finalRewTokBobRecord.balance).isEqualTo(
-        new BigNumber(initialRewTokBobRecord.balance).plus(
-          resAlice.referralCommission
-        )
-      )
-    );
-  });
-
-  it("should claim sender's rewards (in farms without timelock)", async () => {
-    const tokenId: number = 5;
-    const params: TransferParam[] = [
-      {
-        from_: alice.pkh,
-        txs: [{ to_: bob.pkh, token_id: tokenId, amount: 10 }],
-      },
-    ];
-
-    await tFarm.updateStorage({
-      users_info: [[tokenId, alice.pkh]],
-      farms: [tokenId],
-    });
-    await qsGov.updateStorage({ account_info: [alice.pkh, bob.pkh] });
-
-    const initialFarm: Farm = tFarm.storage.storage.farms[tokenId];
-    const initialFarmAliceRecord: UserInfoType =
-      tFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
-    const initialRewTokAliceRecord: UserFA2Info =
-      qsGov.storage.account_info[alice.pkh];
-    const initialRewTokBobRecord: UserFA2Info =
-      qsGov.storage.account_info[bob.pkh];
-
-    await tFarm.transfer(params);
-    await tFarm.updateStorage({
-      users_info: [[tokenId, alice.pkh]],
-      farms: [tokenId],
-    });
-    await qsGov.updateStorage({ account_info: [alice.pkh, bob.pkh] });
-
-    const finalFarm: Farm = tFarm.storage.storage.farms[tokenId];
-    const finalFarmAliceRecord: UserInfoType =
-      tFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
-    const finalRewTokAliceRecord: UserFA2Info =
-      qsGov.storage.account_info[alice.pkh];
-    const finalRewTokBobRecord: UserFA2Info =
-      qsGov.storage.account_info[bob.pkh];
-    const resAlice: FarmData = TFarmUtils.getFarmData(
-      initialFarm,
-      finalFarm,
-      initialFarmAliceRecord,
-      finalFarmAliceRecord,
-      precision,
-      feePrecision
-    );
-
-    ok(
-      new BigNumber(
-        +(await finalRewTokAliceRecord.balances.get("0"))
-      ).isEqualTo(
-        new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
-          resAlice.actualUserEarned
-        )
-      )
-    );
-    ok(
-      new BigNumber(+(await finalRewTokBobRecord.balances.get("0"))).isEqualTo(
-        new BigNumber(+(await initialRewTokBobRecord.balances.get("0"))).plus(
-          resAlice.referralCommission
-        )
-      )
-    );
-  });
-
-  it("should not claim recipient's rewards if timelock is not finished (in farms with timelock)", async () => {
-    const tokenId: number = 0;
-    const updateOperatorParam: UpdateOperatorParam = {
-      add_operator: {
-        owner: bob.pkh,
-        operator: tFarm.contract.address,
-        token_id: 0,
-      },
-    };
-    const depositParams: DepositParams = {
-      fid: tokenId,
-      amt: 100,
-      referrer: undefined,
+  it("should claim rewards after transfer correctly", async () => {
+    const harvestParams: HarvestParams = {
+      fid: 0,
       rewards_receiver: alice.pkh,
-      candidate: bob.pkh,
     };
-    const params: TransferParam[] = [
-      {
-        from_: alice.pkh,
-        txs: [{ to_: bob.pkh, token_id: tokenId, amount: 10 }],
-      },
-    ];
 
-    await utils.setProvider(bob.sk);
-    await qsGov.updateOperators([updateOperatorParam]);
-    await tFarm.deposit(depositParams);
-    await tFarm.updateStorage({
-      users_info: [[tokenId, alice.pkh]],
-      farms: [tokenId],
-    });
-    await fa12.updateStorage({ ledger: [bob.pkh] });
-
-    const initialFarm: Farm = tFarm.storage.storage.farms[tokenId];
-    const initialFarmAliceRecord: UserInfoType =
-      tFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
-    const initialRewTokBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
-
-    await utils.setProvider(alice.sk);
-    await tFarm.transfer(params);
-    await tFarm.updateStorage({
-      users_info: [[tokenId, alice.pkh]],
-      farms: [tokenId],
-    });
-    await fa12.updateStorage({ ledger: [bob.pkh] });
-
-    const finalFarm: Farm = tFarm.storage.storage.farms[tokenId];
-    const finalFarmAliceRecord: UserInfoType =
-      tFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
-    const finalRewTokBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
-    const resAlice: FarmData = TFarmUtils.getFarmData(
-      initialFarm,
-      finalFarm,
-      initialFarmAliceRecord,
-      finalFarmAliceRecord,
-      precision,
-      feePrecision
-    );
-
-    ok(
-      new BigNumber(finalRewTokBobRecord.balance).isEqualTo(
-        new BigNumber(initialRewTokBobRecord.balance).plus(
-          resAlice.referralCommission
-        )
-      )
-    );
-  });
-
-  it("should claim recipient's rewards (in farms without timelock)", async () => {
-    const tokenId: number = 5;
-    const transferParams: TransferParam[] = [
-      {
-        from_: alice.pkh,
-        txs: [{ to_: bob.pkh, token_id: 0, amount: 100 }],
-      },
-    ];
-    const updateOperatorParam: UpdateOperatorParam = {
-      add_operator: {
-        owner: bob.pkh,
-        operator: tFarm.contract.address,
-        token_id: 0,
-      },
-    };
-    const depositParams: DepositParams = {
-      fid: tokenId,
-      amt: 100,
-      referrer: undefined,
-      rewards_receiver: bob.pkh,
-      candidate: alice.pkh,
-    };
-    const params: TransferParam[] = [
-      {
-        from_: alice.pkh,
-        txs: [{ to_: bob.pkh, token_id: tokenId, amount: 10 }],
-      },
-    ];
-
-    await fa2LP.transfer(transferParams);
-    await utils.setProvider(bob.sk);
-    await fa2LP.updateOperators([updateOperatorParam]);
-    await tFarm.deposit(depositParams);
+    await utils.bakeBlocks(5);
     await tFarm.updateStorage({
       users_info: [
-        [tokenId, alice.pkh],
-        [tokenId, bob.pkh],
+        [harvestParams.fid, alice.pkh],
+        [harvestParams.fid, bob.pkh],
+        [harvestParams.fid, carol.pkh],
       ],
-      farms: [tokenId],
+      farms: [harvestParams.fid],
     });
-    await qsGov.updateStorage({ account_info: [bob.pkh] });
 
-    const initialFarm: Farm = tFarm.storage.storage.farms[tokenId];
+    let initialFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
     const initialFarmAliceRecord: UserInfoType =
-      tFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
     const initialFarmBobRecord: UserInfoType =
-      tFarm.storage.storage.users_info[`${tokenId},${bob.pkh}`];
-    const initialRewTokBobRecord: UserFA2Info =
-      qsGov.storage.account_info[bob.pkh];
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${bob.pkh}`];
+    const initialFarmCarolRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${carol.pkh}`];
 
     await utils.setProvider(alice.sk);
-    await tFarm.transfer(params);
+    await tFarm.harvest(harvestParams);
     await tFarm.updateStorage({
-      users_info: [
-        [tokenId, alice.pkh],
-        [tokenId, bob.pkh],
-      ],
-      farms: [tokenId],
+      users_info: [[harvestParams.fid, alice.pkh]],
+      farms: [harvestParams.fid],
     });
-    await qsGov.updateStorage({ account_info: [bob.pkh] });
 
-    const finalFarm: Farm = tFarm.storage.storage.farms[tokenId];
+    let finalFarm: Farm = tFarm.storage.storage.farms[harvestParams.fid];
     const finalFarmAliceRecord: UserInfoType =
-      tFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
-    const finalFarmBobRecord: UserInfoType =
-      tFarm.storage.storage.users_info[`${tokenId},${bob.pkh}`];
-    const finalRewTokBobRecord: UserFA2Info =
-      qsGov.storage.account_info[bob.pkh];
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${alice.pkh}`];
     const resAlice: FarmData = TFarmUtils.getFarmData(
       initialFarm,
       finalFarm,
@@ -5907,6 +5752,20 @@ describe("TFarm tests (section 1)", async () => {
       precision,
       feePrecision
     );
+
+    initialFarm = tFarm.storage.storage.farms[harvestParams.fid];
+
+    await utils.setProvider(bob.sk);
+    await tFarm.harvest(harvestParams);
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, bob.pkh]],
+      farms: [harvestParams.fid],
+    });
+
+    finalFarm = tFarm.storage.storage.farms[harvestParams.fid];
+
+    const finalFarmBobRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${bob.pkh}`];
     const resBob: FarmData = TFarmUtils.getFarmData(
       initialFarm,
       finalFarm,
@@ -5916,83 +5775,67 @@ describe("TFarm tests (section 1)", async () => {
       feePrecision
     );
 
+    initialFarm = tFarm.storage.storage.farms[harvestParams.fid];
+
+    await utils.setProvider(carol.sk);
+    await tFarm.harvest(harvestParams);
+    await tFarm.updateStorage({
+      users_info: [[harvestParams.fid, carol.pkh]],
+      farms: [harvestParams.fid],
+    });
+
+    finalFarm = tFarm.storage.storage.farms[harvestParams.fid];
+
+    const finalFarmCarolRecord: UserInfoType =
+      tFarm.storage.storage.users_info[`${harvestParams.fid},${carol.pkh}`];
+    const resCarol: FarmData = TFarmUtils.getFarmData(
+      initialFarm,
+      finalFarm,
+      initialFarmCarolRecord,
+      finalFarmCarolRecord,
+      precision,
+      feePrecision
+    );
+
+    strictEqual(+finalFarm.staked, +initialFarm.staked);
+    strictEqual(+finalFarmAliceRecord.staked, +initialFarmAliceRecord.staked);
+    strictEqual(+finalFarmBobRecord.staked, +initialFarmBobRecord.staked);
+    strictEqual(+finalFarmCarolRecord.staked, +initialFarmCarolRecord.staked);
+
+    ok(finalFarm.upd > initialFarm.upd);
     ok(
-      new BigNumber(+(await finalRewTokBobRecord.balances.get("0"))).isEqualTo(
-        new BigNumber(+(await initialRewTokBobRecord.balances.get("0")))
-          .plus(resAlice.referralCommission)
-          .plus(resBob.actualUserEarned)
+      new BigNumber(finalFarm.reward_per_share).isEqualTo(
+        resCarol.expectedShareReward
       )
     );
-  });
-
-  it("should claim recipient's rewards if timelock is finished (in farms with timelock)", async () => {
-    const tokenId: number = 0;
-    const params: TransferParam[] = [
-      {
-        from_: alice.pkh,
-        txs: [{ to_: bob.pkh, token_id: tokenId, amount: 10 }],
-      },
-    ];
-
-    await utils.bakeBlocks(10);
-    await tFarm.updateStorage({
-      users_info: [
-        [tokenId, alice.pkh],
-        [tokenId, bob.pkh],
-      ],
-      farms: [tokenId],
-    });
-    await fa12.updateStorage({
-      ledger: [bob.pkh],
-    });
-
-    const initialFarm: Farm = tFarm.storage.storage.farms[tokenId];
-    const initialFarmAliceRecord: UserInfoType =
-      tFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
-    const initialFarmBobRecord: UserInfoType =
-      tFarm.storage.storage.users_info[`${tokenId},${bob.pkh}`];
-    const initialRewTokBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
-
-    await tFarm.transfer(params);
-    await tFarm.updateStorage({
-      users_info: [
-        [tokenId, alice.pkh],
-        [tokenId, bob.pkh],
-      ],
-      farms: [tokenId],
-    });
-    await fa12.updateStorage({
-      ledger: [bob.pkh],
-    });
-
-    const finalFarm: Farm = tFarm.storage.storage.farms[tokenId];
-    const finalFarmAliceRecord: UserInfoType =
-      tFarm.storage.storage.users_info[`${tokenId},${alice.pkh}`];
-    const finalFarmBobRecord: UserInfoType =
-      tFarm.storage.storage.users_info[`${tokenId},${bob.pkh}`];
-    const finalRewTokBobRecord: UserFA12Info = fa12.storage.ledger[bob.pkh];
-    const resAlice: FarmData = TFarmUtils.getFarmData(
-      initialFarm,
-      finalFarm,
-      initialFarmAliceRecord,
-      finalFarmAliceRecord,
-      precision,
-      feePrecision
-    );
-    const resBob: FarmData = TFarmUtils.getFarmData(
-      initialFarm,
-      finalFarm,
-      initialFarmBobRecord,
-      finalFarmBobRecord,
-      precision,
-      feePrecision
-    );
-
     ok(
-      new BigNumber(finalRewTokBobRecord.balance).isEqualTo(
-        new BigNumber(initialRewTokBobRecord.balance)
-          .plus(resBob.actualUserEarned)
-          .plus(resAlice.referralCommission)
+      new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
+        resAlice.expectedUserPrevEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
+        resAlice.expectedUserEarnedAfterHarvest
+      )
+    );
+    ok(
+      new BigNumber(finalFarmBobRecord.prev_earned).isEqualTo(
+        resBob.expectedUserPrevEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmBobRecord.earned).isEqualTo(
+        resBob.expectedUserEarnedAfterHarvest
+      )
+    );
+    ok(
+      new BigNumber(finalFarmCarolRecord.prev_earned).isEqualTo(
+        resCarol.expectedUserPrevEarned
+      )
+    );
+    ok(
+      new BigNumber(finalFarmCarolRecord.earned).isEqualTo(
+        resCarol.expectedUserEarnedAfterHarvest
       )
     );
   });

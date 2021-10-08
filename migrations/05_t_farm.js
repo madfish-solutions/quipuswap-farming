@@ -39,22 +39,40 @@ module.exports = async (tezos) => {
 
   console.log(`TFarm: ${tFarmAddress}`);
 
-  let params = [];
+  let batch1 = [];
+  let batch2 = [];
 
-  for (tFarmFunction of tFarmFunctions) {
-    params.push({
+  for (let i = 0; i < tFarmFunctions.length / 2; ++i) {
+    batch1.push({
       kind: OpKind.TRANSACTION,
       to: tFarmAddress,
       amount: 0,
       parameter: {
         entrypoint: "setup_func",
-        value: tFarmFunction,
+        value: tFarmFunctions[i],
       },
     });
   }
 
-  const batch = tezos.wallet.batch(params);
-  const operation = await batch.send();
+  for (let i = tFarmFunctions.length / 2; i < tFarmFunctions.length; ++i) {
+    batch2.push({
+      kind: OpKind.TRANSACTION,
+      to: tFarmAddress,
+      amount: 0,
+      parameter: {
+        entrypoint: "setup_func",
+        value: tFarmFunctions[i],
+      },
+    });
+  }
+
+  let batch = tezos.wallet.batch(batch1);
+  let operation = await batch.send();
+
+  await confirmOperation(tezos, operation.opHash);
+
+  batch = tezos.wallet.batch(batch2);
+  operation = await batch.send();
 
   await confirmOperation(tezos, operation.opHash);
 };

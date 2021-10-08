@@ -110,24 +110,52 @@ export class TFarm {
   }
 
   async setLambdas(): Promise<void> {
-    let params: WalletParamsWithKind[] = [];
+    let batch1: WalletParamsWithKind[] = [];
+    let batch2: WalletParamsWithKind[] = [];
 
-    for (const tFarmFunction of tFarmFunctions) {
-      params.push({
+    for (let i = 0; i < tFarmFunctions.length / 2; ++i) {
+      batch1.push({
         kind: OpKind.TRANSACTION,
         to: this.contract.address,
         amount: 0,
         parameter: {
           entrypoint: "setup_func",
-          value: tFarmFunction,
+          value: tFarmFunctions[i],
         },
       });
     }
 
-    const batch: WalletOperationBatch = this.tezos.wallet.batch(params);
-    const operation: WalletOperation = await batch.send();
+    for (let i = tFarmFunctions.length / 2; i < tFarmFunctions.length; ++i) {
+      batch2.push({
+        kind: OpKind.TRANSACTION,
+        to: this.contract.address,
+        amount: 0,
+        parameter: {
+          entrypoint: "setup_func",
+          value: tFarmFunctions[i],
+        },
+      });
+    }
+
+    let batch: WalletOperationBatch = this.tezos.wallet.batch(batch1);
+    let operation: WalletOperation = await batch.send();
 
     await confirmOperation(this.tezos, operation.opHash);
+
+    batch = this.tezos.wallet.batch(batch2);
+    operation = await batch.send();
+
+    await confirmOperation(this.tezos, operation.opHash);
+  }
+
+  async default(mutezAmount: number): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .default([])
+      .send({ amount: mutezAmount, mutez: true });
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
   }
 
   async setAdmin(newAdmin: string): Promise<TransactionOperation> {
@@ -248,9 +276,9 @@ export class TFarm {
     return operation;
   }
 
-  async burnXTZRewards(fid: number): Promise<TransactionOperation> {
+  async burnTEZRewards(fid: number): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
-      .burn_xtz_rewards(fid)
+      .burn_tez_rewards(fid)
       .send();
 
     await confirmOperation(this.tezos, operation.hash);
@@ -356,8 +384,19 @@ export class TFarmUtils {
     precision: number,
     feePrecision: number
   ): FarmData {
-    const timeLeft: number =
-      (Date.parse(finalFarm.upd) - Date.parse(initialFarm.upd)) / 1000;
+    let timeLeft: number = 0;
+
+    if (
+      Date.parse(finalFarm.upd) / 1000 >
+      Date.parse(finalFarm.end_time) / 1000
+    ) {
+      timeLeft =
+        (Date.parse(finalFarm.end_time) - Date.parse(initialFarm.upd)) / 1000;
+    } else {
+      timeLeft =
+        (Date.parse(finalFarm.upd) - Date.parse(initialFarm.upd)) / 1000;
+    }
+
     const newReward: BigNumber = new BigNumber(
       timeLeft * finalFarm.reward_per_second
     );

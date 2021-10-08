@@ -12,6 +12,7 @@
 #include "../partial/farm/t_farm/t_farm_helpers.ligo"
 
 #include "../partial/farm/common_helpers.ligo"
+#include "../partial/farm/common_methods.ligo"
 #include "../partial/farm/common_lambdas.ligo"
 #include "../partial/farm/fa2_farm_lambdas.ligo"
 
@@ -25,4 +26,5 @@ function main(
   case action of
     Use(params)         -> call_t_farm(params, s)
   | Setup_func(params)  -> setup_func(params, s)
+  | Default             -> burn_tez(s)
   end

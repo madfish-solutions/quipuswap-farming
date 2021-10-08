@@ -18,7 +18,7 @@ type farm_type          is [@layout:comb] record [
   reward_token            : fa2_type;
   (* Timelock in seconds, 0 for farms without timelock *)
   timelock                : nat;
-  (* The account XTZ are currently delegated for *)
+  (* The account TEZ are currently delegated for *)
   current_delegated       : key_hash;
   (* The best candidate to become next delegated *)
   next_candidate          : key_hash;
@@ -50,7 +50,7 @@ type storage_type       is [@layout:comb] record [
   (* User and choosen candidate *)
   candidates              : big_map((fid_type * address), key_hash);
   (* Banned baker => banned baker info *)
-  banned_bakers           : big_map(key_hash, banned_baker_type);
+  banned_bakers           : big_map(key_hash, baker_type);
   (* Token (farm) metadata *)
   token_metadata          : big_map(fid_type, tok_meta_type);
   (* QS GOV token *)
@@ -133,7 +133,7 @@ type action_type        is
 | Deposit                 of deposit_type
 | Withdraw                of withdraw_type
 | Harvest                 of harvest_type
-| Burn_xtz_rewards        of burn_xtz_rew_type
+| Burn_tez_rewards        of burn_tez_rew_type
 | Burn_farm_rewards       of burn_farm_rew_type
 | Withdraw_farm_depo      of withdraw_farm_type
 | Transfer                of list(fa2_send_type)
@@ -149,7 +149,7 @@ type full_storage_type  is [@layout:comb] record [
   (* Contract's real storage *)
   storage                 : storage_type;
   (* Lambdas *)
-  q_farm_lambdas          : big_map(nat, q_farm_func_type);
+  q_farm_lambdas          : big_map(nat, bytes);
 ]
 
 type full_return_type   is (list(operation) * full_storage_type)
@@ -158,14 +158,12 @@ type setup_func_type    is [@layout:comb] record [
   (* Index (ID) of the function *)
   index                   : nat;
   (* Function's lambda *)
-  func                    : q_farm_func_type;
+  func                    : bytes;
 ]
-
-type default_type       is unit
 
 type full_action_type   is
   Use                     of action_type
 | Setup_func              of setup_func_type
-| Default                 of unit
+| Default                 of default_type
 
 [@inline] const q_farm_methods_max_index : nat = 19n;

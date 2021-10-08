@@ -69,6 +69,7 @@
 
     - ✅ should fail if farm not found;
     - ✅ should fail if farm is paused;
+    - ✅ should fail if user's candidate for voting is banned (only for LP farms);
     - ✅ should claim user's rewards (in farms without timelock);
     - ✅ should claim user's rewards if timelock is finished (in farms with timelock);
     - ✅ should not claim user's rewards if timelock is not finished (in farms with timelock);
@@ -115,12 +116,12 @@
     - ✅ should mint QS GOV tokens as harvest fee to zero address (in case when user does not have referrer);
     - ✅ should calculate and mint QS GOV tokens as harvest fee with decimals (like 4.2%).
 
-14. `burn_xtz_rewards`:
+14. `burn_tez_rewards`:
 
-    - ✅ should fail if not admin is trying to burn XTZ rewards;
+    - ✅ should fail if not admin is trying to burn TEZ rewards;
     - ✅ should fail if farm not found;
     - ✅ should fail if not LP token is staked on the farm;
-    - ✅ should withdraw bakers rewards in XTZ from the QS pool, swap for QS GOV tokens and burn them.
+    - ✅ should withdraw bakers rewards in TEZ from the QS pool, swap for QS GOV tokens and burn them.
 
 15. `burn_farm_rewards`:
 
@@ -141,18 +142,14 @@
 17. `transfer`:
 
     - ✅ should fail if farm not found;
-    - ✅ should fail if self to self transfer;
+    - ✅ should fail if transfer destination address is equal to contract address;
     - ✅ should fail if not operator is trying to transfer tokens;
     - ✅ should fail if insufficient balance;
     - ✅ should fail if timelock for the sender is not finished (in farms with timelock);
     - ✅ should fail if one transaction from a group fails;
     - ✅ should transfer one token and update values correctly;
     - ✅ should transfer a group of tokens and update values correctly;
-    - ✅ should claim sender's rewards if timelock is finished (in farms with timelock);
-    - ✅ should claim sender's rewards (in farms without timelock);
-    - ✅ should not claim recipient's rewards if timelock is not finished (in farms with timelock);
-    - ✅ should claim recipient's rewards if timelock is finished (in farms with timelock);
-    - ✅ should claim recipient's rewards (in farms without timelock).
+    - ✅ should claim rewards after transfer correctly.
 
 18. `update_operators`:
 
@@ -172,6 +169,21 @@
     - ✅ should fail if not admit is trying to update token metadata;
     - ✅ should fail if farm not found;
     - ✅ should update token metadata.
+
+21. `default`:
+
+    - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn them (1);
+    - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn them (2).
+
+22. `integration_tests`:
+
+    - ✅ should vote for bob, bob must become first current delegated;
+    - ✅ should vote for alice, alice must became next candidate;
+    - ✅ should vote for alice, alice must not become current delegated;
+    - ✅ should vote for alice, alice must become current delegated;
+    - ✅ should vote for bob, bob must become current delegated after alice;
+    - should revote for banned bob, alice must become current delegated;
+    -
 
 ## TFarm
 
@@ -234,6 +246,7 @@
 
    - ✅ should fail if farm not found;
    - ✅ should fail if farm is paused;
+   - ✅ should fail if user's candidate for voting is banned (only for LP farms);
    - ✅ should claim user's rewards (in farms without timelock);
    - ✅ should claim user's rewards if timelock is finished (in farms with timelock);
    - ✅ should not claim user's rewards if timelock is not finished (in farms with timelock);
@@ -290,12 +303,12 @@
     - ✅ should transfer FA2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
     - ✅ should calculate and transfer reward tokens as harvest fee with decimals (like 4.2%).
 
-12. `burn_xtz_rewards`:
+12. `burn_tez_rewards`:
 
-    - ✅ should fail if not admin is trying to burn XTZ rewards;
+    - ✅ should fail if not admin is trying to burn TEZ rewards;
     - ✅ should fail if farm not found;
     - ✅ should fail if not LP token is staked on the farm;
-    - ✅ should withdraw bakers rewards in XTZ from the QS pool, swap for QS GOV tokens and burn them.
+    - ✅ should withdraw bakers rewards in TEZ from the QS pool, swap for QS GOV tokens and burn them.
 
 13. `claim_farm_rewards`:
 
@@ -317,18 +330,14 @@
 15. `transfer`:
 
     - ✅ should fail if farm not found;
-    - ✅ should fail if self to self transfer;
+    - ✅ should fail if transfer destination address is equal to contract address;
     - ✅ should fail if not operator is trying to transfer tokens;
     - ✅ should fail if insufficient balance;
     - ✅ should fail if timelock for the sender is not finished (in farms with timelock);
     - ✅ should fail if one transaction from a group fails;
     - ✅ should transfer one token and update values correctly;
     - ✅ should transfer a group of tokens and update values correctly;
-    - ✅ should claim sender's rewards if timelock is finished (in farms with timelock);
-    - ✅ should claim sender's rewards (in farms without timelock);
-    - ✅ should not claim recipient's rewards if timelock is not finished (in farms with timelock);
-    - ✅ should claim recipient's rewards if timelock is finished (in farms with timelock);
-    - ✅ should claim recipient's rewards (in farms without timelock).
+    - ✅ should claim rewards after transfer correctly.
 
 16. `update_operators`:
 
@@ -349,20 +358,25 @@
     - ✅ should fail if farm not found;
     - ✅ should update token metadata.
 
-19. `integration tests`:
+19. `default`:
+
+    - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn them (1);
+    - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn them (2).
+
+20. `integration tests`:
 
     - ✅ should add new farm, stake in the next block and withdraw all rewards (except the first block reward) after farms lifetime finishing (without timelock);
     - ✅ should add new farm and stake in batch, withdraw all rewards after farms lifetime finishing (without timelock);
-    - should claim rewards in time of depositing after farms finishing when timelock is not finished;
-    - should claim rewards in time of withdrawing after farms finishing when timelock is not finished;
-    - should claim rewards in time of claiming after farms finishing when timelock is not finished.
+    - ✅ should claim rewards in time of depositing after farms finishing when timelock is not finished;
+    - ✅ should claim rewards in time of withdrawing after farms finishing when timelock is not finished;
+    - ✅ should claim rewards in time of claiming after farms finishing when timelock is not finished.
 
 ## Burner
 
 1. `default`:
 
-   - ✅ should swap all XTZ from contract for QS GOV tokens and burn them;
-   - ✅ should fail if zero XTZ amount have been sent;
+   - ✅ should swap all TEZ from contract for QS GOV tokens and burn them;
+   - ✅ should fail if zero TEZ amount have been sent;
    - ✅ should fail if small liquidity amount in the pool.
 
 2. `burn_callback`:

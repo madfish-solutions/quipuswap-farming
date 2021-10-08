@@ -9,8 +9,8 @@ type user_info_type     is [@layout:comb] record [
   earned                  : nat;
   (* Previous earned amount of tokens by user *)
   prev_earned             : nat;
-  (* Amount of used votes for the preferred baker *)
-  used_votes              : nat;
+  (* Total amount of tokens staked by user in previous contract call *)
+  prev_staked             : nat;
   (* Set of user's allowances for staked tokens transfer *)
   allowances              : set(address);
 ]
@@ -32,7 +32,7 @@ type set_burner_type    is address (* New burner contract address *)
 
 type set_registry_type  is address (* New baker registry contract address *)
 
-type banned_baker_type  is [@layout:comb] record [
+type baker_type         is [@layout:comb] record [
   (* Period during which baker will be banned (in seconds)*)
   period                  : nat;
   (* Banning start time *)
@@ -88,7 +88,7 @@ type harvest_type       is [@layout:comb] record [
   rewards_receiver        : address;
 ]
 
-type burn_xtz_rew_type  is nat (* Farm ID *)
+type burn_tez_rew_type  is nat (* Farm ID *)
 
 type withdraw_farm_type is [@layout:comb] record [
   (* Farm ID *)
@@ -117,3 +117,5 @@ type upd_tok_meta_type  is [@layout:comb] record [
   (* Token metadata *)
   token_info              : list(meta_pair_type);
 ]
+
+type default_type       is unit

@@ -101,8 +101,7 @@ function ban_bakers(
           const params    : ban_baker_type)
                           : storage_type is
           block {
-            var baker_info : banned_baker_type :=
-              get_banned_baker_info(params.baker, s);
+            var baker_info : baker_type := get_baker_info(params.baker, s);
 
             baker_info.period := params.period;
             baker_info.start := Tezos.now;
@@ -149,7 +148,7 @@ function pause_farms(
     end
   } with (no_operations, s)
 
-function burn_xtz_rewards(
+function burn_tez_rewards(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
@@ -157,7 +156,7 @@ function burn_xtz_rewards(
     var operations : list(operation) := no_operations;
 
     case action of
-      Burn_xtz_rewards(fid)             -> {
+      Burn_tez_rewards(fid)             -> {
         only_admin(s.admin);
 
         const farm : farm_type = get_farm(fid, s);
@@ -217,6 +216,22 @@ function withdraw_farm_depo(
         farm.staked := abs(farm.staked - value);
 
         s.farms[farm.fid] := farm;
+
+        if farm.stake_params.is_lp_staked_token
+        then {
+          const vote_res : (list(operation) * storage_type) = vote(
+            get_user_candidate(farm, Tezos.self_address, s),
+            Tezos.self_address,
+            operations,
+            user,
+            farm,
+            s
+          );
+
+          operations := vote_res.0;
+          s := vote_res.1;
+        }
+        else skip;
 
         operations := transfer_token(
           Tezos.self_address,

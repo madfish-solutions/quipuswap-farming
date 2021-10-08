@@ -111,24 +111,52 @@ export class QFarm {
   }
 
   async setLambdas(): Promise<void> {
-    let params: WalletParamsWithKind[] = [];
+    let batch1: WalletParamsWithKind[] = [];
+    let batch2: WalletParamsWithKind[] = [];
 
-    for (const qFarmFunction of qFarmFunctions) {
-      params.push({
+    for (let i = 0; i < qFarmFunctions.length / 2; ++i) {
+      batch1.push({
         kind: OpKind.TRANSACTION,
         to: this.contract.address,
         amount: 0,
         parameter: {
           entrypoint: "setup_func",
-          value: qFarmFunction,
+          value: qFarmFunctions[i],
         },
       });
     }
 
-    const batch: WalletOperationBatch = this.tezos.wallet.batch(params);
-    const operation: WalletOperation = await batch.send();
+    for (let i = qFarmFunctions.length / 2; i < qFarmFunctions.length; ++i) {
+      batch2.push({
+        kind: OpKind.TRANSACTION,
+        to: this.contract.address,
+        amount: 0,
+        parameter: {
+          entrypoint: "setup_func",
+          value: qFarmFunctions[i],
+        },
+      });
+    }
+
+    let batch: WalletOperationBatch = this.tezos.wallet.batch(batch1);
+    let operation: WalletOperation = await batch.send();
 
     await confirmOperation(this.tezos, operation.opHash);
+
+    batch = this.tezos.wallet.batch(batch2);
+    operation = await batch.send();
+
+    await confirmOperation(this.tezos, operation.opHash);
+  }
+
+  async default(mutezAmount: number): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .default([])
+      .send({ amount: mutezAmount, mutez: true });
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
   }
 
   async setAdmin(newAdmin: string): Promise<TransactionOperation> {
@@ -271,9 +299,9 @@ export class QFarm {
     return operation;
   }
 
-  async burnXTZRewards(fid: number): Promise<TransactionOperation> {
+  async burnTEZRewards(fid: number): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
-      .burn_xtz_rewards(fid)
+      .burn_tez_rewards(fid)
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

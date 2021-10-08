@@ -15,7 +15,7 @@
     | Deposit(_)               -> 8n
     | Withdraw(_)              -> 9n
     | Harvest(_)               -> 10n
-    | Burn_xtz_rewards(_)      -> 11n
+    | Burn_tez_rewards(_)      -> 11n
     | Claim_farm_rewards(_)    -> 12n
     | Withdraw_farm_depo(_)    -> 13n
     | Transfer(_)              -> 14n
@@ -24,10 +24,16 @@
     | Update_token_metadata(_) -> 17n
     end;
 
-    const res : return_type = case s.t_farm_lambdas[id] of
-      Some(f) -> f(action, s.storage)
-    | None    -> (failwith("TFarm/func-not-set") : return_type)
+    const lambda_bytes : bytes = case s.t_farm_lambdas[id] of
+      Some(l) -> l
+    | None    -> failwith("TFarm/func-not-set")
     end;
+
+    const res : return_type =
+      case (Bytes.unpack(lambda_bytes) : option(t_farm_func_type)) of
+        Some(f) -> f(action, s.storage)
+      | None    -> failwith("TFarm/can-not-unpack-lambda")
+      end;
 
     s.storage := res.1;
   } with (res.0, s)

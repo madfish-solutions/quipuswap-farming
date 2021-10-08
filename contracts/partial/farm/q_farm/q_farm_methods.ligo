@@ -17,7 +17,7 @@
     | Deposit(_)               -> 10n
     | Withdraw(_)              -> 11n
     | Harvest(_)               -> 12n
-    | Burn_xtz_rewards(_)      -> 13n
+    | Burn_tez_rewards(_)      -> 13n
     | Burn_farm_rewards(_)     -> 14n
     | Withdraw_farm_depo(_)    -> 15n
     | Transfer(_)              -> 16n
@@ -26,10 +26,16 @@
     | Update_token_metadata(_) -> 19n
     end;
 
-    const res : return_type = case s.q_farm_lambdas[id] of
-      Some(f) -> f(action, s.storage)
-    | None    -> (failwith("QFarm/func-not-set") : return_type)
+    const lambda_bytes : bytes = case s.q_farm_lambdas[id] of
+      Some(l) -> l
+    | None    -> failwith("QFarm/func-not-set")
     end;
+
+    const res : return_type =
+      case (Bytes.unpack(lambda_bytes) : option(q_farm_func_type)) of
+        Some(f) -> f(action, s.storage)
+      | None    -> failwith("QFarm/can-not-unpack-lambda")
+      end;
 
     s.storage := res.1;
   } with (res.0, s)

@@ -27,6 +27,7 @@ function get_user_info(
       last_staked = (0 : timestamp);
       staked      = 0n;
       earned      = 0n;
+      claimed     = 0n;
       prev_earned = 0n;
       prev_staked = 0n;
       allowances  = (set [] : set(address));

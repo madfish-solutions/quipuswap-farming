@@ -36,7 +36,7 @@ import { bakerRegistryStorage } from "../storage/BakerRegistry";
 import { qsFA12FactoryStorage } from "../storage/test/QSFA12Factory";
 import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
 
-describe.only("QFarm tests (section 2)", async () => {
+describe("QFarm tests (section 2)", async () => {
   var fa12: FA12;
   var fa12LP: QSFA12Dex;
   var qsGov: FA2;

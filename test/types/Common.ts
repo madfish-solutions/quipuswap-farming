@@ -44,6 +44,7 @@ export type UserInfoType = {
   last_staked: string;
   staked: number;
   earned: number;
+  claimed: number;
   prev_earned: number;
   prev_staked: number;
   allowances: string[];

@@ -175,6 +175,16 @@
     - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn them (1);
     - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn them (2).
 
+22. `integration_tests`:
+
+    - ✅ should vote for bob, bob must become first current delegated;
+    - ✅ should vote for alice, alice must became next candidate;
+    - ✅ should vote for alice, alice must not become current delegated;
+    - ✅ should vote for alice, alice must become current delegated;
+    - ✅ should vote for bob, bob must become current delegated after alice;
+    - should revote for banned bob, alice must become current delegated;
+    -
+
 ## TFarm
 
 1. `set_admin`:

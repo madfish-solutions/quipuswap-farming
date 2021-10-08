@@ -56,7 +56,7 @@ import { bakerRegistryStorage } from "../storage/BakerRegistry";
 import { qsFA12FactoryStorage } from "../storage/test/QSFA12Factory";
 import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
 
-describe("QFarm tests", async () => {
+describe("QFarm tests (section 1)", async () => {
   var fa12: FA12;
   var fa12LP: QSFA12Dex;
   var fa2: FA2;

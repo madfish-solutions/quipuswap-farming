@@ -164,7 +164,7 @@ function vote(
     then farm.next_candidate := zero_key_hash
     else skip;
 
-    var ops : list(operation) := list[];
+    var operations : list(operation) := list[];
 
     if is_banned_baker(farm.current_delegated, s)
     then {
@@ -177,18 +177,18 @@ function vote(
       farm.current_delegated := farm.next_candidate;
     }
     else {
-      ops := get_vote_operation(
+      operations := get_vote_operation(
         farm.stake_params.qs_pool,
         farm.current_delegated,
         farm.staked
-      ) # ops;
+      ) # operations;
     };
 
     operations := Tezos.transaction(
       farm.current_delegated,
       0mutez,
       get_baker_registry_validate_entrypoint(s.baker_registry)
-    ) # ops;
+    ) # operations;
 
     s.farms[farm.fid] := farm;
-  } with (ops, s)
+  } with (operations, s)

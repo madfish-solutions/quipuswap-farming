@@ -62,7 +62,7 @@ function iterate_transfer(
             s
           );
 
-          operations := vote_res_1.0;
+          operations := merge_ops(vote_res_1.0, operations);
           s := vote_res_1.1;
 
           const vote_res_2 : (list(operation) * storage_type) = vote(
@@ -73,7 +73,7 @@ function iterate_transfer(
             s
           );
 
-          operations := merge_ops(vote_res_2.0, operations)
+          operations := merge_ops(vote_res_2.0, operations);
           s := vote_res_2.1;
         }
         else skip;

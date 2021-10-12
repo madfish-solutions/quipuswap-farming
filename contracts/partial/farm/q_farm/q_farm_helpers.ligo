@@ -89,13 +89,13 @@ function claim_rewards(
 
 function burn_rewards(
   var user              : user_info_type;
-  var operations        : list(operation);
   var farm              : farm_type;
   const pay_burn_reward : bool;
-  const s               : storage_type)
+  const proxy_minter    : address)
                         : claim_return_type is
   block {
     const earned : nat = user.earned / precision;
+    var operations := no_operations;
 
     if earned =/= 0n
     then {
@@ -111,21 +111,21 @@ function burn_rewards(
         const burn_amount : nat = earned *
           abs(fee_precision - farm.fees.burn_reward) / fee_precision;
         const reward : nat = abs(earned - burn_amount);
-        const dst1 : mint_gov_tok_type = record [
+        const burn_dst : mint_gov_tok_type = record [
           receiver = zero_address;
           amount   = burn_amount;
         ];
 
-        mint_data := dst1 # mint_data;
+        mint_data := burn_dst # mint_data;
 
         if reward =/= 0n
         then {
-          const dst2 : mint_gov_tok_type = record [
+          const user_reward_dst : mint_gov_tok_type = record [
             receiver = Tezos.sender;
             amount   = reward;
           ];
 
-          mint_data := dst2 # mint_data;
+          mint_data := user_reward_dst # mint_data;
         }
         else skip;
       }
@@ -141,7 +141,7 @@ function burn_rewards(
       operations := Tezos.transaction(
         mint_data,
         0mutez,
-        get_proxy_minter_mint_entrypoint(s.proxy_minter)
+        get_proxy_minter_mint_entrypoint(proxy_minter)
       ) # operations;
     }
     else skip;

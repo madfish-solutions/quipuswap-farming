@@ -216,7 +216,7 @@ function withdraw(
           s.proxy_minter
         )
         else {
-          res := burn_rewards(user, operations, farm, False, s);
+          res := burn_rewards(user, farm, False, s.proxy_minter);
 
           value_without_fee := value *
             abs(fee_precision - farm.fees.withdrawal_fee) / fee_precision;
@@ -355,7 +355,7 @@ function burn_farm_rewards(
           abs(user.staked * farm.reward_per_share - user.prev_earned);
 
         var res : claim_return_type :=
-          burn_rewards(user, operations, farm, True, s);
+          burn_rewards(user, farm, True, s.proxy_minter);
 
         operations := res.operations;
         user := res.user;

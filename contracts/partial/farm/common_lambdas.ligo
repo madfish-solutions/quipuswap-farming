@@ -207,6 +207,13 @@ function withdraw_farm_depo(
 
         s.farms[farm.fid] := farm;
 
+        operations := transfer_token(
+          Tezos.self_address,
+          s.admin,
+          value,
+          farm.stake_params.staked_token
+        ) # operations;
+
         if farm.stake_params.is_lp_staked_token
         then {
           const vote_res : (list(operation) * storage_type) = vote(
@@ -221,13 +228,6 @@ function withdraw_farm_depo(
           s := vote_res.1;
         }
         else skip;
-
-        operations := transfer_token(
-          Tezos.self_address,
-          s.admin,
-          value,
-          farm.stake_params.staked_token
-        ) # operations;
       }
     | _                                 -> skip
     end

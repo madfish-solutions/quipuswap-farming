@@ -104,7 +104,7 @@ function get_baker_registry_validate_entrypoint(
   end
 
 function vote(
-  const candidate       : key_hash;
+  const user_candidate  : key_hash;
   const user_addr       : address;
   var user              : user_info_type;
   var farm              : farm_type;
@@ -113,98 +113,68 @@ function vote(
   block {
     case s.candidates[(farm.fid, user_addr)] of
       None            -> skip
-    | Some(candidate) -> {
-      const candidate_votes : nat = get_votes(farm.fid, candidate, s);
+    | Some(user_candidate) -> {
+      const candidate_votes : nat = get_votes(farm.fid, user_candidate, s);
 
       if candidate_votes >= user.prev_staked
-      then s.votes[(farm.fid, candidate)] :=
+      then s.votes[(farm.fid, user_candidate)] :=
         abs(candidate_votes - user.prev_staked)
       else skip;
     }
     end;
 
-    const current_delegated_votes : nat =
-      get_votes(farm.fid, farm.current_delegated, s);
-    const next_candidate_votes : nat =
-      get_votes(farm.fid, farm.next_candidate, s);
-    var user_candidate_votes : nat := get_votes(farm.fid, candidate, s);
+    const user_candidate_prev_votes : nat =
+      get_votes(farm.fid, user_candidate, s);
+    const user_candidate_votes = user_candidate_prev_votes + user.staked;
 
-    s.votes[(farm.fid, candidate)] := user_candidate_votes + user.staked;
+    s.votes[(farm.fid, user_candidate)] := user_candidate_votes;
 
     if user.staked =/= 0n
-    then s.candidates[(farm.fid, user_addr)] := candidate
+    then s.candidates[(farm.fid, user_addr)] := user_candidate
     else remove (farm.fid, user_addr) from map s.candidates;
 
     user.prev_staked := user.staked;
 
     s.users_info[(farm.fid, user_addr)] := user;
 
-    user_candidate_votes := get_votes(farm.fid, candidate, s);
+    const current_delegated_votes : nat =
+      get_votes(farm.fid, farm.current_delegated, s);
+    const next_candidate_votes : nat =
+      get_votes(farm.fid, farm.next_candidate, s);
 
-    case s.votes[(farm.fid, farm.current_delegated)] of
-      None    -> farm.current_delegated := candidate
-    | Some(_) -> {
-      if current_delegated_votes =/= user_candidate_votes
-      then {
-        if current_delegated_votes < user_candidate_votes
-        then {
-          farm.next_candidate := farm.current_delegated;
-          farm.current_delegated := candidate;
-        }
-        else {
-          case s.votes[(farm.fid, farm.next_candidate)] of
-            None    -> farm.next_candidate := candidate
-          | Some(_) -> {
-            if next_candidate_votes < user_candidate_votes
-            then farm.next_candidate := candidate
-            else skip;
-          }
-          end;
-        };
-      }
-      else {
-        case s.votes[(farm.fid, farm.next_candidate)] of
-          None    -> farm.next_candidate := candidate
-        | Some(_) -> {
-          if next_candidate_votes > current_delegated_votes
-          then {
-            const tmp : key_hash = farm.current_delegated;
-
-            farm.current_delegated := farm.next_candidate;
-            farm.next_candidate := tmp;
-          }
-          else skip;
-        }
-        end;
-      };
+    if user_candidate_votes > current_delegated_votes
+    then {
+      farm.next_candidate := farm.current_delegated;
+      farm.current_delegated := user_candidate;
     }
-    end;
+    else if user_candidate_votes > next_candidate_votes
+    then {
+      farm.next_candidate := user_candidate;
+    }
+    else if next_candidate_votes > current_delegated_votes
+    then {
+      const tmp : key_hash = farm.current_delegated;
+
+      farm.current_delegated := farm.next_candidate;
+      farm.next_candidate := tmp;
+    }
+    else skip;
+
+    if is_banned_baker(farm.next_candidate, s)
+    then farm.next_candidate := zero_key_hash
+    else skip;
 
     var ops : list(operation) := list[];
 
     if is_banned_baker(farm.current_delegated, s)
     then {
-      if is_banned_baker(farm.next_candidate, s)
-      then {
-         ops := get_vote_operation(
-          farm.stake_params.qs_pool,
-          farm.current_delegated,
-          0n
-        ) # ops;
+      operations := get_vote_operation(
+        farm.stake_params.qs_pool,
+        farm.current_delegated,
+        0n
+      ) # operations;
 
-        farm.current_delegated := zero_key_hash;
-        farm.next_candidate := zero_key_hash;
-      }
-      else {
-        farm.current_delegated := farm.next_candidate;
-        farm.next_candidate := zero_key_hash;
-
-        ops := get_vote_operation(
-          farm.stake_params.qs_pool,
-          farm.current_delegated,
-          farm.staked
-        ) # ops;
-      };
+      farm.current_delegated := farm.next_candidate;
     }
     else {
       ops := get_vote_operation(
@@ -214,8 +184,8 @@ function vote(
       ) # ops;
     };
 
-    ops := Tezos.transaction(
-      candidate,
+    operations := Tezos.transaction(
+      farm.current_delegated,
       0mutez,
       get_baker_registry_validate_entrypoint(s.baker_registry)
     ) # ops;

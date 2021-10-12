@@ -59,10 +59,10 @@ function iterate_transfer(
         if farm.stake_params.is_lp_staked_token
         then {
           const vote_res_1 : (list(operation) * storage_type) = vote(
-            get_user_candidate(farm, params.from_, s),
-            params.from_,
+            get_user_candidate(farm, dst.to_, s),
+            dst.to_,
             operations,
-            src_user,
+            dst_user,
             farm,
             s
           );
@@ -71,10 +71,10 @@ function iterate_transfer(
           s := vote_res_1.1;
 
           const vote_res_2 : (list(operation) * storage_type) = vote(
-            get_user_candidate(farm, dst.to_, s),
-            dst.to_,
+            get_user_candidate(farm, params.from_, s),
+            params.from_,
             operations,
-            dst_user,
+            src_user,
             farm,
             s
           );

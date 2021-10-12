@@ -131,14 +131,8 @@ function pause_farms(
                           : storage_type is
           block {
             var farm : farm_type := get_farm(params.fid, s);
-            const upd_res : (storage_type * farm_type) =
-              update_farm_rewards(farm, s);
-
-            s := upd_res.0;
-            farm := upd_res.1;
-
+            farm := update_farm_rewards(farm);
             farm.paused := params.pause;
-
             s.farms[farm.fid] := farm;
           } with s;
 
@@ -192,11 +186,7 @@ function withdraw_farm_depo(
         only_admin(s.admin);
 
         var farm : farm_type := get_farm(params.fid, s);
-        const upd_res : (storage_type * farm_type) =
-          update_farm_rewards(farm, s);
-
-        s := upd_res.0;
-        farm := upd_res.1;
+        farm := update_farm_rewards(farm);
 
         var user : user_info_type :=
           get_user_info(farm.fid, Tezos.self_address, s);
@@ -222,13 +212,12 @@ function withdraw_farm_depo(
           const vote_res : (list(operation) * storage_type) = vote(
             get_user_candidate(farm, Tezos.self_address, s),
             Tezos.self_address,
-            operations,
             user,
             farm,
             s
           );
 
-          operations := vote_res.0;
+          operations := merge_ops(vote_res.0, operations);
           s := vote_res.1;
         }
         else skip;

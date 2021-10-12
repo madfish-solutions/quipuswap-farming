@@ -76,11 +76,7 @@ function deposit(
         then failwith("TFarm/farm-is-paused")
         else skip;
 
-        const upd_res : (storage_type * farm_type) =
-          update_farm_rewards(farm, s);
-
-        s := upd_res.0;
-        farm := upd_res.1;
+        farm := update_farm_rewards(farm);
 
         var user : user_info_type := get_user_info(farm.fid, Tezos.sender, s);
 
@@ -144,7 +140,6 @@ function deposit(
             const vote_res : (list(operation) * storage_type) = vote(
               params.candidate,
               Tezos.sender,
-              operations,
               user,
               farm,
               s
@@ -178,11 +173,7 @@ function withdraw(
     case action of
       Withdraw(params)                  -> {
         var farm : farm_type := get_farm(params.fid, s);
-        const upd_res : (storage_type * farm_type) =
-          update_farm_rewards(farm, s);
-
-        s := upd_res.0;
-        farm := upd_res.1;
+        farm := update_farm_rewards(farm);
 
         var user : user_info_type := get_user_info(farm.fid, Tezos.sender, s);
         var value : nat := params.amt;
@@ -267,29 +258,27 @@ function withdraw(
 
         if farm.stake_params.is_lp_staked_token
         then {
-          const vote_res_1 : (list(operation) * storage_type) = vote(
+          const farm_vote_res : (list(operation) * storage_type) = vote(
             get_user_candidate(farm, Tezos.self_address, s),
             Tezos.self_address,
-            operations,
             get_user_info(farm.fid, Tezos.self_address, s),
             farm,
             s
           );
 
-          operations := vote_res_1.0;
-          s := vote_res_1.1;
+          operations := merge_ops(farm_vote_res.0, operations);
+          s := farm_vote_res.1;
 
-          const vote_res_2 : (list(operation) * storage_type) = vote(
+          const user_vote_res : (list(operation) * storage_type) = vote(
             get_user_candidate(farm, Tezos.sender, s),
             Tezos.sender,
-            operations,
             user,
             farm,
             s
           );
 
-          operations := vote_res_2.0;
-          s := vote_res_2.1;
+          operations := merge_ops(user_vote_res.0, operations);
+          s := user_vote_res.1;
         }
         else skip;
       }
@@ -307,11 +296,7 @@ function harvest(
     case action of
       Harvest(params)                   -> {
         var farm : farm_type := get_farm(params.fid, s);
-        const upd_res : (storage_type * farm_type) =
-          update_farm_rewards(farm, s);
-
-        s := upd_res.0;
-        farm := upd_res.1;
+        farm := update_farm_rewards(farm);
 
         var user : user_info_type := get_user_info(farm.fid, Tezos.sender, s);
 
@@ -363,11 +348,7 @@ function claim_farm_rewards(
         only_admin(s.admin);
 
         var farm : farm_type := get_farm(fid, s);
-        const upd_res : (storage_type * farm_type) =
-          update_farm_rewards(farm, s);
-
-        s := upd_res.0;
-        farm := upd_res.1;
+        farm := update_farm_rewards(farm);
 
         var user : user_info_type :=
           get_user_info(farm.fid, Tezos.self_address, s);

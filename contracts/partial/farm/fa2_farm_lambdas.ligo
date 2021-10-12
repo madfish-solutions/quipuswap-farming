@@ -11,11 +11,7 @@ function iterate_transfer(
         var operations : list(operation) := result.0;
         var s : storage_type := result.1;
         var farm : farm_type := get_farm(dst.token_id, s);
-        const upd_res : (storage_type * farm_type) =
-          update_farm_rewards(farm, s);
-
-        s := upd_res.0;
-        farm := upd_res.1;
+        farm := update_farm_rewards(farm);
 
         if dst.to_ = Tezos.self_address
         then failwith("FA2_ILLEGAL_TRANSFER")
@@ -61,7 +57,6 @@ function iterate_transfer(
           const vote_res_1 : (list(operation) * storage_type) = vote(
             get_user_candidate(farm, params.from_, s),
             params.from_,
-            operations,
             src_user,
             farm,
             s
@@ -73,7 +68,6 @@ function iterate_transfer(
           const vote_res_2 : (list(operation) * storage_type) = vote(
             get_user_candidate(farm, dst.to_, s),
             dst.to_,
-            operations,
             dst_user,
             farm,
             s
@@ -91,32 +85,24 @@ function iterate_update_operators(
   const params          : upd_operator_type)
                         : storage_type is
   block {
-    case params of
-      Add_operator(param) -> {
-      if Tezos.sender =/= param.owner
-      then failwith("FA2_NOT_OWNER")
-      else skip;
+    const (param, should_remove) = case params of
+      | Add_operator(param) -> (param, False)
+      | Remove_operator(param) ->  (param, True)
+    end;
+    
+    if Tezos.sender =/= param.owner
+    then failwith("FA2_NOT_OWNER")
+    else skip;
 
-      var user : user_info_type :=
-        get_user_info(param.token_id, param.owner, s);
+    var user : user_info_type :=
+      get_user_info(param.token_id, param.owner, s);
 
-      user.allowances := Set.add(param.operator, user.allowances);
+    user.allowances := if should_remove then
+      Set.remove(param.operator, user.allowances);
+    else
+      Set.add(param.operator, user.allowances);
 
-      s.users_info[(param.token_id, param.owner)] := user;
-    }
-    | Remove_operator(param) -> {
-      if Tezos.sender =/= param.owner
-      then failwith("FA2_NOT_OWNER")
-      else skip;
-
-      var user : user_info_type :=
-        get_user_info(param.token_id, param.owner, s);
-
-      user.allowances := Set.remove(param.operator, user.allowances);
-
-      s.users_info[(param.token_id, param.owner)] := user;
-    }
-    end
+    s.users_info[(param.token_id, param.owner)] := user;
   } with s
 
 function balance_of(

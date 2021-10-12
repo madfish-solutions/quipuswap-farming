@@ -106,7 +106,6 @@ function get_baker_registry_validate_entrypoint(
 function vote(
   const candidate       : key_hash;
   const user_addr       : address;
-  var operations        : list(operation);
   var user              : user_info_type;
   var farm              : farm_type;
   var s                 : storage_type)
@@ -181,15 +180,17 @@ function vote(
     }
     end;
 
+    var ops : list(operation) := list[];
+
     if is_banned_baker(farm.current_delegated, s)
     then {
       if is_banned_baker(farm.next_candidate, s)
       then {
-         operations := get_vote_operation(
+         ops := get_vote_operation(
           farm.stake_params.qs_pool,
           farm.current_delegated,
           0n
-        ) # operations;
+        ) # ops;
 
         farm.current_delegated := zero_key_hash;
         farm.next_candidate := zero_key_hash;
@@ -198,26 +199,26 @@ function vote(
         farm.current_delegated := farm.next_candidate;
         farm.next_candidate := zero_key_hash;
 
-        operations := get_vote_operation(
+        ops := get_vote_operation(
           farm.stake_params.qs_pool,
           farm.current_delegated,
           farm.staked
-        ) # operations;
+        ) # ops;
       };
     }
     else {
-      operations := get_vote_operation(
+      ops := get_vote_operation(
         farm.stake_params.qs_pool,
         farm.current_delegated,
         farm.staked
-      ) # operations;
+      ) # ops;
     };
 
-    operations := Tezos.transaction(
+    ops := Tezos.transaction(
       candidate,
       0mutez,
       get_baker_registry_validate_entrypoint(s.baker_registry)
-    ) # operations;
+    ) # ops;
 
     s.farms[farm.fid] := farm;
-  } with (operations, s)
+  } with (ops, s)

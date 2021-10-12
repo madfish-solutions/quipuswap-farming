@@ -13,14 +13,8 @@ function set_reward_per_second(
                           : storage_type is
           block {
             var farm : farm_type := get_farm(params.fid, s);
-            const upd_res : (storage_type * farm_type) =
-              update_farm_rewards(farm, s);
-
-            s := upd_res.0;
-            farm := upd_res.1;
-
+            farm := update_farm_rewards(farm);
             farm.reward_per_second := params.reward_per_second;
-
             s.farms[farm.fid] := farm;
           } with s;
 
@@ -102,35 +96,28 @@ function deposit(
         then failwith("QFarm/farm-is-paused")
         else skip;
 
-        const upd_res : (storage_type * farm_type) =
-          update_farm_rewards(farm, s);
-
-        s := upd_res.0;
-        farm := upd_res.1;
+        farm := update_farm_rewards(farm);
 
         var user : user_info_type := get_user_info(farm.fid, Tezos.sender, s);
 
         user.earned := user.earned +
           abs(user.staked * farm.reward_per_share - user.prev_earned);
 
-        var res : claim_return_type := record [
-          operations = operations;
-          user       = user;
-          farm       = farm;
-        ];
+        const res = if abs(Tezos.now - user.last_staked) >= farm.timelock
+            then claim_rewards(
+              user,
+              farm,
+              params.rewards_receiver,
+              s.referrers[Tezos.sender],
+              s.proxy_minter
+            )
+            else record [
+              operations = (list [] : list(operation));
+              user       = user;
+              farm       = farm;
+            ];
 
-        if abs(Tezos.now - user.last_staked) >= farm.timelock
-        then res := claim_rewards(
-          user,
-          operations,
-          farm,
-          Tezos.sender,
-          params.rewards_receiver,
-          s
-        )
-        else skip;
-
-        operations := res.operations;
+        operations := merge_ops(res.operations, operations);
         user := res.user;
         farm := res.farm;
 
@@ -167,7 +154,6 @@ function deposit(
             const vote_res : (list(operation) * storage_type) = vote(
               params.candidate,
               Tezos.sender,
-              operations,
               user,
               farm,
               s
@@ -201,11 +187,7 @@ function withdraw(
     case action of
       Withdraw(params)                  -> {
         var farm : farm_type := get_farm(params.fid, s);
-        const upd_res : (storage_type * farm_type) =
-          update_farm_rewards(farm, s);
-
-        s := upd_res.0;
-        farm := upd_res.1;
+        farm := update_farm_rewards(farm);
 
         var user : user_info_type := get_user_info(farm.fid, Tezos.sender, s);
         var value : nat := params.amt;
@@ -228,11 +210,10 @@ function withdraw(
         if abs(Tezos.now - user.last_staked) >= farm.timelock
         then res := claim_rewards(
           user,
-          operations,
           farm,
-          Tezos.sender,
           params.rewards_receiver,
-          s
+          s.referrers[Tezos.sender],
+          s.proxy_minter
         )
         else {
           res := burn_rewards(user, operations, farm, False, s);
@@ -281,29 +262,27 @@ function withdraw(
 
         if farm.stake_params.is_lp_staked_token
         then {
-          const vote_res_1 : (list(operation) * storage_type) = vote(
+          const (farm_vote_ops, farm_vote_storage) = vote(
             get_user_candidate(farm, Tezos.self_address, s),
             Tezos.self_address,
-            operations,
             get_user_info(farm.fid, Tezos.self_address, s),
             farm,
             s
           );
 
-          operations := vote_res_1.0;
-          s := vote_res_1.1;
+          operations := merge_ops(farm_vote_ops, operations);
+          // s := farm_vote_storage;
 
-          const vote_res_2 : (list(operation) * storage_type) = vote(
+          const (user_vote_ops, user_vote_storage) = vote(
             get_user_candidate(farm, Tezos.sender, s),
             Tezos.sender,
-            operations,
             user,
             farm,
-            s
+            farm_vote_storage
           );
 
-          operations := vote_res_2.0;
-          s := vote_res_2.1;
+          operations := merge_ops(user_vote_ops, operations);
+          s := user_vote_storage;
         }
         else skip;
       }
@@ -321,11 +300,7 @@ function harvest(
     case action of
       Harvest(params)                   -> {
         var farm : farm_type := get_farm(params.fid, s);
-        const upd_res : (storage_type * farm_type) =
-          update_farm_rewards(farm, s);
-
-        s := upd_res.0;
-        farm := upd_res.1;
+        farm := update_farm_rewards(farm);
 
         var user : user_info_type := get_user_info(farm.fid, Tezos.sender, s);
 
@@ -341,11 +316,10 @@ function harvest(
         if abs(Tezos.now - user.last_staked) >= farm.timelock
         then res := claim_rewards(
           user,
-          operations,
           farm,
-          Tezos.sender,
           params.rewards_receiver,
-          s
+          s.referrers[Tezos.sender],
+          s.proxy_minter
         )
         else failwith("QFarm/timelock-is-not-finished");
 
@@ -372,14 +346,10 @@ function burn_farm_rewards(
     case action of
       Burn_farm_rewards(fid)            -> {
         var farm : farm_type := get_farm(fid, s);
-        const upd_res : (storage_type * farm_type) =
-          update_farm_rewards(farm, s);
-
-        s := upd_res.0;
-        farm := upd_res.1;
+        farm := update_farm_rewards(farm);
 
         var user : user_info_type :=
-          get_user_info(farm.fid, Tezos.self_address, s);
+          get_user_info(fid, Tezos.self_address, s);
 
         user.earned := user.earned +
           abs(user.staked * farm.reward_per_share - user.prev_earned);

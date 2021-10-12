@@ -1,28 +1,23 @@
-function update_farm_rewards(
-  var _farm             : farm_type;
-  var s                 : storage_type)
-                        : storage_type * farm_type is
-  block {
-    if Tezos.now >= _farm.start_time and _farm.upd <= _farm.end_time
+function update_farm_rewards(var farm : farm_type) : farm_type is
+block {
+  if Tezos.now >= farm.start_time
+  then {
+    if farm.staked =/= 0n
     then {
-      if _farm.staked =/= 0n
-      then {
-        const time_diff : nat = if Tezos.now > _farm.end_time
-          then abs(_farm.end_time - _farm.upd)
-          else abs(Tezos.now - _farm.upd);
-        const reward : nat = time_diff * _farm.reward_per_second;
+      const time_diff : nat = if Tezos.now > farm.end_time
+          then abs(farm.end_time - farm.upd)
+          else abs(Tezos.now - farm.upd);
+      const reward : nat = time_diff * farm.reward_per_second;
 
-        _farm.reward_per_share :=
-          _farm.reward_per_share + reward / _farm.staked;
-      }
-      else skip;
-
-      _farm.upd := Tezos.now;
-
-      s.farms[_farm.fid] := _farm;
+      farm.reward_per_share :=
+        farm.reward_per_share + reward / farm.staked;
     }
     else skip;
-  } with (s, _farm)
+
+    farm.upd := Tezos.now;
+  }
+  else skip;
+} with farm
 
 function claim_rewards(
   var user              : user_info_type;

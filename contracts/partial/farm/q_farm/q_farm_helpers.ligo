@@ -1,26 +1,21 @@
-function update_farm_rewards(
-  var _farm             : farm_type;
-  var s                 : storage_type)
-                        : storage_type * farm_type is
+function update_farm_rewards(var farm : farm_type) : farm_type is
   block {
-    if Tezos.now >= _farm.start_time
+    if Tezos.now >= farm.start_time
     then {
-      if _farm.staked =/= 0n
+      if farm.staked =/= 0n
       then {
-        const time_diff : nat = abs(Tezos.now - _farm.upd);
-        const reward : nat = time_diff * _farm.reward_per_second;
+        const time_diff : nat = abs(Tezos.now - farm.upd);
+        const reward : nat = time_diff * farm.reward_per_second;
 
-        _farm.reward_per_share :=
-          _farm.reward_per_share + reward / _farm.staked;
+        farm.reward_per_share :=
+          farm.reward_per_share + reward / farm.staked;
       }
       else skip;
 
-      _farm.upd := Tezos.now;
-
-      s.farms[_farm.fid] := _farm;
+      farm.upd := Tezos.now;
     }
     else skip;
-  } with (s, _farm)
+  } with farm
 
 function get_proxy_minter_mint_entrypoint(
   const proxy_minter    : address)
@@ -38,15 +33,15 @@ function get_proxy_minter_mint_entrypoint(
 
 function claim_rewards(
   var user              : user_info_type;
-  var operations        : list(operation);
   var farm              : farm_type;
-  const user_addr       : address;
   const receiver        : address;
-  const s               : storage_type)
+  const referrer        : option(address);
+  const proxy_minter    : address)
                         : claim_return_type is
   block {
-    const earned : nat = user.earned / precision;
+    var ops: list(operation) := no_operations;
 
+    const earned : nat = user.earned / precision;
     if earned =/= 0n
     then {
       user.earned := abs(user.earned - earned * precision);
@@ -66,7 +61,7 @@ function claim_rewards(
 
       if harvest_fee =/= 0n
       then {
-        const fee_receiver : address = case s.referrers[user_addr] of
+        const fee_receiver : address = case referrer of
           None           -> zero_address
         | Some(referrer) -> referrer
         end;
@@ -79,15 +74,15 @@ function claim_rewards(
       }
       else skip;
 
-      operations := Tezos.transaction(
+      ops := Tezos.transaction(
         mint_data,
         0mutez,
-        get_proxy_minter_mint_entrypoint(s.proxy_minter)
-      ) # operations;
+        get_proxy_minter_mint_entrypoint(proxy_minter)
+      ) # ops;
     }
     else skip;
   } with (record [
-    operations = operations;
+    operations = ops;
     user       = user;
     farm       = farm;
   ])

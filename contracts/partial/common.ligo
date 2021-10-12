@@ -174,3 +174,9 @@ function transfer_token(
     FA12(token) -> transfer_fa12(from_, to_, amt, token)
   | FA2(token)  -> transfer_fa2(from_, to_, amt, token.token, token.id)
   end
+
+
+function append_op(const op : operation; const acc : list(operation)) : list(operation) is op # acc
+
+function merge_ops(const first : list(operation); const second: list(operation)) : list(operation)
+    is List.fold_right(append_op, first, second)

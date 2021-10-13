@@ -63,7 +63,7 @@ describe("TFarm tests (section 1)", async () => {
   var qsFA2Factory: QSFA2Factory;
 
   var precision = 10 ** 18;
-  var feePrecision = 10 ** 2;
+  var feePrecision = 10 ** 16;
 
   before("setup", async () => {
     utils = new Utils();
@@ -1324,8 +1324,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked + depositParams.amt);
@@ -1658,8 +1657,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(finalFarmAliceRecord.last_staked > initialFarmAliceRecord.last_staked);
@@ -1758,8 +1756,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(finalFarmAliceRecord.last_staked > initialFarmAliceRecord.last_staked);
@@ -1856,8 +1853,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     strictEqual(+finalFarm.claimed, +initialFarm.claimed);
@@ -1944,8 +1940,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -2028,8 +2023,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -2112,8 +2106,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -2196,8 +2189,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -2280,8 +2272,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -2362,8 +2353,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -2449,8 +2439,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -2633,8 +2622,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
@@ -2750,8 +2738,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -2831,8 +2818,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -2911,8 +2897,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -2992,8 +2977,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -3084,8 +3068,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -3165,8 +3148,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -3248,8 +3230,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -3358,8 +3339,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
@@ -3430,8 +3410,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
@@ -3503,8 +3482,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
@@ -3575,8 +3553,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
@@ -3646,8 +3623,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
@@ -3720,8 +3696,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
@@ -3816,8 +3791,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
@@ -3911,8 +3885,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
@@ -4029,8 +4002,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
@@ -4127,7 +4099,7 @@ describe("TFarm tests (section 1)", async () => {
     const res: WithdrawData = TFarmUtils.getWithdrawData(
       initialFarm,
       withdrawParams.amt,
-      feePrecision
+      precision
     );
 
     ok(
@@ -4210,8 +4182,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -4290,8 +4261,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -4370,8 +4340,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -4453,8 +4422,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -4547,8 +4515,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -4630,8 +4597,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -4715,8 +4681,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -4931,8 +4896,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmFarmRecord,
       finalFarmFarmRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(finalFarmFarmRecord.last_staked === initialFarmFarmRecord.last_staked);
@@ -5006,8 +4970,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmFarmRecord,
       finalFarmFarmRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(finalFarmFarmRecord.last_staked === initialFarmFarmRecord.last_staked);
@@ -5449,16 +5412,14 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
     const resBob: FarmData = TFarmUtils.getFarmData(
       initialFarm,
       finalFarm,
       initialFarmBobRecord,
       finalFarmBobRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked);
@@ -5577,24 +5538,21 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
     const resBob: FarmData = TFarmUtils.getFarmData(
       initialFarm,
       finalFarm,
       initialFarmBobRecord,
       finalFarmBobRecord,
-      precision,
-      feePrecision
+      precision
     );
     const resCarol: FarmData = TFarmUtils.getFarmData(
       initialFarm,
       finalFarm,
       initialFarmCarolRecord,
       finalFarmCarolRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked);
@@ -5749,8 +5707,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     initialFarm = tFarm.storage.storage.farms[harvestParams.fid];
@@ -5771,8 +5728,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmBobRecord,
       finalFarmBobRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     initialFarm = tFarm.storage.storage.farms[harvestParams.fid];
@@ -5793,8 +5749,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmCarolRecord,
       finalFarmCarolRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked);

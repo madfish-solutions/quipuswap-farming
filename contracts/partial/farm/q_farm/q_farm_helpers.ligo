@@ -52,9 +52,8 @@ function claim_rewards(
       user.earned := abs(user.earned - earned * precision);
       user.claimed := user.claimed + earned;
 
-      const actual_earned : nat = earned *
-        abs(fee_precision - farm.fees.harvest_fee) / fee_precision;
-      const harvest_fee : nat = abs(earned - actual_earned);
+      const harvest_fee : nat = earned * farm.fees.harvest_fee / precision;
+      const actual_earned : nat = abs(earned - harvest_fee);
       var mint_data : mint_gov_toks_type := list [
         record [
           receiver = receiver;
@@ -113,9 +112,8 @@ function burn_rewards(
 
       if pay_burn_reward
       then {
-        const burn_amount : nat = earned *
-          abs(fee_precision - farm.fees.burn_reward) / fee_precision;
-        const reward : nat = abs(earned - burn_amount);
+        const reward : nat = earned * farm.fees.burn_reward / precision;
+        const burn_amount : nat = abs(earned - reward);
         const dst1 : mint_gov_tok_type = record [
           receiver = zero_address;
           amount   = burn_amount;

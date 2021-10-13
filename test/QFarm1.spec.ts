@@ -72,7 +72,7 @@ describe("QFarm tests (section 1)", async () => {
   var qsFA2Factory: QSFA2Factory;
 
   var precision = 10 ** 18;
-  var feePrecision = 10 ** 2;
+  var feePrecision = 10 ** 16;
 
   before("setup", async () => {
     utils = new Utils();
@@ -1585,8 +1585,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(finalFarmAliceRecord.last_staked > initialFarmAliceRecord.last_staked);
@@ -1672,8 +1671,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(finalFarmAliceRecord.last_staked > initialFarmAliceRecord.last_staked);
@@ -1759,8 +1757,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     strictEqual(+finalFarm.claimed, +initialFarm.claimed);
@@ -1833,8 +1830,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -1904,8 +1900,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -1940,6 +1935,7 @@ describe("QFarm tests (section 1)", async () => {
       candidate: zeroAddress,
     };
 
+    await utils.bakeBlocks(5);
     await qFarm.updateStorage({
       users_info: [[depositParams.fid, alice.pkh]],
       farms: [depositParams.fid],
@@ -1975,8 +1971,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -2047,8 +2042,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -2221,8 +2215,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
@@ -2330,8 +2323,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -2400,8 +2392,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -2479,8 +2470,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -2549,8 +2539,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -2650,8 +2639,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
@@ -2722,8 +2710,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
@@ -2795,8 +2782,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
@@ -2867,8 +2853,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
@@ -2938,8 +2923,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
@@ -3008,8 +2992,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
@@ -3097,8 +3080,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
@@ -3186,8 +3168,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -3258,8 +3239,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -3339,8 +3319,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -3411,8 +3390,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -3493,8 +3471,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
@@ -3589,7 +3566,7 @@ describe("QFarm tests (section 1)", async () => {
     const res: WithdrawData = QFarmUtils.getWithdrawData(
       initialFarm,
       withdrawParams.amt,
-      feePrecision
+      precision
     );
 
     ok(
@@ -3800,8 +3777,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmFarmRecord,
       finalFarmFarmRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(finalFarmFarmRecord.last_staked === initialFarmFarmRecord.last_staked);
@@ -3884,8 +3860,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmFarmRecord,
       finalFarmFarmRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(finalFarmFarmRecord.last_staked === initialFarmFarmRecord.last_staked);
@@ -4352,16 +4327,14 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
     const resBob: FarmData = QFarmUtils.getFarmData(
       initialFarm,
       finalFarm,
       initialFarmBobRecord,
       finalFarmBobRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked);
@@ -4467,24 +4440,21 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
     const resBob: FarmData = QFarmUtils.getFarmData(
       initialFarm,
       finalFarm,
       initialFarmBobRecord,
       finalFarmBobRecord,
-      precision,
-      feePrecision
+      precision
     );
     const resCarol: FarmData = QFarmUtils.getFarmData(
       initialFarm,
       finalFarm,
       initialFarmCarolRecord,
       finalFarmCarolRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked);
@@ -4594,8 +4564,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     initialFarm = qFarm.storage.storage.farms[harvestParams.fid];
@@ -4616,8 +4585,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmBobRecord,
       finalFarmBobRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     initialFarm = qFarm.storage.storage.farms[harvestParams.fid];
@@ -4638,8 +4606,7 @@ describe("QFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmCarolRecord,
       finalFarmCarolRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked);

@@ -38,7 +38,7 @@ describe("TFarm tests (section 2)", async () => {
   var tFarm: TFarm;
 
   var precision = 10 ** 18;
-  var feePrecision = 10 ** 2;
+  var feePrecision = 10 ** 16;
 
   before("setup", async () => {
     utils = new Utils();
@@ -87,7 +87,8 @@ describe("TFarm tests (section 2)", async () => {
     const lifetime: number = 3; // 3 seconds
     const rewAmount: number =
       (lifetime * newFarmParams.reward_per_second) / precision;
-    const harvestFeePercent: number = newFarmParams.fees.harvest_fee / 10000;
+    const harvestFeePercent: number =
+      newFarmParams.fees.harvest_fee / (feePrecision * 100);
     const earnedPercent: number = 1 - harvestFeePercent;
     const correctRewTokensReminder: number = 100;
 
@@ -201,7 +202,8 @@ describe("TFarm tests (section 2)", async () => {
     const lifetime: number = 3; // 3 seconds
     const rewAmount: number =
       (lifetime * newFarmParams.reward_per_second) / precision;
-    const harvestFeePercent: number = newFarmParams.fees.harvest_fee / 10000;
+    const harvestFeePercent: number =
+      newFarmParams.fees.harvest_fee / (feePrecision * 100);
     const earnedPercent: number = 1 - harvestFeePercent;
 
     await fa12.approve(tFarm.contract.address, rewAmount);
@@ -407,8 +409,7 @@ describe("TFarm tests (section 2)", async () => {
       middleFarm,
       initialFarmAliceRecord,
       middleFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -456,8 +457,7 @@ describe("TFarm tests (section 2)", async () => {
       finalFarm,
       middleFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -584,8 +584,7 @@ describe("TFarm tests (section 2)", async () => {
       middleFarm,
       initialFarmAliceRecord,
       middleFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -646,8 +645,7 @@ describe("TFarm tests (section 2)", async () => {
       finalFarm,
       middleFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -768,8 +766,7 @@ describe("TFarm tests (section 2)", async () => {
       middleFarm,
       initialFarmAliceRecord,
       middleFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(
@@ -822,8 +819,7 @@ describe("TFarm tests (section 2)", async () => {
       finalFarm,
       middleFarmAliceRecord,
       finalFarmAliceRecord,
-      precision,
-      feePrecision
+      precision
     );
 
     ok(

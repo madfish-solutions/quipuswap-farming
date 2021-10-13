@@ -47,7 +47,7 @@ describe("TFarm tests (section 3)", async () => {
   var qsFA2Factory: QSFA2Factory;
 
   var precision = 10 ** 18;
-  var feePrecision = 10 ** 2;
+  var feePrecision = 10 ** 16;
 
   before("setup", async () => {
     utils = new Utils();
@@ -517,7 +517,7 @@ describe("TFarm tests (section 3)", async () => {
   it("should revote for bob, alice must become current delegated", async () => {
     const withdrawParams: WithdrawParams = {
       fid: 0,
-      amt: 5,
+      amt: 50,
       receiver: alice.pkh,
       rewards_receiver: alice.pkh,
     };
@@ -566,7 +566,7 @@ describe("TFarm tests (section 3)", async () => {
     const res: WithdrawData = TFarmUtils.getWithdrawData(
       initialFarm,
       withdrawParams.amt,
-      feePrecision
+      precision
     );
 
     strictEqual(finalFarm.current_delegated, initialFarm.next_candidate);
@@ -663,7 +663,7 @@ describe("TFarm tests (section 3)", async () => {
     const res: WithdrawData = TFarmUtils.getWithdrawData(
       initialFarm,
       withdrawParams.amt,
-      feePrecision
+      precision
     );
 
     strictEqual(finalFarm.current_delegated, bob.pkh);
@@ -702,7 +702,7 @@ describe("TFarm tests (section 3)", async () => {
   it("should withdraw farm deposit and revote for bob, bob must remain current delegated", async () => {
     const withdrawParams: WithdrawFarmDepoParams = {
       fid: 0,
-      amt: 21,
+      amt: 25,
     };
 
     await tFarm.updateStorage({

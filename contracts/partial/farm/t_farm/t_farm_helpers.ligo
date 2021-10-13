@@ -40,9 +40,8 @@ function claim_rewards(
       user.earned := abs(user.earned - earned * precision);
       user.claimed := user.claimed + earned;
 
-      const actual_earned : nat = earned *
-        abs(fee_precision - farm.fees.harvest_fee) / fee_precision;
-      const harvest_fee : nat = abs(earned - actual_earned);
+      const harvest_fee : nat = earned * farm.fees.harvest_fee / precision;
+      const actual_earned : nat = abs(earned - harvest_fee);
       const fee_receiver : address = case s.referrers[user_addr] of
         None           -> zero_address
       | Some(referrer) -> referrer

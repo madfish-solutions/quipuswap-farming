@@ -223,10 +223,10 @@ function withdraw(
             s.admin
           );
 
-          value_without_fee := value *
-            abs(fee_precision - farm.fees.withdrawal_fee) / fee_precision;
+          const withdrawal_fee : nat = value *
+            farm.fees.withdrawal_fee / precision;
 
-          const withdrawal_fee : nat = abs(value - value_without_fee);
+          value_without_fee := abs(value - withdrawal_fee);
 
           if withdrawal_fee =/= 0n
           then {

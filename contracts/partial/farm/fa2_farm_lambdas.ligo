@@ -85,9 +85,9 @@ function iterate_update_operators(
   const params          : upd_operator_type)
                         : storage_type is
   block {
-    const (param, should_remove) = case params of
-      | Add_operator(param) -> (param, False)
-      | Remove_operator(param) ->  (param, True)
+    const (param, should_add) = case params of
+      | Add_operator(param) -> (param, True)
+      | Remove_operator(param) ->  (param, False)
     end;
     
     if Tezos.sender =/= param.owner
@@ -97,10 +97,7 @@ function iterate_update_operators(
     var user : user_info_type :=
       get_user_info(param.token_id, param.owner, s);
 
-    user.allowances := if should_remove then
-      Set.remove(param.operator, user.allowances);
-    else
-      Set.add(param.operator, user.allowances);
+    user.allowances := Set.update(param.operator, should_add, user.allowances);
 
     s.users_info[(param.token_id, param.owner)] := user;
   } with s

@@ -1,6 +1,6 @@
 function update_farm_rewards(var farm : farm_type) : farm_type is
 block {
-  if Tezos.now >= farm.start_time
+  if Tezos.now >= farm.start_time and farm.upd <= farm.end_time
   then {
     if farm.staked =/= 0n
     then {

@@ -179,4 +179,28 @@ function transfer_token(
 function append_op(const op : operation; const acc : list(operation)) : list(operation) is op # acc
 
 function merge_ops(const first : list(operation); const second: list(operation)) : list(operation)
-    is List.fold_right(append_op, first, second)
+    is List.fold_right(append_op, second, first)
+
+[@inline]
+function ediv_or_fail(
+  const numerator       : nat;
+  const denominator     : nat)
+                        : (nat * nat) is
+  case ediv(numerator, denominator) of
+    | Some(result) -> result
+    | None -> failwith("ediv-or-fail-error")
+  end;
+
+[@inline]
+function is_nat_or_fail(const number : int) : nat is
+  case is_nat(number) of 
+    | Some(n) -> n
+    | None -> failwith("not-a-nat")
+  end;
+
+[@inline]
+function unwrap_or_get_burn_address(const addr : option(address)) : address is
+  case addr of
+    | Some(a) -> a
+    | None    -> zero_address
+  end;

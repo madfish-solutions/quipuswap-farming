@@ -106,7 +106,6 @@ function get_baker_registry_validate_entrypoint(
 function vote(
   const user_candidate  : key_hash;
   const user_addr       : address;
-  var operations        : list(operation);
   var user              : user_info_type;
   var farm              : farm_type;
   var s                 : storage_type)
@@ -161,33 +160,37 @@ function vote(
     }
     else skip;
 
-    if is_banned_baker(farm.next_candidate, s)
-    then farm.next_candidate := zero_key_hash
-    else skip;
-
-    if is_banned_baker(farm.current_delegated, s)
-    then {
-      operations := get_vote_operation(
-        farm.stake_params.qs_pool,
-        farm.current_delegated,
-        0n
-      ) # operations;
-
-      farm.current_delegated := farm.next_candidate;
-    }
-    else {
-      operations := get_vote_operation(
-        farm.stake_params.qs_pool,
-        farm.current_delegated,
-        farm.staked
-      ) # operations;
-    };
-
-    operations := Tezos.transaction(
-      farm.current_delegated,
-      0mutez,
-      get_baker_registry_validate_entrypoint(s.baker_registry)
-    ) # operations;
-
     s.farms[farm.fid] := farm;
-  } with (operations, s)
+  } with s
+
+function form_vote_ops(
+  var farm              : farm_type)
+                        : (farm * list(operation)) is
+block {
+  if is_banned_baker(farm.next_candidate, s)
+  then farm.next_candidate := zero_key_hash
+  else skip;
+
+  const votes = if is_banned_baker(farm.current_delegated, s) then 0n else farm.staked; 
+
+  if votes = 0n
+  then farm.current_delegated := farm.next_candidate;
+  else skip;
+
+  const vote = get_vote_operation(
+    farm.stake_params.qs_pool,
+    farm.current_delegated,
+    votes
+  );
+
+  const validate_baker = Tezos.transaction(
+    farm.current_delegated,
+    0mutez,
+    get_baker_registry_validate_entrypoint(s.baker_registry)
+  );
+} with ( list [validate_baker; vote], farm)
+
+function append_op(const op : operation; const acc : list(operation)) : list(operation) is op # acc
+
+function append_ops(const what : list(operation); const to: list(operation)) : list(operation)
+    is List.fold_right(append_op, to, what)

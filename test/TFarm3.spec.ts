@@ -1,9 +1,8 @@
 import { FA12 } from "./helpers/FA12";
 import { FA2 } from "./helpers/FA2";
 import { Utils, zeroAddress } from "./helpers/Utils";
-import { QFarm, QFarmUtils } from "./helpers/QFarm";
+import { TFarm, TFarmUtils } from "./helpers/TFarm";
 import { Burner } from "./helpers/Burner";
-import { ProxyMinter } from "./helpers/ProxyMinter";
 import { BakerRegistry } from "./helpers/BakerRegistry";
 import { QSFA12Factory } from "./helpers/QSFA12Factory";
 import { QSFA2Factory } from "./helpers/QSFA2Factory";
@@ -17,7 +16,7 @@ import {
   WithdrawData,
   WithdrawFarmDepoParams,
 } from "./types/Common";
-import { NewFarmParams, Farm } from "./types/QFarm";
+import { NewFarmParams, Farm } from "./types/TFarm";
 import { UserFA12Info } from "./types/FA12";
 import { TransferParam, UpdateOperatorParam } from "./types/FA2";
 
@@ -29,22 +28,20 @@ import { alice, bob, carol } from "../scripts/sandbox/accounts";
 
 import { fa12Storage } from "../storage/test/FA12";
 import { fa2Storage } from "../storage/test/FA2";
-import { qFarmStorage } from "../storage/QFarm";
+import { tFarmStorage } from "../storage/TFarm";
 import { burnerStorage } from "../storage/Burner";
-import { proxyMinterStorage } from "../storage/ProxyMinter";
 import { bakerRegistryStorage } from "../storage/BakerRegistry";
 import { qsFA12FactoryStorage } from "../storage/test/QSFA12Factory";
 import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
 
-describe("QFarm tests (section 2)", async () => {
+describe("TFarm tests (section 3)", async () => {
   var fa12: FA12;
   var fa12LP: QSFA12Dex;
   var qsGov: FA2;
   var qsGovLP: QSFA2Dex;
   var utils: Utils;
-  var qFarm: QFarm;
+  var tFarm: TFarm;
   var burner: Burner;
-  var proxyMinter: ProxyMinter;
   var bakerRegistry: BakerRegistry;
   var qsFA12Factory: QSFA12Factory;
   var qsFA2Factory: QSFA2Factory;
@@ -115,49 +112,52 @@ describe("QFarm tests (section 2)", async () => {
     burnerStorage.qsgov.token = qsGov.contract.address;
     burnerStorage.qsgov.id = 0;
 
-    proxyMinterStorage.qsgov.token = qsGov.contract.address;
-    proxyMinterStorage.qsgov.id = 0;
-    proxyMinterStorage.admin = alice.pkh;
-    proxyMinterStorage.pending_admin = zeroAddress;
-
     burner = await Burner.originate(utils.tezos, burnerStorage);
-    proxyMinter = await ProxyMinter.originate(utils.tezos, proxyMinterStorage);
 
-    await qsGov.setMinters([
-      { minter: proxyMinter.contract.address, share: 100000000 },
-    ]);
+    tFarmStorage.storage.qsgov.token = qsGov.contract.address;
+    tFarmStorage.storage.qsgov.id = 0;
+    tFarmStorage.storage.qsgov_lp = qsGovLP.contract.address;
+    tFarmStorage.storage.admin = alice.pkh;
+    tFarmStorage.storage.pending_admin = zeroAddress;
+    tFarmStorage.storage.burner = burner.contract.address;
+    tFarmStorage.storage.baker_registry = bakerRegistry.contract.address;
+    tFarmStorage.storage.farms_count = 0;
 
-    qFarmStorage.storage.qsgov.token = qsGov.contract.address;
-    qFarmStorage.storage.qsgov.id = 0;
-    qFarmStorage.storage.qsgov_lp = qsGovLP.contract.address;
-    qFarmStorage.storage.admin = alice.pkh;
-    qFarmStorage.storage.pending_admin = zeroAddress;
-    qFarmStorage.storage.burner = burner.contract.address;
-    qFarmStorage.storage.proxy_minter = proxyMinter.contract.address;
-    qFarmStorage.storage.baker_registry = bakerRegistry.contract.address;
-    qFarmStorage.storage.farms_count = 0;
+    tFarm = await TFarm.originate(utils.tezos, tFarmStorage);
 
-    qFarm = await QFarm.originate(utils.tezos, qFarmStorage);
-
-    await qFarm.setLambdas();
-    await proxyMinter.addMinter(qFarm.contract.address, true);
+    await tFarm.setLambdas();
   });
 
   it("should vote for bob, bob must become first current delegated", async () => {
-    let newFarmParams: NewFarmParams = await QFarmUtils.getMockNewFarmParams(
+    let newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
       utils
     );
 
     newFarmParams.fees.harvest_fee = 6 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 10 * feePrecision;
-    newFarmParams.fees.burn_reward = 12 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
     newFarmParams.stake_params.is_lp_staked_token = true;
     newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
+    newFarmParams.reward_token = { fA12: fa12.contract.address };
     newFarmParams.reward_per_second = 100 * precision;
     newFarmParams.timelock = 5; // 5 seconds
 
-    await qFarm.addNewFarm(newFarmParams);
+    const lifetime: number = 600; // 10 minutes
+    const rewAmount: number =
+      (lifetime * newFarmParams.reward_per_second) / precision;
+
+    await fa12.approve(tFarm.contract.address, rewAmount);
+
+    newFarmParams.start_time = String(
+      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 + 1
+    );
+    newFarmParams.end_time = String(
+      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
+        lifetime +
+        1
+    );
+
+    await tFarm.addNewFarm(newFarmParams);
 
     const depositParams: DepositParams = {
       fid: 0,
@@ -174,29 +174,29 @@ describe("QFarm tests (section 2)", async () => {
     const initialTokenAliceRecord: UserFA12Info =
       fa12LP.storage.storage.ledger[alice.pkh];
 
-    await fa12LP.approve(qFarm.contract.address, depositParams.amt);
-    await qFarm.deposit(depositParams);
-    await qFarm.updateStorage({
+    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
+    await tFarm.deposit(depositParams);
+    await tFarm.updateStorage({
       users_info: [[depositParams.fid, alice.pkh]],
       candidates: [[depositParams.fid, alice.pkh]],
       votes: [[depositParams.fid, bob.pkh]],
       farms: [depositParams.fid],
     });
     await fa12LP.updateStorage({
-      ledger: [alice.pkh, qFarm.contract.address],
+      ledger: [alice.pkh, tFarm.contract.address],
     });
 
-    const finalFarm: Farm = qFarm.storage.storage.farms[depositParams.fid];
+    const finalFarm: Farm = tFarm.storage.storage.farms[depositParams.fid];
     const finalFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${depositParams.fid},${alice.pkh}`];
+      tFarm.storage.storage.users_info[`${depositParams.fid},${alice.pkh}`];
     const finalFarmAliceCandidate: string =
-      qFarm.storage.storage.candidates[`${depositParams.fid},${alice.pkh}`];
+      tFarm.storage.storage.candidates[`${depositParams.fid},${alice.pkh}`];
     const finalFarmBobVotes: number =
-      qFarm.storage.storage.votes[`${depositParams.fid},${bob.pkh}`];
+      tFarm.storage.storage.votes[`${depositParams.fid},${bob.pkh}`];
     const finalTokenAliceRecord: UserFA12Info =
       fa12LP.storage.storage.ledger[alice.pkh];
     const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+      fa12LP.storage.storage.ledger[tFarm.contract.address];
 
     strictEqual(finalFarm.current_delegated, depositParams.candidate);
     strictEqual(finalFarm.next_candidate, zeroAddress);
@@ -229,38 +229,38 @@ describe("QFarm tests (section 2)", async () => {
     await fa12LP.transfer(alice.pkh, carol.pkh, 1000);
     await fa12LP.transfer(alice.pkh, bob.pkh, 1000);
     await fa12LP.updateStorage({
-      ledger: [carol.pkh, qFarm.contract.address],
+      ledger: [carol.pkh, tFarm.contract.address],
     });
 
     const initialTokenCarolRecord: UserFA12Info =
       fa12LP.storage.storage.ledger[carol.pkh];
     const initialTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+      fa12LP.storage.storage.ledger[tFarm.contract.address];
 
     await utils.setProvider(carol.sk);
-    await fa12LP.approve(qFarm.contract.address, depositParams.amt);
-    await qFarm.deposit(depositParams);
-    await qFarm.updateStorage({
+    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
+    await tFarm.deposit(depositParams);
+    await tFarm.updateStorage({
       users_info: [[depositParams.fid, carol.pkh]],
       candidates: [[depositParams.fid, carol.pkh]],
       votes: [[depositParams.fid, alice.pkh]],
       farms: [depositParams.fid],
     });
     await fa12LP.updateStorage({
-      ledger: [carol.pkh, qFarm.contract.address],
+      ledger: [carol.pkh, tFarm.contract.address],
     });
 
-    const finalFarm: Farm = qFarm.storage.storage.farms[depositParams.fid];
+    const finalFarm: Farm = tFarm.storage.storage.farms[depositParams.fid];
     const finalFarmCarolRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${depositParams.fid},${carol.pkh}`];
+      tFarm.storage.storage.users_info[`${depositParams.fid},${carol.pkh}`];
     const finalFarmCarolCandidate: string =
-      qFarm.storage.storage.candidates[`${depositParams.fid},${carol.pkh}`];
+      tFarm.storage.storage.candidates[`${depositParams.fid},${carol.pkh}`];
     const finalFarmAliceVotes: number =
-      qFarm.storage.storage.votes[`${depositParams.fid},${alice.pkh}`];
+      tFarm.storage.storage.votes[`${depositParams.fid},${alice.pkh}`];
     const finalTokenCarolRecord: UserFA12Info =
       fa12LP.storage.storage.ledger[carol.pkh];
     const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+      fa12LP.storage.storage.ledger[tFarm.contract.address];
 
     strictEqual(finalFarm.current_delegated, bob.pkh);
     strictEqual(finalFarm.next_candidate, depositParams.candidate);
@@ -292,46 +292,46 @@ describe("QFarm tests (section 2)", async () => {
       candidate: alice.pkh,
     };
 
-    await qFarm.updateStorage({
+    await tFarm.updateStorage({
       users_info: [[depositParams.fid, carol.pkh]],
       votes: [[depositParams.fid, alice.pkh]],
     });
     await fa12LP.updateStorage({
-      ledger: [carol.pkh, qFarm.contract.address],
+      ledger: [carol.pkh, tFarm.contract.address],
     });
 
     const initialFarmCarolRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${depositParams.fid},${carol.pkh}`];
+      tFarm.storage.storage.users_info[`${depositParams.fid},${carol.pkh}`];
     const initialFarmAliceVotes: number =
-      qFarm.storage.storage.votes[`${depositParams.fid},${alice.pkh}`];
+      tFarm.storage.storage.votes[`${depositParams.fid},${alice.pkh}`];
     const initialTokenCarolRecord: UserFA12Info =
       fa12LP.storage.storage.ledger[carol.pkh];
     const initialTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+      fa12LP.storage.storage.ledger[tFarm.contract.address];
 
-    await fa12LP.approve(qFarm.contract.address, depositParams.amt);
-    await qFarm.deposit(depositParams);
-    await qFarm.updateStorage({
+    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
+    await tFarm.deposit(depositParams);
+    await tFarm.updateStorage({
       users_info: [[depositParams.fid, carol.pkh]],
       candidates: [[depositParams.fid, carol.pkh]],
       votes: [[depositParams.fid, alice.pkh]],
       farms: [depositParams.fid],
     });
     await fa12LP.updateStorage({
-      ledger: [carol.pkh, qFarm.contract.address],
+      ledger: [carol.pkh, tFarm.contract.address],
     });
 
-    const finalFarm: Farm = qFarm.storage.storage.farms[depositParams.fid];
+    const finalFarm: Farm = tFarm.storage.storage.farms[depositParams.fid];
     const finalFarmCarolRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${depositParams.fid},${carol.pkh}`];
+      tFarm.storage.storage.users_info[`${depositParams.fid},${carol.pkh}`];
     const finalFarmCarolCandidate: string =
-      qFarm.storage.storage.candidates[`${depositParams.fid},${carol.pkh}`];
+      tFarm.storage.storage.candidates[`${depositParams.fid},${carol.pkh}`];
     const finalFarmAliceVotes: number =
-      qFarm.storage.storage.votes[`${depositParams.fid},${alice.pkh}`];
+      tFarm.storage.storage.votes[`${depositParams.fid},${alice.pkh}`];
     const finalTokenCarolRecord: UserFA12Info =
       fa12LP.storage.storage.ledger[carol.pkh];
     const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+      fa12LP.storage.storage.ledger[tFarm.contract.address];
 
     strictEqual(finalFarm.current_delegated, bob.pkh);
     strictEqual(finalFarm.next_candidate, depositParams.candidate);
@@ -369,46 +369,46 @@ describe("QFarm tests (section 2)", async () => {
       candidate: alice.pkh,
     };
 
-    await qFarm.updateStorage({
+    await tFarm.updateStorage({
       users_info: [[depositParams.fid, carol.pkh]],
       votes: [[depositParams.fid, alice.pkh]],
     });
     await fa12LP.updateStorage({
-      ledger: [carol.pkh, qFarm.contract.address],
+      ledger: [carol.pkh, tFarm.contract.address],
     });
 
     const initialFarmCarolRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${depositParams.fid},${carol.pkh}`];
+      tFarm.storage.storage.users_info[`${depositParams.fid},${carol.pkh}`];
     const initialFarmAliceVotes: number =
-      qFarm.storage.storage.votes[`${depositParams.fid},${alice.pkh}`];
+      tFarm.storage.storage.votes[`${depositParams.fid},${alice.pkh}`];
     const initialTokenCarolRecord: UserFA12Info =
       fa12LP.storage.storage.ledger[carol.pkh];
     const initialTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+      fa12LP.storage.storage.ledger[tFarm.contract.address];
 
-    await fa12LP.approve(qFarm.contract.address, depositParams.amt);
-    await qFarm.deposit(depositParams);
-    await qFarm.updateStorage({
+    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
+    await tFarm.deposit(depositParams);
+    await tFarm.updateStorage({
       users_info: [[depositParams.fid, carol.pkh]],
       candidates: [[depositParams.fid, carol.pkh]],
       votes: [[depositParams.fid, alice.pkh]],
       farms: [depositParams.fid],
     });
     await fa12LP.updateStorage({
-      ledger: [carol.pkh, qFarm.contract.address],
+      ledger: [carol.pkh, tFarm.contract.address],
     });
 
-    const finalFarm: Farm = qFarm.storage.storage.farms[depositParams.fid];
+    const finalFarm: Farm = tFarm.storage.storage.farms[depositParams.fid];
     const finalFarmCarolRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${depositParams.fid},${carol.pkh}`];
+      tFarm.storage.storage.users_info[`${depositParams.fid},${carol.pkh}`];
     const finalFarmCarolCandidate: string =
-      qFarm.storage.storage.candidates[`${depositParams.fid},${carol.pkh}`];
+      tFarm.storage.storage.candidates[`${depositParams.fid},${carol.pkh}`];
     const finalFarmAliceVotes: number =
-      qFarm.storage.storage.votes[`${depositParams.fid},${alice.pkh}`];
+      tFarm.storage.storage.votes[`${depositParams.fid},${alice.pkh}`];
     const finalTokenCarolRecord: UserFA12Info =
       fa12LP.storage.storage.ledger[carol.pkh];
     const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+      fa12LP.storage.storage.ledger[tFarm.contract.address];
 
     strictEqual(finalFarm.current_delegated, depositParams.candidate);
     strictEqual(finalFarm.next_candidate, bob.pkh);
@@ -446,49 +446,49 @@ describe("QFarm tests (section 2)", async () => {
       candidate: bob.pkh,
     };
 
-    await qFarm.updateStorage({
+    await tFarm.updateStorage({
       users_info: [[depositParams.fid, alice.pkh]],
       votes: [[depositParams.fid, bob.pkh]],
       farms: [depositParams.fid],
     });
     await fa12LP.updateStorage({
-      ledger: [alice.pkh, qFarm.contract.address],
+      ledger: [alice.pkh, tFarm.contract.address],
     });
 
-    const initialFarm: Farm = qFarm.storage.storage.farms[depositParams.fid];
+    const initialFarm: Farm = tFarm.storage.storage.farms[depositParams.fid];
     const initialFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${depositParams.fid},${alice.pkh}`];
+      tFarm.storage.storage.users_info[`${depositParams.fid},${alice.pkh}`];
     const initialFarmBobVotes: number =
-      qFarm.storage.storage.votes[`${depositParams.fid},${bob.pkh}`];
+      tFarm.storage.storage.votes[`${depositParams.fid},${bob.pkh}`];
     const initialTokenAliceRecord: UserFA12Info =
       fa12LP.storage.storage.ledger[alice.pkh];
     const initialTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+      fa12LP.storage.storage.ledger[tFarm.contract.address];
 
     await utils.setProvider(alice.sk);
-    await fa12LP.approve(qFarm.contract.address, depositParams.amt);
-    await qFarm.deposit(depositParams);
-    await qFarm.updateStorage({
+    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
+    await tFarm.deposit(depositParams);
+    await tFarm.updateStorage({
       users_info: [[depositParams.fid, alice.pkh]],
       candidates: [[depositParams.fid, alice.pkh]],
       votes: [[depositParams.fid, bob.pkh]],
       farms: [depositParams.fid],
     });
     await fa12LP.updateStorage({
-      ledger: [alice.pkh, qFarm.contract.address],
+      ledger: [alice.pkh, tFarm.contract.address],
     });
 
-    const finalFarm: Farm = qFarm.storage.storage.farms[depositParams.fid];
+    const finalFarm: Farm = tFarm.storage.storage.farms[depositParams.fid];
     const finalFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${depositParams.fid},${alice.pkh}`];
+      tFarm.storage.storage.users_info[`${depositParams.fid},${alice.pkh}`];
     const finalFarmAliceCandidate: string =
-      qFarm.storage.storage.candidates[`${depositParams.fid},${alice.pkh}`];
+      tFarm.storage.storage.candidates[`${depositParams.fid},${alice.pkh}`];
     const finalFarmBobVotes: number =
-      qFarm.storage.storage.votes[`${depositParams.fid},${bob.pkh}`];
+      tFarm.storage.storage.votes[`${depositParams.fid},${bob.pkh}`];
     const finalTokenAliceRecord: UserFA12Info =
       fa12LP.storage.storage.ledger[alice.pkh];
     const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+      fa12LP.storage.storage.ledger[tFarm.contract.address];
 
     strictEqual(finalFarm.current_delegated, depositParams.candidate);
     strictEqual(finalFarm.next_candidate, initialFarm.current_delegated);
@@ -522,48 +522,48 @@ describe("QFarm tests (section 2)", async () => {
       rewards_receiver: alice.pkh,
     };
 
-    await qFarm.updateStorage({
+    await tFarm.updateStorage({
       users_info: [[withdrawParams.fid, alice.pkh]],
       votes: [[withdrawParams.fid, bob.pkh]],
       farms: [withdrawParams.fid],
     });
     await fa12LP.updateStorage({
-      ledger: [alice.pkh, qFarm.contract.address],
+      ledger: [alice.pkh, tFarm.contract.address],
     });
 
-    const initialFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
     const initialFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
     const initialFarmBobVotes: number =
-      qFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
+      tFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
     const initialTokenAliceRecord: UserFA12Info =
       fa12LP.storage.storage.ledger[alice.pkh];
     const initialTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+      fa12LP.storage.storage.ledger[tFarm.contract.address];
 
-    await qFarm.withdraw(withdrawParams);
-    await qFarm.updateStorage({
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
       users_info: [[withdrawParams.fid, alice.pkh]],
       candidates: [[withdrawParams.fid, alice.pkh]],
       votes: [[withdrawParams.fid, bob.pkh]],
       farms: [withdrawParams.fid],
     });
     await fa12LP.updateStorage({
-      ledger: [alice.pkh, qFarm.contract.address],
+      ledger: [alice.pkh, tFarm.contract.address],
     });
 
-    const finalFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
     const finalFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
     const finalFarmAliceCandidate: string =
-      qFarm.storage.storage.candidates[`${withdrawParams.fid},${alice.pkh}`];
+      tFarm.storage.storage.candidates[`${withdrawParams.fid},${alice.pkh}`];
     const finalFarmBobVotes: number =
-      qFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
+      tFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
     const finalTokenAliceRecord: UserFA12Info =
       fa12LP.storage.storage.ledger[alice.pkh];
     const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
-    const res: WithdrawData = QFarmUtils.getWithdrawData(
+      fa12LP.storage.storage.ledger[tFarm.contract.address];
+    const res: WithdrawData = TFarmUtils.getWithdrawData(
       initialFarm,
       withdrawParams.amt,
       precision
@@ -608,7 +608,7 @@ describe("QFarm tests (section 2)", async () => {
       rewards_receiver: carol.pkh,
     };
 
-    await qFarm.updateStorage({
+    await tFarm.updateStorage({
       users_info: [[withdrawParams.fid, carol.pkh]],
       votes: [
         [withdrawParams.fid, alice.pkh],
@@ -617,24 +617,24 @@ describe("QFarm tests (section 2)", async () => {
       farms: [withdrawParams.fid],
     });
     await fa12LP.updateStorage({
-      ledger: [carol.pkh, qFarm.contract.address],
+      ledger: [carol.pkh, tFarm.contract.address],
     });
 
-    const initialFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
+    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
     const initialFarmCarolRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${withdrawParams.fid},${carol.pkh}`];
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${carol.pkh}`];
     const initialFarmAliceVotes: number =
-      qFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
+      tFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
     const initialFarmBobVotes: number =
-      qFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
+      tFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
     const initialTokenCarolRecord: UserFA12Info =
       fa12LP.storage.storage.ledger[carol.pkh];
     const initialTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+      fa12LP.storage.storage.ledger[tFarm.contract.address];
 
     await utils.setProvider(carol.sk);
-    await qFarm.withdraw(withdrawParams);
-    await qFarm.updateStorage({
+    await tFarm.withdraw(withdrawParams);
+    await tFarm.updateStorage({
       users_info: [[withdrawParams.fid, carol.pkh]],
       candidates: [[withdrawParams.fid, carol.pkh]],
       votes: [
@@ -644,23 +644,23 @@ describe("QFarm tests (section 2)", async () => {
       farms: [withdrawParams.fid],
     });
     await fa12LP.updateStorage({
-      ledger: [carol.pkh, qFarm.contract.address],
+      ledger: [carol.pkh, tFarm.contract.address],
     });
 
-    const finalFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
     const finalFarmCarolRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${withdrawParams.fid},${carol.pkh}`];
+      tFarm.storage.storage.users_info[`${withdrawParams.fid},${carol.pkh}`];
     const finalFarmCarolCandidate: string =
-      qFarm.storage.storage.candidates[`${withdrawParams.fid},${carol.pkh}`];
+      tFarm.storage.storage.candidates[`${withdrawParams.fid},${carol.pkh}`];
     const finalFarmAliceVotes: number =
-      qFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
+      tFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
     const finalFarmBobVotes: number =
-      qFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
+      tFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
     const finalTokenCarolRecord: UserFA12Info =
       fa12LP.storage.storage.ledger[carol.pkh];
     const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
-    const res: WithdrawData = QFarmUtils.getWithdrawData(
+      fa12LP.storage.storage.ledger[tFarm.contract.address];
+    const res: WithdrawData = TFarmUtils.getWithdrawData(
       initialFarm,
       withdrawParams.amt,
       precision
@@ -705,35 +705,35 @@ describe("QFarm tests (section 2)", async () => {
       amt: 25,
     };
 
-    await qFarm.updateStorage({
-      users_info: [[withdrawParams.fid, qFarm.contract.address]],
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, tFarm.contract.address]],
       votes: [
         [withdrawParams.fid, alice.pkh],
         [withdrawParams.fid, bob.pkh],
       ],
     });
     await fa12LP.updateStorage({
-      ledger: [alice.pkh, qFarm.contract.address],
+      ledger: [alice.pkh, tFarm.contract.address],
     });
 
     const initialFarmFarmRecord: UserInfoType =
-      qFarm.storage.storage.users_info[
-        `${withdrawParams.fid},${qFarm.contract.address}`
+      tFarm.storage.storage.users_info[
+        `${withdrawParams.fid},${tFarm.contract.address}`
       ];
     const initialFarmAliceVotes: number =
-      qFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
+      tFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
     const initialFarmBobVotes: number =
-      qFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
+      tFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
     const initialTokenAliceRecord: UserFA12Info =
       fa12LP.storage.storage.ledger[alice.pkh];
     const initialTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+      fa12LP.storage.storage.ledger[tFarm.contract.address];
 
     await utils.setProvider(alice.sk);
-    await qFarm.withdrawFarmDepo(withdrawParams);
-    await qFarm.updateStorage({
-      users_info: [[withdrawParams.fid, qFarm.contract.address]],
-      candidates: [[withdrawParams.fid, qFarm.contract.address]],
+    await tFarm.withdrawFarmDepo(withdrawParams);
+    await tFarm.updateStorage({
+      users_info: [[withdrawParams.fid, tFarm.contract.address]],
+      candidates: [[withdrawParams.fid, tFarm.contract.address]],
       votes: [
         [withdrawParams.fid, alice.pkh],
         [withdrawParams.fid, bob.pkh],
@@ -741,26 +741,26 @@ describe("QFarm tests (section 2)", async () => {
       farms: [withdrawParams.fid],
     });
     await fa12LP.updateStorage({
-      ledger: [alice.pkh, qFarm.contract.address],
+      ledger: [alice.pkh, tFarm.contract.address],
     });
 
-    const finalFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
+    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
     const finalFarmFarmRecord: UserInfoType =
-      qFarm.storage.storage.users_info[
-        `${withdrawParams.fid},${qFarm.contract.address}`
+      tFarm.storage.storage.users_info[
+        `${withdrawParams.fid},${tFarm.contract.address}`
       ];
     const finalFarmFarmCandidate: string =
-      qFarm.storage.storage.candidates[
-        `${withdrawParams.fid},${qFarm.contract.address}`
+      tFarm.storage.storage.candidates[
+        `${withdrawParams.fid},${tFarm.contract.address}`
       ];
     const finalFarmAliceVotes: number =
-      qFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
+      tFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
     const finalFarmBobVotes: number =
-      qFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
+      tFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
     const finalTokenAliceRecord: UserFA12Info =
       fa12LP.storage.storage.ledger[alice.pkh];
     const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+      fa12LP.storage.storage.ledger[tFarm.contract.address];
 
     strictEqual(finalFarm.current_delegated, bob.pkh);
     strictEqual(finalFarm.next_candidate, bob.pkh);
@@ -796,7 +796,7 @@ describe("QFarm tests (section 2)", async () => {
     };
 
     await utils.bakeBlocks(2);
-    await qFarm.updateStorage({
+    await tFarm.updateStorage({
       users_info: [
         [fid, alice.pkh],
         [fid, carol.pkh],
@@ -809,17 +809,17 @@ describe("QFarm tests (section 2)", async () => {
     });
 
     const initialFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${fid},${alice.pkh}`];
+      tFarm.storage.storage.users_info[`${fid},${alice.pkh}`];
     const initialFarmCarolRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${fid},${carol.pkh}`];
+      tFarm.storage.storage.users_info[`${fid},${carol.pkh}`];
     const initialFarmAliceVotes: number =
-      qFarm.storage.storage.votes[`${fid},${alice.pkh}`];
+      tFarm.storage.storage.votes[`${fid},${alice.pkh}`];
     const initialFarmBobVotes: number =
-      qFarm.storage.storage.votes[`${fid},${bob.pkh}`];
+      tFarm.storage.storage.votes[`${fid},${bob.pkh}`];
 
     await utils.setProvider(alice.sk);
-    await qFarm.transfer([transferParams]);
-    await qFarm.updateStorage({
+    await tFarm.transfer([transferParams]);
+    await tFarm.updateStorage({
       users_info: [
         [fid, alice.pkh],
         [fid, carol.pkh],
@@ -835,19 +835,19 @@ describe("QFarm tests (section 2)", async () => {
       farms: [fid],
     });
 
-    const finalFarm: Farm = qFarm.storage.storage.farms[fid];
+    const finalFarm: Farm = tFarm.storage.storage.farms[fid];
     const finalFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${fid},${alice.pkh}`];
+      tFarm.storage.storage.users_info[`${fid},${alice.pkh}`];
     const finalFarmCarolRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${fid},${carol.pkh}`];
+      tFarm.storage.storage.users_info[`${fid},${carol.pkh}`];
     const finalFarmAliceCandidate: string =
-      qFarm.storage.storage.candidates[`${fid},${alice.pkh}`];
+      tFarm.storage.storage.candidates[`${fid},${alice.pkh}`];
     const finalFarmCarolCandidate: string =
-      qFarm.storage.storage.candidates[`${fid},${carol.pkh}`];
+      tFarm.storage.storage.candidates[`${fid},${carol.pkh}`];
     const finalFarmAliceVotes: number =
-      qFarm.storage.storage.votes[`${fid},${alice.pkh}`];
+      tFarm.storage.storage.votes[`${fid},${alice.pkh}`];
     const finalFarmBobVotes: number =
-      qFarm.storage.storage.votes[`${fid},${bob.pkh}`];
+      tFarm.storage.storage.votes[`${fid},${bob.pkh}`];
 
     strictEqual(finalFarm.current_delegated, bob.pkh);
     strictEqual(finalFarm.next_candidate, bob.pkh);
@@ -882,10 +882,10 @@ describe("QFarm tests (section 2)", async () => {
     };
 
     await utils.setProvider(bob.sk);
-    await fa12LP.approve(qFarm.contract.address, depositParams.amt);
-    await qFarm.deposit(depositParams);
+    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
+    await tFarm.deposit(depositParams);
     await utils.bakeBlocks(5);
-    await qFarm.updateStorage({
+    await tFarm.updateStorage({
       users_info: [
         [fid, alice.pkh],
         [fid, bob.pkh],
@@ -899,18 +899,18 @@ describe("QFarm tests (section 2)", async () => {
     });
 
     const initialFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${fid},${alice.pkh}`];
+      tFarm.storage.storage.users_info[`${fid},${alice.pkh}`];
     const initialFarmBobRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${fid},${bob.pkh}`];
+      tFarm.storage.storage.users_info[`${fid},${bob.pkh}`];
     const initialFarmCarolRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${fid},${carol.pkh}`];
+      tFarm.storage.storage.users_info[`${fid},${carol.pkh}`];
     const initialFarmAliceVotes: number =
-      qFarm.storage.storage.votes[`${fid},${alice.pkh}`];
+      tFarm.storage.storage.votes[`${fid},${alice.pkh}`];
     const initialFarmBobVotes: number =
-      qFarm.storage.storage.votes[`${fid},${bob.pkh}`];
+      tFarm.storage.storage.votes[`${fid},${bob.pkh}`];
 
-    await qFarm.transfer([transferParams]);
-    await qFarm.updateStorage({
+    await tFarm.transfer([transferParams]);
+    await tFarm.updateStorage({
       users_info: [
         [fid, alice.pkh],
         [fid, bob.pkh],
@@ -928,23 +928,23 @@ describe("QFarm tests (section 2)", async () => {
       farms: [fid],
     });
 
-    const finalFarm: Farm = qFarm.storage.storage.farms[fid];
+    const finalFarm: Farm = tFarm.storage.storage.farms[fid];
     const finalFarmAliceRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${fid},${alice.pkh}`];
+      tFarm.storage.storage.users_info[`${fid},${alice.pkh}`];
     const finalFarmBobRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${fid},${bob.pkh}`];
+      tFarm.storage.storage.users_info[`${fid},${bob.pkh}`];
     const finalFarmCarolRecord: UserInfoType =
-      qFarm.storage.storage.users_info[`${fid},${carol.pkh}`];
+      tFarm.storage.storage.users_info[`${fid},${carol.pkh}`];
     const finalFarmAliceCandidate: string =
-      qFarm.storage.storage.candidates[`${fid},${alice.pkh}`];
+      tFarm.storage.storage.candidates[`${fid},${alice.pkh}`];
     const finalFarmBobCandidate: string =
-      qFarm.storage.storage.candidates[`${fid},${bob.pkh}`];
+      tFarm.storage.storage.candidates[`${fid},${bob.pkh}`];
     const finalFarmCarolCandidate: string =
-      qFarm.storage.storage.candidates[`${fid},${carol.pkh}`];
+      tFarm.storage.storage.candidates[`${fid},${carol.pkh}`];
     const finalFarmAliceVotes: number =
-      qFarm.storage.storage.votes[`${fid},${alice.pkh}`];
+      tFarm.storage.storage.votes[`${fid},${alice.pkh}`];
     const finalFarmBobVotes: number =
-      qFarm.storage.storage.votes[`${fid},${bob.pkh}`];
+      tFarm.storage.storage.votes[`${fid},${bob.pkh}`];
 
     strictEqual(finalFarm.current_delegated, depositParams.candidate);
     strictEqual(finalFarm.next_candidate, alice.pkh);

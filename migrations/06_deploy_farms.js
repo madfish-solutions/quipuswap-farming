@@ -1,4 +1,5 @@
 const QFarm = require("../build/q_farm.json");
+const TFarm = require("../build/t_farm.json");
 
 const { MichelsonMap, TezosToolkit } = require("@taquito/taquito");
 const { InMemorySigner } = require("@taquito/signer");
@@ -36,7 +37,7 @@ module.exports = async (tezos) => {
   newFarmParams.fees.burn_reward = 23 * feePrecision;
   newFarmParams.stake_params.staked_token = {
     fA2: {
-      token: "KT1NfYbYTCRZsNPZ97VdLqSrwPdVupiqniFu",
+      token: "KT1MsQZeAbLuNfhfWdiUsJT4tTDzxymkaxwo",
       id: 0,
     },
   };
@@ -52,6 +53,9 @@ module.exports = async (tezos) => {
   const qFarm = await tezos.contract.at(
     QFarm["networks"][env.network]["q_farm"]
   );
+  const tFarm = await tezos.contract.at(
+    TFarm["networks"][env.network]["t_farm"]
+  );
   let operation = await qFarm.methods
     .add_new_farm(...Utils.destructObj(newFarmParams))
     .send();
@@ -66,6 +70,18 @@ module.exports = async (tezos) => {
 
   operation = await qFarm.methods
     .add_new_farm(...Utils.destructObj(newFarmParams))
+    .send();
+
+  await confirmOperation(tezos, operation.hash);
+
+  operation = await qFarm.methods
+    .set_admin("tz1hajsAod8pgMpKYF7h5BStd1dBRZYTSNHD")
+    .send();
+
+  await confirmOperation(tezos, operation.hash);
+
+  operation = await tFarm.methods
+    .set_admin("tz1hajsAod8pgMpKYF7h5BStd1dBRZYTSNHD")
     .send();
 
   await confirmOperation(tezos, operation.hash);

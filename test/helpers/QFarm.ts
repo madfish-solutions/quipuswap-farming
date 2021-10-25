@@ -403,8 +403,7 @@ export class QFarmUtils {
     finalFarm: Farm,
     initialFarmUserRecord: UserInfoType,
     finalFarmUserRecord: UserInfoType,
-    precision: number,
-    feePrecision: number
+    precision: number
   ): FarmData {
     const timeLeft: number =
       (Date.parse(finalFarm.upd) - Date.parse(initialFarm.upd)) / 1000;
@@ -432,33 +431,29 @@ export class QFarmUtils {
         .integerValue(BigNumber.ROUND_DOWN)
         .multipliedBy(precision)
     );
-    const actualUserEarned: BigNumber = expectedUserEarned
-      .div(precision)
-      .integerValue(BigNumber.ROUND_DOWN)
-      .multipliedBy(100 * feePrecision - finalFarm.fees.harvest_fee)
-      .div(100)
-      .integerValue(BigNumber.ROUND_DOWN)
-      .div(feePrecision)
-      .integerValue(BigNumber.ROUND_DOWN);
     const actualUserBurned: BigNumber = expectedUserEarned
       .div(precision)
       .integerValue(BigNumber.ROUND_DOWN);
     const referralCommission: BigNumber = expectedUserEarned
       .div(precision)
       .integerValue(BigNumber.ROUND_DOWN)
-      .minus(actualUserEarned);
-    const burnAmount: BigNumber = expectedUserEarned
+      .multipliedBy(initialFarm.fees.harvest_fee)
+      .dividedBy(precision)
+      .integerValue(BigNumber.ROUND_DOWN);
+    const actualUserEarned: BigNumber = expectedUserEarned
       .div(precision)
       .integerValue(BigNumber.ROUND_DOWN)
-      .multipliedBy(100 * feePrecision - finalFarm.fees.burn_reward)
-      .div(100)
-      .integerValue(BigNumber.ROUND_DOWN)
-      .div(feePrecision)
-      .integerValue(BigNumber.ROUND_DOWN);
+      .minus(referralCommission);
     const expectedUserBurnReward: BigNumber = expectedUserEarned
       .div(precision)
       .integerValue(BigNumber.ROUND_DOWN)
-      .minus(burnAmount);
+      .multipliedBy(initialFarm.fees.burn_reward)
+      .dividedBy(precision)
+      .integerValue(BigNumber.ROUND_DOWN);
+    const burnAmount: BigNumber = expectedUserEarned
+      .div(precision)
+      .integerValue(BigNumber.ROUND_DOWN)
+      .minus(expectedUserBurnReward);
 
     return {
       expectedShareReward: expectedShareReward,
@@ -476,16 +471,14 @@ export class QFarmUtils {
   static getWithdrawData(
     initialFarm: Farm,
     withdrawValue: number,
-    feePrecision: number
+    precision: number
   ): WithdrawData {
-    const actualUserWithdraw: BigNumber = new BigNumber(withdrawValue)
-      .multipliedBy(100 * feePrecision - initialFarm.fees.withdrawal_fee)
-      .div(100)
-      .integerValue(BigNumber.ROUND_DOWN)
-      .div(feePrecision)
+    const wirthdrawCommission: BigNumber = new BigNumber(withdrawValue)
+      .multipliedBy(initialFarm.fees.withdrawal_fee)
+      .dividedBy(precision)
       .integerValue(BigNumber.ROUND_DOWN);
-    const wirthdrawCommission: BigNumber = new BigNumber(withdrawValue).minus(
-      actualUserWithdraw
+    const actualUserWithdraw: BigNumber = new BigNumber(withdrawValue).minus(
+      wirthdrawCommission
     );
 
     return {

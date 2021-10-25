@@ -182,8 +182,11 @@
     - ✅ should vote for alice, alice must not become current delegated;
     - ✅ should vote for alice, alice must become current delegated;
     - ✅ should vote for bob, bob must become current delegated after alice;
-    - should revote for banned bob, alice must become current delegated;
-    -
+    - ✅ should revote for bob, alice must become current delegated;
+    - ✅ should revote for alice, bob must become current delegated;
+    - ✅ should withdraw farm deposit and revote for bob, bob must remain current delegated;
+    - ✅ should transfer staked tokens to carol, bob must remain current delegated;
+    - ✅ should vote for alice and transfer staked tokens to carol, alice must become current delegated.
 
 ## TFarm
 
@@ -369,7 +372,17 @@
     - ✅ should add new farm and stake in batch, withdraw all rewards after farms lifetime finishing (without timelock);
     - ✅ should claim rewards in time of depositing after farms finishing when timelock is not finished;
     - ✅ should claim rewards in time of withdrawing after farms finishing when timelock is not finished;
-    - ✅ should claim rewards in time of claiming after farms finishing when timelock is not finished.
+    - ✅ should claim rewards in time of claiming after farms finishing when timelock is not finished;
+    - ✅ should vote for bob, bob must become first current delegated;
+    - ✅ should vote for alice, alice must became next candidate;
+    - ✅ should vote for alice, alice must not become current delegated;
+    - ✅ should vote for alice, alice must become current delegated;
+    - ✅ should vote for bob, bob must become current delegated after alice;
+    - ✅ should revote for bob, alice must become current delegated;
+    - ✅ should revote for alice, bob must become current delegated;
+    - ✅ should withdraw farm deposit and revote for bob, bob must remain current delegated;
+    - ✅ should transfer staked tokens to carol, bob must remain current delegated;
+    - ✅ should vote for alice and transfer staked tokens to carol, alice must become current delegated.
 
 ## Burner
 

@@ -23,7 +23,7 @@ for i in    0,set_admin \
             8,deposit \
             9,withdraw \
             10,harvest \
-            11,burn_xtz_rewards \
+            11,burn_tez_rewards \
             12,claim_farm_rewards \
             13,withdraw_farm_depo \
             14,transfer \
@@ -36,7 +36,7 @@ for i in    0,set_admin \
     FUNC=${i#*,};
     echo $IDX-$FUNC;
 
-    chosen_ligo compile-parameter --michelson-format=json $PWD/contracts/main/t_farm.ligo main "Setup_func(record index = ${IDX}n; func = ${FUNC}; end)" --output  $PWD/$DIR/${IDX}-${FUNC}.json
+    chosen_ligo compile-expression pascaligo --michelson-format=json --init-file $PWD/contracts/main/t_farm.ligo "Bytes.pack(${FUNC})" > $PWD/$DIR/${IDX}-${FUNC}.json
 done
 
 DIR=integration_tests/compiled/lambdas/qfarm
@@ -54,7 +54,7 @@ for i in    0,set_admin \
             10,deposit \
             11,withdraw \
             12,harvest \
-            13,burn_xtz_rewards \
+            13,burn_tez_rewards \
             14,burn_farm_rewards \
             15,withdraw_farm_depo \
             16,transfer \
@@ -67,5 +67,5 @@ for i in    0,set_admin \
     FUNC=${i#*,};
     echo $IDX-$FUNC;
 
-    chosen_ligo compile-parameter --michelson-format=json $PWD/contracts/main/q_farm.ligo main "Setup_func(record index = ${IDX}n; func = ${FUNC}; end)" --output  $PWD/$DIR/${IDX}-${FUNC}.json
+    chosen_ligo compile-expression pascaligo --michelson-format=json --init-file $PWD/contracts/main/q_farm.ligo "Bytes.pack(${FUNC})" > $PWD/$DIR/${IDX}-${FUNC}.json
 done

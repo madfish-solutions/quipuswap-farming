@@ -10,7 +10,7 @@ function iterate_transfer(
       block {
         var operations : list(operation) := result.0;
         var s : storage_type := result.1;
-        var farm : farm_type := get_farm(dst.token_id, s);
+        var farm : farm_type := get_farm(dst.token_id, s.farms);
         const upd_res : (storage_type * farm_type) =
           update_farm_rewards(farm, s);
 
@@ -22,7 +22,7 @@ function iterate_transfer(
         else skip;
 
         var src_user : user_info_type :=
-          get_user_info(dst.token_id, params.from_, s);
+          get_user_info(dst.token_id, params.from_, s.users_info);
 
         if params.from_ =/= Tezos.sender
           and not (Set.mem(Tezos.sender, src_user.allowances))
@@ -45,7 +45,7 @@ function iterate_transfer(
         s.users_info[(dst.token_id, params.from_)] := src_user;
 
         var dst_user : user_info_type :=
-          get_user_info(dst.token_id, dst.to_, s);
+          get_user_info(dst.token_id, dst.to_, s.users_info);
 
         dst_user.earned := dst_user.earned +
           abs(dst_user.staked * farm.reward_per_share - dst_user.prev_earned);
@@ -58,29 +58,31 @@ function iterate_transfer(
 
         if farm.stake_params.is_lp_staked_token
         then {
-          const vote_res_1 : (list(operation) * storage_type) = vote(
-            get_user_candidate(farm, dst.to_, s),
-            dst.to_,
-            operations,
-            dst_user,
-            farm,
-            s
-          );
-
-          operations := vote_res_1.0;
-          s := vote_res_1.1;
-
-          const vote_res_2 : (list(operation) * storage_type) = vote(
-            get_user_candidate(farm, params.from_, s),
+          s := vote(
+            get_user_candidate(farm, params.from_, s.candidates),
             params.from_,
-            operations,
             src_user,
             farm,
             s
           );
 
-          operations := vote_res_2.0;
-          s := vote_res_2.1;
+          var upd_farm : farm_type := get_farm(dst.token_id, s.farms);
+
+          s := vote(
+            get_user_candidate(upd_farm, dst.to_, s.candidates),
+            dst.to_,
+            dst_user,
+            upd_farm,
+            s
+          );
+          upd_farm := get_farm(dst.token_id, s.farms);
+
+          const farm_and_ops : (farm_type * list(operation)) =
+            form_vote_ops(s, upd_farm);
+
+          s.farms[farm.fid] := farm_and_ops.0;
+
+          operations := append_ops(operations, farm_and_ops.1);
         }
         else skip;
     } with (operations, s)
@@ -98,7 +100,7 @@ function iterate_update_operators(
       else skip;
 
       var user : user_info_type :=
-        get_user_info(param.token_id, param.owner, s);
+        get_user_info(param.token_id, param.owner, s.users_info);
 
       user.allowances := Set.add(param.operator, user.allowances);
 
@@ -110,7 +112,7 @@ function iterate_update_operators(
       else skip;
 
       var user : user_info_type :=
-        get_user_info(param.token_id, param.owner, s);
+        get_user_info(param.token_id, param.owner, s.users_info);
 
       user.allowances := Set.remove(param.operator, user.allowances);
 
@@ -134,7 +136,7 @@ function balance_of(
                         : list(bal_response_type) is
           block {
             const user : user_info_type =
-              get_user_info(request.token_id, request.owner, s);
+              get_user_info(request.token_id, request.owner, s.users_info);
             const response : bal_response_type = record [
               request = request;
               balance = user.staked;

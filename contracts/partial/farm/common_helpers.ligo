@@ -1,17 +1,17 @@
 function get_farm(
   const fid             : fid_type;
-  const s               : storage_type)
+  const farms           : big_map(fid_type, farm_type))
                         : farm_type is
-  case s.farms[fid] of
+  case farms[fid] of
     None       -> (failwith("QSystem/farm-not-set") : farm_type)
   | Some(farm) -> farm
   end
 
 function get_token_metadata(
   const fid             : fid_type;
-  const s               : storage_type)
+  const token_metadata  : big_map(fid_type, tok_meta_type))
                         : tok_meta_type is
-  case s.token_metadata[fid] of
+  case token_metadata[fid] of
     None           -> (failwith("QSystem/farm-not-set") : tok_meta_type)
   | Some(metadata) -> metadata
   end
@@ -19,9 +19,9 @@ function get_token_metadata(
 function get_user_info(
   const fid             : fid_type;
   const user            : address;
-  const s               : storage_type)
+  const users_info      : big_map((fid_type * address), user_info_type))
                         : user_info_type is
-    case s.users_info[(fid, user)] of
+    case users_info[(fid, user)] of
       Some(info) -> info
     | None       -> record [
       last_staked = (0 : timestamp);
@@ -36,9 +36,9 @@ function get_user_info(
 
 function get_baker_info(
   const baker           : key_hash;
-  const s               : storage_type)
+  const banned_bakers   : big_map(key_hash, baker_type))
                         : baker_type is
-    case s.banned_bakers[baker] of
+    case banned_bakers[baker] of
       Some(info) -> info
     | None       -> record [
       period = 0n;
@@ -48,18 +48,18 @@ function get_baker_info(
 
 function is_banned_baker(
   const baker           : key_hash;
-  const s               : storage_type)
+  const banned_bakers   : big_map(key_hash, baker_type))
                         : bool is
   block {
-    const baker_info : baker_type = get_baker_info(baker, s);
+    const baker_info : baker_type = get_baker_info(baker, banned_bakers);
   } with baker_info.start + int(baker_info.period) > Tezos.now
 
 function get_user_candidate(
   const farm            : farm_type;
   const user_addr       : address;
-  const s               : storage_type)
+  const candidates      : big_map((fid_type * address), key_hash))
                         : key_hash is
-  case s.candidates[(farm.fid, user_addr)] of
+  case candidates[(farm.fid, user_addr)] of
     None            -> farm.current_delegated
   | Some(candidate) -> candidate
   end
@@ -67,9 +67,9 @@ function get_user_candidate(
 function get_votes(
   const fid             : fid_type;
   const candidate       : key_hash;
-  const s               : storage_type)
+  const votes           : big_map((fid_type * key_hash), nat))
                         : nat is
-  case s.votes[(fid, candidate)] of
+  case votes[(fid, candidate)] of
     None      -> 0n
   | Some(amt) -> amt
   end
@@ -106,16 +106,16 @@ function get_baker_registry_validate_entrypoint(
 function vote(
   const user_candidate  : key_hash;
   const user_addr       : address;
-  var operations        : list(operation);
   var user              : user_info_type;
   var farm              : farm_type;
   var s                 : storage_type)
-                        : (list(operation) * storage_type) is
+                        : storage_type is
   block {
     case s.candidates[(farm.fid, user_addr)] of
       None            -> skip
     | Some(user_candidate) -> {
-      const candidate_votes : nat = get_votes(farm.fid, user_candidate, s);
+      const candidate_votes : nat =
+        get_votes(farm.fid, user_candidate, s.votes);
 
       if candidate_votes >= user.prev_staked
       then s.votes[(farm.fid, user_candidate)] :=
@@ -125,7 +125,7 @@ function vote(
     end;
 
     const user_candidate_prev_votes : nat =
-      get_votes(farm.fid, user_candidate, s);
+      get_votes(farm.fid, user_candidate, s.votes);
     const user_candidate_votes = user_candidate_prev_votes + user.staked;
 
     s.votes[(farm.fid, user_candidate)] := user_candidate_votes;
@@ -139,16 +139,17 @@ function vote(
     s.users_info[(farm.fid, user_addr)] := user;
 
     const current_delegated_votes : nat =
-      get_votes(farm.fid, farm.current_delegated, s);
+      get_votes(farm.fid, farm.current_delegated, s.votes);
     const next_candidate_votes : nat =
-      get_votes(farm.fid, farm.next_candidate, s);
+      get_votes(farm.fid, farm.next_candidate, s.votes);
 
     if user_candidate_votes > current_delegated_votes
     then {
       farm.next_candidate := farm.current_delegated;
       farm.current_delegated := user_candidate;
     }
-    else if user_candidate_votes > next_candidate_votes
+    else if user_candidate_votes > next_candidate_votes and
+      user_candidate =/= farm.current_delegated
     then {
       farm.next_candidate := user_candidate;
     }
@@ -161,33 +162,47 @@ function vote(
     }
     else skip;
 
-    if is_banned_baker(farm.next_candidate, s)
+    s.farms[farm.fid] := farm;
+  } with s
+
+function form_vote_ops(
+  const s               : storage_type;
+  var farm              : farm_type)
+                        : (farm_type * list(operation)) is
+  block {
+    if is_banned_baker(farm.next_candidate, s.banned_bakers)
     then farm.next_candidate := zero_key_hash
     else skip;
 
-    if is_banned_baker(farm.current_delegated, s)
-    then {
-      operations := get_vote_operation(
-        farm.stake_params.qs_pool,
-        farm.current_delegated,
-        0n
-      ) # operations;
+    const votes : nat =
+      if is_banned_baker(farm.current_delegated, s.banned_bakers)
+      then 0n
+      else farm.staked;
 
-      farm.current_delegated := farm.next_candidate;
-    }
-    else {
-      operations := get_vote_operation(
-        farm.stake_params.qs_pool,
-        farm.current_delegated,
-        farm.staked
-      ) # operations;
-    };
+    if votes = 0n
+    then farm.current_delegated := farm.next_candidate;
+    else skip;
 
-    operations := Tezos.transaction(
+    const vote_op : operation = get_vote_operation(
+      farm.stake_params.qs_pool,
+      farm.current_delegated,
+      votes
+    );
+    const validate_baker_op : operation = Tezos.transaction(
       farm.current_delegated,
       0mutez,
       get_baker_registry_validate_entrypoint(s.baker_registry)
-    ) # operations;
+    );
+  } with (farm, list [validate_baker_op; vote_op])
 
-    s.farms[farm.fid] := farm;
-  } with (operations, s)
+function append_op(
+  const op              : operation;
+  const acc             : list(operation))
+                        : list(operation) is
+  op # acc
+
+function append_ops(
+  const what            : list(operation);
+  const to_             : list(operation))
+                        : list(operation) is
+  List.fold_right(append_op, to_, what)

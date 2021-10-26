@@ -70,7 +70,7 @@ function deposit(
 
     case action of
       Deposit(params)                   -> {
-        var farm : farm_type := get_farm(params.fid, s);
+        var farm : farm_type := get_farm(params.fid, s.farms);
 
         if farm.paused
         then failwith("TFarm/farm-is-paused")
@@ -82,7 +82,8 @@ function deposit(
         s := upd_res.0;
         farm := upd_res.1;
 
-        var user : user_info_type := get_user_info(farm.fid, Tezos.sender, s);
+        var user : user_info_type :=
+          get_user_info(farm.fid, Tezos.sender, s.users_info);
 
         user.earned := user.earned +
           abs(user.staked * farm.reward_per_share - user.prev_earned);
@@ -137,21 +138,20 @@ function deposit(
         then {
           if farm.stake_params.is_lp_staked_token
           then {
-            if is_banned_baker(params.candidate, s)
+            if is_banned_baker(params.candidate, s.banned_bakers)
             then failwith("TFarm/baker-is-banned")
             else skip;
 
-            const vote_res : (list(operation) * storage_type) = vote(
-              params.candidate,
-              Tezos.sender,
-              operations,
-              user,
-              farm,
-              s
-            );
+            s := vote(params.candidate, Tezos.sender, user, farm, s);
 
-            operations := vote_res.0;
-            s := vote_res.1;
+            var upd_farm : farm_type := get_farm(params.fid, s.farms);
+
+            const farm_and_ops : (farm_type * list(operation)) =
+              form_vote_ops(s, upd_farm);
+
+            s.farms[farm.fid] := farm_and_ops.0;
+
+            operations := append_ops(operations, farm_and_ops.1);
           }
           else skip;
 
@@ -177,14 +177,15 @@ function withdraw(
 
     case action of
       Withdraw(params)                  -> {
-        var farm : farm_type := get_farm(params.fid, s);
+        var farm : farm_type := get_farm(params.fid, s.farms);
         const upd_res : (storage_type * farm_type) =
           update_farm_rewards(farm, s);
 
         s := upd_res.0;
         farm := upd_res.1;
 
-        var user : user_info_type := get_user_info(farm.fid, Tezos.sender, s);
+        var user : user_info_type :=
+          get_user_info(farm.fid, Tezos.sender, s.users_info);
         var value : nat := params.amt;
 
         if value > user.staked
@@ -231,7 +232,7 @@ function withdraw(
           if withdrawal_fee =/= 0n
           then {
             var farm_user : user_info_type :=
-              get_user_info(farm.fid, Tezos.self_address, s);
+              get_user_info(farm.fid, Tezos.self_address, s.users_info);
 
             farm_user.earned := farm_user.earned +
               abs(farm_user.staked * farm.reward_per_share -
@@ -267,29 +268,31 @@ function withdraw(
 
         if farm.stake_params.is_lp_staked_token
         then {
-          const vote_res_1 : (list(operation) * storage_type) = vote(
-            get_user_candidate(farm, Tezos.self_address, s),
-            Tezos.self_address,
-            operations,
-            get_user_info(farm.fid, Tezos.self_address, s),
-            farm,
-            s
-          );
-
-          operations := vote_res_1.0;
-          s := vote_res_1.1;
-
-          const vote_res_2 : (list(operation) * storage_type) = vote(
-            get_user_candidate(farm, Tezos.sender, s),
+          s := vote(
+            get_user_candidate(farm, Tezos.sender, s.candidates),
             Tezos.sender,
-            operations,
             user,
             farm,
             s
           );
 
-          operations := vote_res_2.0;
-          s := vote_res_2.1;
+          var upd_farm : farm_type := get_farm(params.fid, s.farms);
+
+          s := vote(
+            get_user_candidate(upd_farm, Tezos.self_address, s.candidates),
+            Tezos.self_address,
+            get_user_info(upd_farm.fid, Tezos.self_address, s.users_info),
+            upd_farm,
+            s
+          );
+          upd_farm := get_farm(params.fid, s.farms);
+
+          const farm_and_ops : (farm_type * list(operation)) =
+            form_vote_ops(s, upd_farm);
+
+          s.farms[farm.fid] := farm_and_ops.0;
+
+          operations := append_ops(operations, farm_and_ops.1);
         }
         else skip;
       }
@@ -306,14 +309,15 @@ function harvest(
 
     case action of
       Harvest(params)                   -> {
-        var farm : farm_type := get_farm(params.fid, s);
+        var farm : farm_type := get_farm(params.fid, s.farms);
         const upd_res : (storage_type * farm_type) =
           update_farm_rewards(farm, s);
 
         s := upd_res.0;
         farm := upd_res.1;
 
-        var user : user_info_type := get_user_info(farm.fid, Tezos.sender, s);
+        var user : user_info_type :=
+          get_user_info(farm.fid, Tezos.sender, s.users_info);
 
         user.earned := user.earned +
           abs(user.staked * farm.reward_per_share - user.prev_earned);
@@ -362,7 +366,7 @@ function claim_farm_rewards(
       Claim_farm_rewards(fid)           -> {
         only_admin(s.admin);
 
-        var farm : farm_type := get_farm(fid, s);
+        var farm : farm_type := get_farm(fid, s.farms);
         const upd_res : (storage_type * farm_type) =
           update_farm_rewards(farm, s);
 
@@ -370,7 +374,7 @@ function claim_farm_rewards(
         farm := upd_res.1;
 
         var user : user_info_type :=
-          get_user_info(farm.fid, Tezos.self_address, s);
+          get_user_info(farm.fid, Tezos.self_address, s.users_info);
 
         user.earned := user.earned +
           abs(user.staked * farm.reward_per_share - user.prev_earned);

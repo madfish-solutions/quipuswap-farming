@@ -93,32 +93,21 @@ function iterate_update_operators(
   const params          : upd_operator_type)
                         : storage_type is
   block {
-    case params of
-      Add_operator(param) -> {
-      if Tezos.sender =/= param.owner
-      then failwith("FA2_NOT_OWNER")
-      else skip;
+    const (param, should_add) = case params of
+    | Add_operator(param)    -> (param, True)
+    | Remove_operator(param) ->  (param, False)
+    end;
 
-      var user : user_info_type :=
-        get_user_info(param.token_id, param.owner, s.users_info);
+    if Tezos.sender =/= param.owner
+    then failwith("FA2_NOT_OWNER")
+    else skip;
 
-      user.allowances := Set.add(param.operator, user.allowances);
+    var user : user_info_type :=
+      get_user_info(param.token_id, param.owner, s.users_info);
 
-      s.users_info[(param.token_id, param.owner)] := user;
-    }
-    | Remove_operator(param) -> {
-      if Tezos.sender =/= param.owner
-      then failwith("FA2_NOT_OWNER")
-      else skip;
+    user.allowances := Set.update(param.operator, should_add, user.allowances);
 
-      var user : user_info_type :=
-        get_user_info(param.token_id, param.owner, s.users_info);
-
-      user.allowances := Set.remove(param.operator, user.allowances);
-
-      s.users_info[(param.token_id, param.owner)] := user;
-    }
-    end
+    s.users_info[(param.token_id, param.owner)] := user;
   } with s
 
 function balance_of(

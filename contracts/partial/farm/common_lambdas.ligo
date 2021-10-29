@@ -43,7 +43,7 @@ function set_fees(
           const params    : set_fee_type)
                           : storage_type is
           block {
-            var farm : farm_type := get_farm(params.fid, s);
+            var farm : farm_type := get_farm(params.fid, s.farms);
 
             farm.fees := params.fees;
 
@@ -101,7 +101,8 @@ function ban_bakers(
           const params    : ban_baker_type)
                           : storage_type is
           block {
-            var baker_info : baker_type := get_baker_info(params.baker, s);
+            var baker_info : baker_type :=
+              get_baker_info(params.baker, s.banned_bakers);
 
             baker_info.period := params.period;
             baker_info.start := Tezos.now;
@@ -130,7 +131,7 @@ function pause_farms(
           const params    : pause_farm_type)
                           : storage_type is
           block {
-            var farm : farm_type := get_farm(params.fid, s);
+            var farm : farm_type := get_farm(params.fid, s.farms);
             const upd_res : (storage_type * farm_type) =
               update_farm_rewards(farm, s);
 
@@ -159,7 +160,7 @@ function burn_tez_rewards(
       Burn_tez_rewards(fid)             -> {
         only_admin(s.admin);
 
-        const farm : farm_type = get_farm(fid, s);
+        const farm : farm_type = get_farm(fid, s.farms);
 
         if not farm.stake_params.is_lp_staked_token
         then failwith("QSystem/not-LP-farm")
@@ -191,7 +192,7 @@ function withdraw_farm_depo(
       Withdraw_farm_depo(params)        -> {
         only_admin(s.admin);
 
-        var farm : farm_type := get_farm(params.fid, s);
+        var farm : farm_type := get_farm(params.fid, s.farms);
         const upd_res : (storage_type * farm_type) =
           update_farm_rewards(farm, s);
 
@@ -199,7 +200,7 @@ function withdraw_farm_depo(
         farm := upd_res.1;
 
         var user : user_info_type :=
-          get_user_info(farm.fid, Tezos.self_address, s);
+          get_user_info(farm.fid, Tezos.self_address, s.users_info);
         var value : nat := params.amt;
 
         if value > user.staked
@@ -226,17 +227,21 @@ function withdraw_farm_depo(
 
         if farm.stake_params.is_lp_staked_token
         then {
-          const vote_res : (list(operation) * storage_type) = vote(
-            get_user_candidate(farm, Tezos.self_address, s),
+          s := vote(
+            get_user_candidate(farm, Tezos.self_address, s.candidates),
             Tezos.self_address,
-            operations,
             user,
             farm,
             s
           );
 
-          operations := vote_res.0;
-          s := vote_res.1;
+          const upd_farm : farm_type = get_farm(params.fid, s.farms);
+          const farm_and_ops : (farm_type * list(operation)) =
+            form_vote_ops(s, upd_farm);
+
+          s.farms[farm.fid] := farm_and_ops.0;
+
+          operations := append_ops(operations, farm_and_ops.1);
         }
         else skip;
       }
@@ -253,7 +258,8 @@ function update_token_metadata(
       Update_token_metadata(params)     -> {
         only_admin(s.admin);
 
-        var metadata : tok_meta_type := get_token_metadata(params.token_id, s);
+        var metadata : tok_meta_type :=
+          get_token_metadata(params.token_id, s.token_metadata);
 
         function upd_tok_meta(
           var metadata  : tok_meta_type;

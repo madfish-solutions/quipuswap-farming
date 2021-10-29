@@ -524,7 +524,10 @@ describe("TFarm tests (section 3)", async () => {
 
     await tFarm.updateStorage({
       users_info: [[withdrawParams.fid, alice.pkh]],
-      votes: [[withdrawParams.fid, bob.pkh]],
+      votes: [
+        [withdrawParams.fid, alice.pkh],
+        [withdrawParams.fid, bob.pkh],
+      ],
       farms: [withdrawParams.fid],
     });
     await fa12LP.updateStorage({
@@ -534,6 +537,8 @@ describe("TFarm tests (section 3)", async () => {
     const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
     const initialFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
+    const initialFarmAliceVotes: number =
+      tFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
     const initialFarmBobVotes: number =
       tFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
     const initialTokenAliceRecord: UserFA12Info =
@@ -545,7 +550,10 @@ describe("TFarm tests (section 3)", async () => {
     await tFarm.updateStorage({
       users_info: [[withdrawParams.fid, alice.pkh]],
       candidates: [[withdrawParams.fid, alice.pkh]],
-      votes: [[withdrawParams.fid, bob.pkh]],
+      votes: [
+        [withdrawParams.fid, alice.pkh],
+        [withdrawParams.fid, bob.pkh],
+      ],
       farms: [withdrawParams.fid],
     });
     await fa12LP.updateStorage({
@@ -557,6 +565,8 @@ describe("TFarm tests (section 3)", async () => {
       tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
     const finalFarmAliceCandidate: string =
       tFarm.storage.storage.candidates[`${withdrawParams.fid},${alice.pkh}`];
+    const finalFarmAliceVotes: number =
+      tFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
     const finalFarmBobVotes: number =
       tFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
     const finalTokenAliceRecord: UserFA12Info =
@@ -576,11 +586,10 @@ describe("TFarm tests (section 3)", async () => {
       +initialFarmAliceRecord.prev_staked - withdrawParams.amt
     );
     strictEqual(finalFarmAliceCandidate, bob.pkh);
+    strictEqual(+finalFarmBobVotes, +initialFarmBobVotes - withdrawParams.amt);
     strictEqual(
-      +finalFarmBobVotes,
-      +initialFarmBobVotes -
-        withdrawParams.amt +
-        res.wirthdrawCommission.toNumber()
+      +finalFarmAliceVotes,
+      +initialFarmAliceVotes + res.wirthdrawCommission.toNumber()
     );
 
     ok(
@@ -675,12 +684,11 @@ describe("TFarm tests (section 3)", async () => {
     strictEqual(finalFarmCarolCandidate, undefined);
     strictEqual(
       +finalFarmAliceVotes,
-      +initialFarmAliceVotes - withdrawParams.amt
+      +initialFarmAliceVotes -
+        withdrawParams.amt +
+        res.wirthdrawCommission.toNumber()
     );
-    strictEqual(
-      +finalFarmBobVotes,
-      +initialFarmBobVotes + res.wirthdrawCommission.toNumber()
-    );
+    strictEqual(+finalFarmBobVotes, +initialFarmBobVotes);
 
     ok(
       new BigNumber(finalTokenCarolRecord.balance).isEqualTo(
@@ -763,14 +771,17 @@ describe("TFarm tests (section 3)", async () => {
       fa12LP.storage.storage.ledger[tFarm.contract.address];
 
     strictEqual(finalFarm.current_delegated, bob.pkh);
-    strictEqual(finalFarm.next_candidate, bob.pkh);
+    strictEqual(finalFarm.next_candidate, alice.pkh);
     strictEqual(
       +finalFarmFarmRecord.prev_staked,
       +initialFarmFarmRecord.prev_staked - withdrawParams.amt
     );
     strictEqual(finalFarmFarmCandidate, undefined);
-    strictEqual(+finalFarmBobVotes, +initialFarmBobVotes - withdrawParams.amt);
-    strictEqual(+finalFarmAliceVotes, +initialFarmAliceVotes);
+    strictEqual(+finalFarmBobVotes, +initialFarmBobVotes);
+    strictEqual(
+      +finalFarmAliceVotes,
+      +initialFarmAliceVotes - withdrawParams.amt
+    );
 
     ok(
       new BigNumber(finalTokenAliceRecord.balance).isEqualTo(
@@ -850,7 +861,7 @@ describe("TFarm tests (section 3)", async () => {
       tFarm.storage.storage.votes[`${fid},${bob.pkh}`];
 
     strictEqual(finalFarm.current_delegated, bob.pkh);
-    strictEqual(finalFarm.next_candidate, bob.pkh);
+    strictEqual(finalFarm.next_candidate, alice.pkh);
     strictEqual(
       +finalFarmAliceRecord.prev_staked,
       +initialFarmAliceRecord.prev_staked - amt
@@ -947,7 +958,7 @@ describe("TFarm tests (section 3)", async () => {
       tFarm.storage.storage.votes[`${fid},${bob.pkh}`];
 
     strictEqual(finalFarm.current_delegated, depositParams.candidate);
-    strictEqual(finalFarm.next_candidate, alice.pkh);
+    strictEqual(finalFarm.next_candidate, bob.pkh);
     strictEqual(
       +finalFarmAliceRecord.prev_staked,
       +initialFarmAliceRecord.prev_staked

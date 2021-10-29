@@ -337,9 +337,10 @@ describe("QFarm tests (section 1)", async () => {
       +qFarm.storage.storage.banned_bakers[alice.pkh].period,
       banParams[0].period
     );
-    strictEqual(
-      Date.parse(qFarm.storage.storage.banned_bakers[alice.pkh].start),
-      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
+
+    ok(
+      Date.parse(qFarm.storage.storage.banned_bakers[alice.pkh].start) <=
+        Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
     );
   });
 
@@ -350,9 +351,10 @@ describe("QFarm tests (section 1)", async () => {
     await qFarm.updateStorage({ banned_bakers: [alice.pkh] });
 
     strictEqual(+qFarm.storage.storage.banned_bakers[alice.pkh].period, 0);
-    strictEqual(
-      Date.parse(qFarm.storage.storage.banned_bakers[alice.pkh].start),
-      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
+
+    ok(
+      Date.parse(qFarm.storage.storage.banned_bakers[alice.pkh].start) <=
+        Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
     );
   });
 
@@ -370,11 +372,11 @@ describe("QFarm tests (section 1)", async () => {
         +qFarm.storage.storage.banned_bakers[banParams[i].baker].period,
         banParams[i].period
       );
-      strictEqual(
+
+      ok(
         Date.parse(
           qFarm.storage.storage.banned_bakers[banParams[i].baker].start
-        ),
-        Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
+        ) <= Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
       );
     }
   });
@@ -393,11 +395,11 @@ describe("QFarm tests (section 1)", async () => {
         +qFarm.storage.storage.banned_bakers[banParams[i].baker].period,
         0
       );
-      strictEqual(
+
+      ok(
         Date.parse(
           qFarm.storage.storage.banned_bakers[banParams[i].baker].start
-        ),
-        Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
+        ) <= Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
       );
     }
   });
@@ -420,18 +422,19 @@ describe("QFarm tests (section 1)", async () => {
         +qFarm.storage.storage.banned_bakers[banParams[i].baker].period,
         banParams[i].period
       );
-      strictEqual(
+
+      ok(
         Date.parse(
           qFarm.storage.storage.banned_bakers[banParams[i].baker].start
-        ),
-        Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
+        ) <= Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
       );
     }
 
     strictEqual(+qFarm.storage.storage.banned_bakers[alice.pkh].period, 0);
-    strictEqual(
-      Date.parse(qFarm.storage.storage.banned_bakers[alice.pkh].start),
-      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
+
+    ok(
+      Date.parse(qFarm.storage.storage.banned_bakers[alice.pkh].start) <=
+        Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
     );
   });
 
@@ -2098,7 +2101,7 @@ describe("QFarm tests (section 1)", async () => {
       qFarm.storage.storage.votes[`${depositParams.fid},${bob.pkh}`];
 
     strictEqual(finalFarm.current_delegated, depositParams.candidate);
-    strictEqual(finalFarm.next_candidate, depositParams.candidate);
+    strictEqual(finalFarm.next_candidate, zeroAddress);
     strictEqual(+finalFarmDevRecord.prev_staked, depositParams.amt);
     strictEqual(finalFarmDevCandidate, depositParams.candidate);
     strictEqual(+finalFarmBobVotes, +finalFarm.staked);

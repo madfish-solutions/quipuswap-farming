@@ -10,12 +10,8 @@ function iterate_transfer(
       block {
         var operations : list(operation) := result.0;
         var s : storage_type := result.1;
-        var farm : farm_type := get_farm(dst.token_id, s.farms);
-        const upd_res : (storage_type * farm_type) =
-          update_farm_rewards(farm, s);
-
-        s := upd_res.0;
-        farm := upd_res.1;
+        var updated_farm : farm_type :=
+          update_farm_rewards(get_farm(dst.token_id, s.farms));
 
         if dst.to_ = Tezos.self_address
         then failwith("FA2_ILLEGAL_TRANSFER")
@@ -33,14 +29,18 @@ function iterate_transfer(
         then failwith("FA2_INSUFFICIENT_BALANCE")
         else skip;
 
-        if abs(Tezos.now - src_user.last_staked) < farm.timelock
+        if abs(Tezos.now - src_user.last_staked) < updated_farm.timelock
         then failwith("FA2_TIMELOCK_NOT_FINISHED")
         else skip;
 
         src_user.earned := src_user.earned +
-          abs(src_user.staked * farm.reward_per_share - src_user.prev_earned);
+          abs(
+            src_user.staked * updated_farm.reward_per_share -
+              src_user.prev_earned
+          );
         src_user.staked := abs(src_user.staked - dst.amount);
-        src_user.prev_earned := src_user.staked * farm.reward_per_share;
+        src_user.prev_earned := src_user.staked *
+          updated_farm.reward_per_share;
 
         s.users_info[(dst.token_id, params.from_)] := src_user;
 
@@ -48,21 +48,25 @@ function iterate_transfer(
           get_user_info(dst.token_id, dst.to_, s.users_info);
 
         dst_user.earned := dst_user.earned +
-          abs(dst_user.staked * farm.reward_per_share - dst_user.prev_earned);
+          abs(
+            dst_user.staked * updated_farm.reward_per_share -
+              dst_user.prev_earned
+          );
         dst_user.staked := dst_user.staked + dst.amount;
-        dst_user.prev_earned := dst_user.staked * farm.reward_per_share;
+        dst_user.prev_earned := dst_user.staked *
+          updated_farm.reward_per_share;
 
         s.users_info[(dst.token_id, dst.to_)] := dst_user;
 
-        s.farms[dst.token_id] := farm;
+        s.farms[dst.token_id] := updated_farm;
 
-        if farm.stake_params.is_lp_staked_token
+        if updated_farm.stake_params.is_lp_staked_token
         then {
           s := vote(
-            get_user_candidate(farm, params.from_, s.candidates),
+            get_user_candidate(updated_farm, params.from_, s.candidates),
             params.from_,
             src_user,
-            farm,
+            updated_farm,
             s
           );
 
@@ -80,7 +84,7 @@ function iterate_transfer(
           const farm_and_ops : (farm_type * list(operation)) =
             form_vote_ops(s, upd_farm);
 
-          s.farms[farm.fid] := farm_and_ops.0;
+          s.farms[upd_farm.fid] := farm_and_ops.0;
 
           operations := append_ops(operations, farm_and_ops.1);
         }

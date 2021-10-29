@@ -26,9 +26,8 @@ function claim_rewards(
   var user              : user_info_type;
   var operations        : list(operation);
   var farm              : farm_type;
-  const user_addr       : address;
   const receiver        : address;
-  const s               : storage_type)
+  const referrer        : option(address))
                         : claim_return_type is
   block {
     const earned : nat = user.earned / precision;
@@ -40,9 +39,9 @@ function claim_rewards(
 
       const harvest_fee : nat = earned * farm.fees.harvest_fee / precision;
       const actual_earned : nat = abs(earned - harvest_fee);
-      const fee_receiver : address = case s.referrers[user_addr] of
-        None           -> zero_address
-      | Some(referrer) -> referrer
+      const fee_receiver : address = case referrer of
+        None      -> zero_address
+      | Some(ref) -> ref
       end;
 
       farm.claimed := farm.claimed + earned;

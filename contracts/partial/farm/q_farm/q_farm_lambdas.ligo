@@ -105,22 +105,21 @@ function deposit(
         user.earned := user.earned +
           abs(user.staked * updated_farm.reward_per_share - user.prev_earned);
 
-        var res : claim_return_type := record [
-          operations = operations;
-          user       = user;
-          farm       = updated_farm;
-        ];
-
-        if abs(Tezos.now - user.last_staked) >= updated_farm.timelock
-        then res := claim_rewards(
-          user,
-          operations,
-          updated_farm,
-          Tezos.sender,
-          params.rewards_receiver,
-          s
-        )
-        else skip;
+        const res : claim_return_type =
+          if abs(Tezos.now - user.last_staked) >= updated_farm.timelock
+          then claim_rewards(
+            user,
+            operations,
+            updated_farm,
+            params.rewards_receiver,
+            s.referrers[Tezos.sender],
+            s.proxy_minter
+          )
+          else record [
+            operations = operations;
+            user       = user;
+            farm       = updated_farm;
+          ];
 
         operations := res.operations;
         user := res.user;
@@ -216,12 +215,18 @@ function withdraw(
           user,
           operations,
           updated_farm,
-          Tezos.sender,
           params.rewards_receiver,
-          s
+          s.referrers[Tezos.sender],
+          s.proxy_minter
         )
         else {
-          res := burn_rewards(user, operations, updated_farm, False, s);
+          res := burn_rewards(
+            user,
+            operations,
+            updated_farm,
+            False,
+            s.proxy_minter
+          );
 
           const withdrawal_fee : nat = value *
             updated_farm.fees.withdrawal_fee / precision;
@@ -333,9 +338,9 @@ function harvest(
           user,
           operations,
           updated_farm,
-          Tezos.sender,
           params.rewards_receiver,
-          s
+          s.referrers[Tezos.sender],
+          s.proxy_minter
         )
         else failwith("QFarm/timelock-is-not-finished");
 
@@ -370,7 +375,7 @@ function burn_farm_rewards(
           abs(user.staked * updated_farm.reward_per_share - user.prev_earned);
 
         var res : claim_return_type :=
-          burn_rewards(user, operations, updated_farm, True, s);
+          burn_rewards(user, operations, updated_farm, True, s.proxy_minter);
 
         operations := res.operations;
         user := res.user;

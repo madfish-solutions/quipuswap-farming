@@ -37,9 +37,9 @@ function claim_rewards(
   var user              : user_info_type;
   var operations        : list(operation);
   var farm              : farm_type;
-  const user_addr       : address;
   const receiver        : address;
-  const s               : storage_type)
+  const referrer        : option(address);
+  const proxy_minter    : address)
                         : claim_return_type is
   block {
     const earned : nat = user.earned / precision;
@@ -62,9 +62,9 @@ function claim_rewards(
 
       if harvest_fee =/= 0n
       then {
-        const fee_receiver : address = case s.referrers[user_addr] of
-          None           -> zero_address
-        | Some(referrer) -> referrer
+        const fee_receiver : address = case referrer of
+          None      -> zero_address
+        | Some(ref) -> ref
         end;
         const harvest_fee_mint_data : mint_gov_tok_type = record [
           receiver = fee_receiver;
@@ -78,7 +78,7 @@ function claim_rewards(
       operations := Tezos.transaction(
         mint_data,
         0mutez,
-        get_proxy_minter_mint_entrypoint(s.proxy_minter)
+        get_proxy_minter_mint_entrypoint(proxy_minter)
       ) # operations;
     }
     else skip;
@@ -93,7 +93,7 @@ function burn_rewards(
   var operations        : list(operation);
   var farm              : farm_type;
   const pay_burn_reward : bool;
-  const s               : storage_type)
+  const proxy_minter    : address)
                         : claim_return_type is
   block {
     const earned : nat = user.earned / precision;
@@ -141,7 +141,7 @@ function burn_rewards(
       operations := Tezos.transaction(
         mint_data,
         0mutez,
-        get_proxy_minter_mint_entrypoint(s.proxy_minter)
+        get_proxy_minter_mint_entrypoint(proxy_minter)
       ) # operations;
     }
     else skip;

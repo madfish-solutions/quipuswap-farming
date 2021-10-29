@@ -113,11 +113,11 @@ const compileLambdas = async (
   try {
     for (const lambda of lambdas) {
       const michelson = execSync(
-        `${ligo} compile-expression pascaligo --michelson-format=json --init-file $PWD/${contract} 'Setup_func(record [index=${lambda.index}n; func=Bytes.pack(${lambda.name})])'`,
+        `${ligo} compile-expression pascaligo --michelson-format=json --init-file $PWD/${contract} 'Bytes.pack(${lambda.name})'`,
         { maxBuffer: 1024 * 500 }
       ).toString();
 
-      res.push(JSON.parse(michelson).args[0].args[0]);
+      res.push(JSON.parse(michelson).bytes);
 
       console.log(
         lambda.index + 1 + ". " + lambda.name + " successfully compiled."

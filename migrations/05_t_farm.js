@@ -36,6 +36,7 @@ module.exports = async (tezos) => {
     BakerRegistry["networks"][env.network]["baker_registry"];
 
   const tFarmAddress = await migrate(tezos, "t_farm", tFarmStorage);
+  const tFarm = await tezos.contract.at(tFarmAddress);
 
   console.log(`TFarm: ${tFarmAddress}`);
 
@@ -45,24 +46,14 @@ module.exports = async (tezos) => {
   for (let i = 0; i < tFarmFunctions.length / 2; ++i) {
     batch1.push({
       kind: OpKind.TRANSACTION,
-      to: tFarmAddress,
-      amount: 0,
-      parameter: {
-        entrypoint: "setup_func",
-        value: tFarmFunctions[i],
-      },
+      ...tFarm.methods.setup_func(i, tFarmFunctions[i]).toTransferParams(),
     });
   }
 
   for (let i = tFarmFunctions.length / 2; i < tFarmFunctions.length; ++i) {
     batch2.push({
       kind: OpKind.TRANSACTION,
-      to: tFarmAddress,
-      amount: 0,
-      parameter: {
-        entrypoint: "setup_func",
-        value: tFarmFunctions[i],
-      },
+      ...tFarm.methods.setup_func(i, tFarmFunctions[i]).toTransferParams(),
     });
   }
 

@@ -39,6 +39,7 @@ module.exports = async (tezos) => {
     BakerRegistry["networks"][env.network]["baker_registry"];
 
   const qFarmAddress = await migrate(tezos, "q_farm", qFarmStorage);
+  const qFarm = await tezos.contract.at(qFarmAddress);
 
   console.log(`QFarm: ${qFarmAddress}`);
 
@@ -48,24 +49,14 @@ module.exports = async (tezos) => {
   for (let i = 0; i < qFarmFunctions.length / 2; ++i) {
     batch1.push({
       kind: OpKind.TRANSACTION,
-      to: qFarmAddress,
-      amount: 0,
-      parameter: {
-        entrypoint: "setup_func",
-        value: qFarmFunctions[i],
-      },
+      ...qFarm.methods.setup_func(i, qFarmFunctions[i]).toTransferParams(),
     });
   }
 
   for (let i = qFarmFunctions.length / 2; i < qFarmFunctions.length; ++i) {
     batch2.push({
       kind: OpKind.TRANSACTION,
-      to: qFarmAddress,
-      amount: 0,
-      parameter: {
-        entrypoint: "setup_func",
-        value: qFarmFunctions[i],
-      },
+      ...qFarm.methods.setup_func(i, qFarmFunctions[i]).toTransferParams(),
     });
   }
 

@@ -117,24 +117,18 @@ export class QFarm {
     for (let i = 0; i < qFarmFunctions.length / 2; ++i) {
       batch1.push({
         kind: OpKind.TRANSACTION,
-        to: this.contract.address,
-        amount: 0,
-        parameter: {
-          entrypoint: "setup_func",
-          value: qFarmFunctions[i],
-        },
+        ...this.contract.methods
+          .setup_func(i, qFarmFunctions[i])
+          .toTransferParams(),
       });
     }
 
     for (let i = qFarmFunctions.length / 2; i < qFarmFunctions.length; ++i) {
       batch2.push({
         kind: OpKind.TRANSACTION,
-        to: this.contract.address,
-        amount: 0,
-        parameter: {
-          entrypoint: "setup_func",
-          value: qFarmFunctions[i],
-        },
+        ...this.contract.methods
+          .setup_func(i, qFarmFunctions[i])
+          .toTransferParams(),
       });
     }
 

@@ -39,8 +39,8 @@ quipu_token = {
 }
 
 fees={
-    "harvest_fee" : 50,
-    "withdrawal_fee" : 50,
+    "harvest_fee" : int(0.005 * PRECISION),
+    "withdrawal_fee" : int(0.005 * PRECISION),
 }
 
 stake_params={
@@ -127,7 +127,7 @@ class TFarmTest(TestCase):
         self.assertEqual(transfers[0]["amount"], 50)
         self.assertEqual(transfers[0]["destination"], me)
 
-
+    # TODO verify burn
     def test_tfarm_timelock_withdraw_burn(self):
         chain = self.create_with_new_farm({"timelock" : 120, "end_time": 180})
 
@@ -145,7 +145,7 @@ class TFarmTest(TestCase):
 
         transfers = parse_token_transfers(res)
         self.assertEqual(len(transfers), 2)
-        self.assertEqual(transfers[0]["amount"], 49)
+        self.assertEqual(transfers[0]["amount"], 50)
         self.assertEqual(transfers[0]["destination"], me)
         self.assertEqual(transfers[1]["amount"], 6000)
         self.assertEqual(transfers[1]["destination"], admin)
@@ -153,7 +153,6 @@ class TFarmTest(TestCase):
         chain.advance_blocks(1)
 
         res = chain.execute(self.farm.deposit(0, 7_777_777, None, me, candidate))
-
         transfers = parse_token_transfers(res)
         self.assertEqual(len(transfers), 1)
         self.assertEqual(transfers[0]["amount"], 7_777_777)
@@ -162,10 +161,24 @@ class TFarmTest(TestCase):
         res = chain.execute(self.farm.withdraw(0, 7_777_777, me, me))
         transfers = parse_token_transfers(res)
         self.assertEqual(len(transfers), 2)
-        self.assertEqual(transfers[0]["amount"], 7_738_888)
+        self.assertEqual(transfers[0]["amount"], 7_738_889)
         self.assertEqual(transfers[0]["destination"], me)
-        self.assertEqual(transfers[1]["amount"], 3_000)
+        self.assertEqual(transfers[1]["amount"], 6_000)
         self.assertEqual(transfers[1]["destination"], admin)
+
+        chain.advance_blocks(1)
+        res = chain.execute(self.farm.deposit(0, 7_777_777, None, me, candidate))
+        transfers = parse_token_transfers(res)
+        self.assertEqual(len(transfers), 1)
+        self.assertEqual(transfers[0]["amount"], 7_777_777)
+        self.assertEqual(transfers[0]["destination"], contract_self_address)
+
+        chain.advance_blocks(1)
+        res = chain.execute(self.farm.withdraw(0, 7_777_777, me, me))
+        transfers = parse_token_transfers(res)
+        self.assertEqual(len(transfers), 1)
+        self.assertEqual(transfers[0]["amount"], 7_777_777)
+        self.assertEqual(transfers[0]["destination"], me)
 
 
     def test_tfarm_fair_reward_distribution(self):
@@ -210,12 +223,12 @@ class TFarmTest(TestCase):
 
         res = chain.execute(self.farm.harvest(0, alice), sender=alice)
         transfers = parse_token_transfers(res)
-        self.assertEqual(transfers[1]["amount"], 2_984_701)
+        self.assertEqual(transfers[1]["amount"], 2_984_702)
         self.assertEqual(transfers[1]["destination"], alice)
 
         res = chain.execute(self.farm.harvest(0, bob), sender=bob)
         transfers = parse_token_transfers(res)
-        self.assertEqual(transfers[1]["amount"], 297)
+        self.assertEqual(transfers[1]["amount"], 298)
         self.assertEqual(transfers[1]["destination"], bob)
 
         res = chain.execute(self.farm.harvest(0, julian), sender=julian)
@@ -315,16 +328,16 @@ class TFarmTest(TestCase):
         res = chain.interpret(self.farm.withdraw(0, 10, me, me))
         transfers = parse_token_transfers(res)
         self.assertEqual(transfers[0]["destination"], me)
-        self.assertEqual(transfers[0]["amount"], 9)
+        self.assertEqual(transfers[0]["amount"], 10)
         farm_stake = res.storage["storage"]["users_info"][(0, contract_self_address)]["staked"]
-        self.assertEqual(farm_stake, 1)
+        self.assertEqual(farm_stake, 0)
 
         res = chain.interpret(self.farm.withdraw(0, 1, me, me))
         transfers = parse_token_transfers(res)
         self.assertEqual(transfers[0]["destination"], me)
-        self.assertEqual(transfers[0]["amount"], 0)
+        self.assertEqual(transfers[0]["amount"], 1)
         farm_stake = res.storage["storage"]["users_info"][(0, contract_self_address)]["staked"]
-        self.assertEqual(farm_stake, 1)
+        self.assertEqual(farm_stake, 0)
 
     def test_tfarm_zero_join_and_quit(self):
         chain = self.create_with_new_farm()

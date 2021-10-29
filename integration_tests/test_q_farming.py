@@ -27,10 +27,12 @@ quipu_token = {
     }
 }
 
+
+
 fees={
-    "harvest_fee" : 50,
-    "withdrawal_fee" : 50,
-    "burn_reward" : 50
+    "harvest_fee" : int(0.005 * PRECISION),
+    "withdrawal_fee" : int(0.005 * PRECISION),
+    "burn_reward" : int(0.005 * PRECISION)
 }
 
 stake_params={
@@ -62,7 +64,7 @@ class FarmTest(TestCase):
             reward_per_second=100 * PRECISION,
             timelock=0,
             start_time=0,
-            token_info={"": ""}
+            token_info={}
         )
         for key, value in patch.items():
             params[key] = value
@@ -70,28 +72,6 @@ class FarmTest(TestCase):
         res = chain.execute(self.farm.add_new_farm(**params), sender=admin)
 
         return chain
-
-    def test_create_farm(self):
-        chain = LocalChain(storage=self.storage_with_admin)
-        res = chain.execute(self.farm.add_new_farm(
-            fees={
-                "harvest_fee" : 50,
-                "withdrawal_fee" : 50,
-                "burn_reward" : 50
-            },
-            stake_params={
-                "staked_token": fa2_token,
-                "is_lp_staked_token": True,
-                "qs_pool": "KT18fp5rcTW7mbWDmzFwjLDUhs5MeJmagDSZ"
-            },
-            paused=False,
-            reward_per_second=101010101010101010,
-            timelock=0,
-            start_time=1,
-            token_info={"": ""}
-        ), sender=admin)
-
-        pprint(res.storage["storage"])
 
     def test_farm_create_deposit_withdraw(self):
         chain = self.create_with_new_farm()
@@ -128,9 +108,9 @@ class FarmTest(TestCase):
         res = chain.execute(self.farm.harvest(0, me))
 
         mints = parse_mints(res)
-        self.assertEqual(mints[0]["amount"], 30 + 2)
+        self.assertEqual(mints[0]["amount"], 30 + 1)
         self.assertEqual(mints[0]["destination"], burn_address)
-        self.assertEqual(mints[1]["amount"], 5970 + 298)
+        self.assertEqual(mints[1]["amount"], 5970 + 299)
         self.assertEqual(mints[1]["destination"], me)
 
     def test_timelock_withdraw_burn(self):
@@ -161,7 +141,7 @@ class FarmTest(TestCase):
 
         transfers = parse_token_transfers(res)
         self.assertEqual(len(transfers), 1)
-        self.assertEqual(transfers[0]["amount"], 50 - 1)
+        self.assertEqual(transfers[0]["amount"], 50)
         self.assertEqual(transfers[0]["destination"], me)
 
 
@@ -207,12 +187,12 @@ class FarmTest(TestCase):
 
         res = chain.execute(self.farm.harvest(0, alice), sender=alice)
         mints = parse_mints(res)
-        self.assertEqual(mints[1]["amount"], 2_984_701)
+        self.assertEqual(mints[1]["amount"], 2_984_702)
         self.assertEqual(mints[1]["destination"], alice)
 
         res = chain.execute(self.farm.harvest(0, bob), sender=bob)
         mints = parse_mints(res)
-        self.assertEqual(mints[1]["amount"], 297)
+        self.assertEqual(mints[1]["amount"], 298)
         self.assertEqual(mints[1]["destination"], bob)
 
         res = chain.execute(self.farm.harvest(0, julian), sender=julian)
@@ -359,16 +339,16 @@ class FarmTest(TestCase):
         res = chain.interpret(self.farm.withdraw(0, 10, me, me))
         transfers = parse_token_transfers(res)
         self.assertEqual(transfers[0]["destination"], me)
-        self.assertEqual(transfers[0]["amount"], 9)
+        self.assertEqual(transfers[0]["amount"], 10)
         farm_stake = res.storage["storage"]["users_info"][(0, contract_self_address)]["staked"]
-        self.assertEqual(farm_stake, 1)
+        self.assertEqual(farm_stake, 0)
 
         res = chain.interpret(self.farm.withdraw(0, 1, me, me))
         transfers = parse_token_transfers(res)
         self.assertEqual(transfers[0]["destination"], me)
-        self.assertEqual(transfers[0]["amount"], 0)
+        self.assertEqual(transfers[0]["amount"], 1)
         farm_stake = res.storage["storage"]["users_info"][(0, contract_self_address)]["staked"]
-        self.assertEqual(farm_stake, 1)
+        self.assertEqual(farm_stake, 0)
 
     def test_farm_zero_join_and_quit(self):
         chain = self.create_with_new_farm()
@@ -416,15 +396,16 @@ class FarmTest(TestCase):
         chain = self.create_with_new_farm({"timelock": 120})
 
         res = chain.execute(self.farm.deposit(0, 50_000_000, None, me, candidate))
-        res = chain.execute(self.farm.withdraw(0, 5_000_000, me, me))
-
+        res = chain.execute(self.farm.withdraw(0, 50_000_000, me, me))
+        
         chain.advance_blocks(1)
 
         res = chain.execute(self.farm.burn_farm_rewards(0))
         mints = parse_mints(res)
         
-        self.assertEqual(mints[0]["amount"], 1)
-        self.assertEqual(mints[1]["amount"], 2)
+        self.assertEqual(len(mints), 1)
+        self.assertEqual(mints[0]["amount"], 3)
+        # self.assertEqual(mints[1]["amount"], 0)
 
         # total_me_mints = 0
         # total_farm_mints = 0

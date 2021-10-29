@@ -39,8 +39,8 @@ quipu_token = {
 }
 
 fees={
-    "harvest_fee" : 50,
-    "withdrawal_fee" : 50,
+    "harvest_fee" : int(0.005 * PRECISION),
+    "withdrawal_fee" : int(0.005 * PRECISION),
 }
 
 stake_params={
@@ -118,13 +118,15 @@ class TFarmTestEndTime(TestCase):
         self.assertEqual(transfers[0]["destination"], contract_self_address)
         self.assertEqual(transfers[0]["amount"], 50)
 
+        pprint(res.storage["storage"])
+
         res = chain.execute(self.farm.withdraw(0, 100, me, me))
         transfers = parse_token_transfers(res)
         self.assertEqual(len(transfers), 1)
         self.assertEqual(transfers[0]["amount"], 100)
         self.assertEqual(transfers[0]["destination"], me)
 
-        chain.advance_blocks(1)
+        # chain.advance_blocks(1)
         res = chain.execute(self.farm.harvest(0, me))
         transfers = parse_token_transfers(res)
         self.assertEqual(transfers, [])

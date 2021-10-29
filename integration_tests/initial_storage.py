@@ -17,19 +17,12 @@ def load_qfarm_lambdas():
     lambdas = glob.glob("./integration_tests/compiled/lambdas/qfarm/*.json")
     for filepath in lambdas:
         lambda_string = open(filepath, 'r').read()
-        micheline = json.loads(lambda_string)
+        lambda_json = json.loads(lambda_string)
         
-        # HACK to extract the function from parameter
-        # e.g. `initialize_exchange` part from `SetDexFunction(initialize_exchange, 0n)`
-        # their amount might be the value to tinker with if you get cryptic storage errors like `expected list got dict` and such
-        lambda_code = micheline["args"][0]["args"][0]["args"][1]
-
-        michelson_code = micheline_to_michelson(lambda_code)
-
         filename = basename(filepath)
         index = filename.split("-")[0]
 
-        qfarm_lambdas[int(index)] = michelson_code
+        qfarm_lambdas[int(index)] = bytes.fromhex(lambda_json["bytes"])
 
         # left here in case it is necessary to do the same by entrypoint
         # dex.setDexFunction(michelson_code, int(index)).interpret
@@ -41,19 +34,12 @@ def load_tfarm_lambdas():
     lambdas = glob.glob("./integration_tests/compiled/lambdas/tfarm/*.json")
     for filepath in lambdas:
         lambda_string = open(filepath, 'r').read()
-        micheline = json.loads(lambda_string)
-        
-        # HACK to extract the function from parameter
-        # e.g. `initialize_exchange` part from `SetTokenFunction(initialize_exchange, 0n)`
-        # their amount might be the value to tinker with if you get cryptic storage errors like `expected list got dict` and such
-        lambda_code = micheline["args"][0]["args"][1]
-
-        michelson_code = micheline_to_michelson(lambda_code)
+        lambda_json = json.loads(lambda_string)
 
         filename = basename(filepath)
         index = filename.split("-")[0]
 
-        tfarm_lambdas[int(index)] = michelson_code
+        tfarm_lambdas[int(index)] = bytes.fromhex(lambda_json["bytes"])
 
         # left here in case it is necessary to do the same by entrypoint
         # dex.setDexFunction(michelson_code, int(index)).interpret

@@ -28,9 +28,9 @@ quipu_token = {
 }
 
 fees={
-    "harvest_fee" : 50,
-    "withdrawal_fee" : 50,
-    "burn_reward" : 50
+    "harvest_fee" : int(0.005 * PRECISION),
+    "withdrawal_fee" : int(0.005 * PRECISION),
+    "burn_reward" : int(0.005 * PRECISION)
 }
 
 stake_params={
@@ -94,21 +94,23 @@ class TestTransfers(TestCase):
         chain = self.create_with_new_farm()
         res = chain.execute(self.farm.deposit(0, 100, None, alice, candidate), sender=alice)
 
-        with self.assertRaises(MichelsonRuntimeError):
-            transfer = self.farm.transfer(
-                [{ "from_" : alice,
-                    "txs" : [{
-                        "amount": 40,
-                        "to_": alice,
-                        "token_id": 0
-                    },
-                    {
-                        "amount": 60,
-                        "to_": bob,
-                        "token_id": 0
-                    }]
-                }])
-            res = chain.execute(transfer, sender=alice)
+        transfer = self.farm.transfer(
+            [{ "from_" : alice,
+                "txs" : [{
+                    "amount": 50,
+                    "to_": alice,
+                    "token_id": 0
+                },
+                {
+                    "amount": 60,
+                    "to_": bob,
+                    "token_id": 0
+                }]
+            }])
+        res = chain.execute(transfer, sender=alice)
+
+        self.assertEqual(res.storage["storage"]["users_info"][(0,alice)]["staked"], 40)
+        self.assertEqual(res.storage["storage"]["users_info"][(0,bob)]["staked"], 60)
 
 
     def test_transfer_wrong_token_id(self):
@@ -163,9 +165,7 @@ class TestTransfers(TestCase):
         res = chain.execute(transfer, sender=alice)
 
         mints = parse_mints(res)
-        self.assertEqual(len(mints), 4)
-        self.assertEqual(mints[1]["amount"], 2985)
-        self.assertEqual(mints[3]["amount"], 2985)
+        self.assertEqual(len(mints), 0)
 
         res = chain.execute(self.farm.harvest(0, alice), sender=alice)
         self.assertEqual(len(parse_mints(res)), 0)
@@ -185,9 +185,7 @@ class TestTransfers(TestCase):
         res = chain.execute(transfer, sender=bob)
 
         mints = parse_mints(res)
-        self.assertEqual(len(mints), 2)
-        self.assertEqual(mints[1]["amount"], 2985 * 2)
-        self.assertEqual(mints[1]["destination"], bob)
+        self.assertEqual(len(mints), 0)
 
         res = chain.execute(self.farm.harvest(0, alice), sender=alice)
         self.assertEqual(len(parse_mints(res)), 0)
@@ -218,11 +216,6 @@ class TestTransfers(TestCase):
             }])
         res = chain.execute(transfer, sender=alice)
 
-        mints = parse_mints(res)
-        self.assertEqual(len(mints), 4)
-        self.assertEqual(mints[1]["amount"], 1990)
-        self.assertEqual(mints[3]["amount"], 1990)
-
         transfer = self.farm.transfer(
             [{ "from_" : bob,
                 "txs" : [{
@@ -232,9 +225,6 @@ class TestTransfers(TestCase):
                 }]
             }])
         res = chain.execute(transfer, sender=bob)
-        mints = parse_mints(res)
-        self.assertEqual(len(mints), 2)
-        self.assertEqual(mints[1]["amount"], 1990)
 
         transfer = self.farm.transfer(
             [{ "from_" : carol,
@@ -267,9 +257,6 @@ class TestTransfers(TestCase):
                 }]
             }])
         res = chain.execute(transfer, sender=alice)
-        mints = parse_mints(res)
-        self.assertEqual(len(mints), 4)
-
 
         transfer = self.farm.transfer(
             [{ "from_" : carol,
@@ -286,52 +273,19 @@ class TestTransfers(TestCase):
             }])
         res = chain.execute(transfer, sender=carol)
         mints = parse_mints(res)
-        # self.assertEqual(len(mints), 0)
+        self.assertEqual(len(mints), 0)
 
-
-        # self.assertEqual(len(mints), 4)
-        # self.assertEqual(mints[1]["amount"], 2985)
-        # self.assertEqual(mints[3]["amount"], 2985)
-
-        # res = chain.execute(self.farm.harvest(0, alice), sender=alice)
-        # self.assertEqual(len(parse_mints(res)), 0)
-        # res = chain.execute(self.farm.harvest(0, bob), sender=bob)
-        # self.assertEqual(len(parse_mints(res)), 0)
-
-        # # next block transfer triggers rewards just fine
-        # chain.advance_blocks(1)
-        # transfer = self.farm.transfer(
-        #     [{ "from_" : bob,
-        #         "txs" : [{
-        #             "amount": 50_000,
-        #             "to_": alice,
-        #             "token_id": 0
-        #         }]
-        #     }])
-        # res = chain.execute(transfer, sender=bob)
-
-        # mints = parse_mints(res)
-        # self.assertEqual(len(mints), 2)
-        # self.assertEqual(mints[1]["amount"], 2985 * 2)
-        # self.assertEqual(mints[1]["destination"], bob)
-
-        # res = chain.execute(self.farm.harvest(0, alice), sender=alice)
-        # self.assertEqual(len(parse_mints(res)), 0)
-        # res = chain.execute(self.farm.harvest(0, bob), sender=bob)
-        # self.assertEqual(len(parse_mints(res)), 0)
-
-    
     def test_transfer_votes(self):
         chain = self.create_with_new_farm()
 
-        res = chain.execute(self.farm.deposit(0, 50, None, alice, carol), sender=alice)
+        res = chain.execute(self.farm.deposit(0, 60, None, alice, carol), sender=alice)
         votes = parse_votes(res)
         self.assertEqual(votes[0]["delegate"], carol)
-        self.assertEqual(votes[0]["amount"], 50)
+        self.assertEqual(votes[0]["amount"], 60)
 
-        res = chain.execute(self.farm.deposit(0, 60, None, bob, dave), sender=bob)
+        res = chain.execute(self.farm.deposit(0, 50, None, bob, dave), sender=bob)
         votes = parse_votes(res)
-        self.assertEqual(votes[0]["delegate"], dave)
+        self.assertEqual(votes[0]["delegate"], carol)
         self.assertEqual(votes[0]["amount"], 110)
 
         transfer = self.farm.transfer(
@@ -344,7 +298,8 @@ class TestTransfers(TestCase):
             }])
         res = chain.execute(transfer, sender=alice)
         
-        res = chain.execute(self.farm.deposit(0, 1, None, julian, carol), sender=julian)
         votes = parse_votes(res)
-        self.assertEqual(votes[0]["delegate"], carol)
+        self.assertEqual(votes[0]["delegate"], dave)
         self.assertNotEqual(votes[0]["amount"], 111)
+
+

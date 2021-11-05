@@ -210,29 +210,29 @@ function withdraw(
           );
 
           const withdrawal_fee : nat = value *
-            updated_farm.fees.withdrawal_fee / precision;
+            res.farm.fees.withdrawal_fee / precision;
 
           value_without_fee := abs(value - withdrawal_fee);
 
           if withdrawal_fee =/= 0n
           then {
             var farm_user : user_info_type := get_user_info(
-              updated_farm.fid,
+              res.farm.fid,
               Tezos.self_address,
               s.users_info
             );
 
             farm_user.earned := farm_user.earned +
               abs(
-                farm_user.staked * updated_farm.reward_per_share -
+                farm_user.staked * res.farm.reward_per_share -
                   farm_user.prev_earned
               );
             farm_user.staked := farm_user.staked + withdrawal_fee;
             farm_user.prev_earned := farm_user.staked *
-              updated_farm.reward_per_share;
+              res.farm.reward_per_share;
             farm_user.last_staked := Tezos.now;
 
-            s.users_info[(updated_farm.fid, Tezos.self_address)] := farm_user;
+            s.users_info[(res.farm.fid, Tezos.self_address)] := farm_user;
           }
           else skip;
         };

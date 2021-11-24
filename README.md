@@ -12,7 +12,7 @@ farms into their interface.
 
 # Architecture
 
-![architecture]("./architecture/architecture.png")
+![architecture](./architecture/architecture.png)
 
 # Requiremets
 

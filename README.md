@@ -10,6 +10,10 @@ single assets (also both, FA1.2 and FA2, standards) to earn the other tokens.
 Interface fee is supported, incentivising the other solutions to integrate
 farms into their interface.
 
+# Architecture
+
+![architecture]("./architecture/architecture.png")
+
 # Requiremets
 
 - Installed [NodeJS](https://nodejs.org/en/) (tested with NodeJS v15+);

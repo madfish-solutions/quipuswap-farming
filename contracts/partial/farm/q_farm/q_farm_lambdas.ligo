@@ -159,7 +159,7 @@ function deposit(
 
         if params.amt =/= 0n
         then {
-          if farm.stake_params.is_lp_staked_token
+          if farm.stake_params.is_v1_lp
           then {
             if is_banned_baker(params.candidate, s.banned_bakers)
             then failwith("QFarm/baker-is-banned")
@@ -279,7 +279,7 @@ function withdraw(
           farm.stake_params.staked_token
         ) # operations;
 
-        if farm.stake_params.is_lp_staked_token
+        if farm.stake_params.is_v1_lp
         then {
           s := vote(
             get_user_candidate(farm, Tezos.sender, s.candidates),

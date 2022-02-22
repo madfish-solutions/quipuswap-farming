@@ -512,8 +512,8 @@ describe("TFarm tests (section 1)", async () => {
       newFarmParams.stake_params.staked_token.fA2.id
     );
     strictEqual(
-      tFarm.storage.storage.farms[0].stake_params.is_lp_staked_token,
-      newFarmParams.stake_params.is_lp_staked_token
+      tFarm.storage.storage.farms[0].stake_params.is_v1_lp,
+      newFarmParams.stake_params.is_v1_lp
     );
     strictEqual(
       tFarm.storage.storage.farms[0].stake_params.qs_pool,
@@ -1362,7 +1362,7 @@ describe("TFarm tests (section 1)", async () => {
     newFarmParams.fees.harvest_fee = 30 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 6 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
-    newFarmParams.stake_params.is_lp_staked_token = true;
+    newFarmParams.stake_params.is_v1_lp = true;
     newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.reward_per_second = 4 * precision;
     newFarmParams.timelock = 0;
@@ -1542,7 +1542,7 @@ describe("TFarm tests (section 1)", async () => {
     newFarmParams.stake_params.staked_token = {
       fA2: { token: fa2LP.contract.address, id: 0 },
     };
-    newFarmParams.stake_params.is_lp_staked_token = true;
+    newFarmParams.stake_params.is_v1_lp = true;
     newFarmParams.stake_params.qs_pool = fa2LP.contract.address;
     newFarmParams.reward_per_second = 10 * precision;
     newFarmParams.timelock = 0;
@@ -5111,7 +5111,7 @@ describe("TFarm tests (section 1)", async () => {
     newFarmParams.fees.harvest_fee = 21 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 60 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
-    newFarmParams.stake_params.is_lp_staked_token = true;
+    newFarmParams.stake_params.is_v1_lp = true;
     newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.reward_per_second = 2 * precision;
     newFarmParams.timelock = 5;
@@ -5271,7 +5271,7 @@ describe("TFarm tests (section 1)", async () => {
     newFarmParams.stake_params.staked_token = {
       fA2: { token: fa2LP.contract.address, id: 0 },
     };
-    newFarmParams.stake_params.is_lp_staked_token = true;
+    newFarmParams.stake_params.is_v1_lp = true;
     newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.reward_per_second = 2 * precision;
     newFarmParams.timelock = 5;

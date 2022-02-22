@@ -16,7 +16,7 @@ export type PauseFarmParam = {
 
 export type StakeParams = {
   staked_token: Token;
-  is_lp_staked_token: boolean;
+  is_v1_lp: boolean;
   qs_pool: FA12Token;
 };
 

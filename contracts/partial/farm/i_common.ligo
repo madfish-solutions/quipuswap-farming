@@ -20,8 +20,8 @@ type user_info_type     is [@layout:comb] record [
 type stake_params_type  is [@layout:comb] record [
   (* Token to stake *)
   staked_token            : token_type;
-  (* Flag: LP token staked or not *)
-  is_lp_staked_token      : bool;
+  (* Flag: QuipuSwap V1 LP token staked or not *)
+  is_v1_lp                : bool;
   (* Quipuswap liquidity pool for staked or divested token *)
   qs_pool                 : address;
 ]

@@ -162,7 +162,7 @@ function burn_tez_rewards(
 
         const farm : farm_type = get_farm(fid, s.farms);
 
-        if not farm.stake_params.is_lp_staked_token
+        if not farm.stake_params.is_v1_lp
         then failwith("QSystem/not-LP-farm")
         else skip;
 
@@ -225,7 +225,7 @@ function withdraw_farm_depo(
           farm.stake_params.staked_token
         ) # operations;
 
-        if farm.stake_params.is_lp_staked_token
+        if farm.stake_params.is_v1_lp
         then {
           s := vote(
             get_user_candidate(farm, Tezos.self_address, s.candidates),

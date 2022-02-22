@@ -380,7 +380,7 @@ export class QFarmUtils {
           id: 0,
         },
       },
-      is_lp_staked_token: false,
+      is_v1_lp: false,
       qs_pool: zeroAddress,
     };
     const newFarmParams: NewFarmParams = {

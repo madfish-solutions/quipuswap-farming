@@ -28,9 +28,9 @@ module.exports = async (tezos) => {
     signer: await InMemorySigner.fromSecretKey(secretKey),
   });
 
-  qFarmStorage.storage.qsgov.token = "KT1NfYbYTCRZsNPZ97VdLqSrwPdVupiqniFu";
+  qFarmStorage.storage.qsgov.token = "KT1VowcKqZFGhdcDZA3UN1vrjBLmxV5bxgfJ";
   qFarmStorage.storage.qsgov.id = 0;
-  qFarmStorage.storage.qsgov_lp = "KT1MsQZeAbLuNfhfWdiUsJT4tTDzxymkaxwo";
+  qFarmStorage.storage.qsgov_lp = "KT1DgpR6mXkbgyF3SdduyimNRy9GSR9TgRqp";
   qFarmStorage.storage.admin = deployer;
   qFarmStorage.storage.burner = Burner["networks"][env.network]["burner"];
   qFarmStorage.storage.proxy_minter =

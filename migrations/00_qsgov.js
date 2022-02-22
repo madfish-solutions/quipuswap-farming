@@ -5,9 +5,7 @@ const { migrate } = require("../scripts/helpers");
 
 const { alice, dev } = require("../scripts/sandbox/accounts");
 
-const { burnerStorage } = require("../storage/Burner");
-
-const { zeroAddress } = require("../test/helpers/Utils");
+const { bakerRegistryStorage } = require("../storage/BakerRegistry");
 
 const env = require("../env");
 
@@ -23,11 +21,11 @@ module.exports = async (tezos) => {
     signer: await InMemorySigner.fromSecretKey(secretKey),
   });
 
-  burnerStorage.qsgov_lp = "KT1DgpR6mXkbgyF3SdduyimNRy9GSR9TgRqp";
-  burnerStorage.qsgov.token = "KT1VowcKqZFGhdcDZA3UN1vrjBLmxV5bxgfJ";
-  burnerStorage.qsgov.id = 0;
+  const bakerRegistryAddress = await migrate(
+    tezos,
+    "baker_registry",
+    bakerRegistryStorage
+  );
 
-  const burnerAddress = await migrate(tezos, "burner", burnerStorage);
-
-  console.log(`Burner: ${burnerAddress}`);
+  console.log(`BakerRegistry: ${bakerRegistryAddress}`);
 };

@@ -22,8 +22,6 @@ type stake_params_type  is [@layout:comb] record [
   staked_token            : token_type;
   (* Flag: QuipuSwap V1 LP token staked or not *)
   is_v1_lp                : bool;
-  (* Quipuswap liquidity pool for staked or divested token *)
-  qs_pool                 : address;
 ]
 
 type set_admin_type     is address (* New admin address *)

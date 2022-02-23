@@ -103,6 +103,14 @@ function get_baker_registry_validate_entrypoint(
   )
   end
 
+function get_token_address(
+  const token           : token_type)
+                        : address is
+  case token of
+    FA12(token_address) -> token_address
+  | FA2(token_info)     -> token_info.token
+  end
+
 function vote(
   const user_candidate  : key_hash;
   const user_addr       : address;
@@ -184,7 +192,7 @@ function form_vote_ops(
     else skip;
 
     const vote_op : operation = get_vote_operation(
-      farm.stake_params.qs_pool,
+      get_token_address(farm.stake_params.staked_token),
       farm.current_delegated,
       votes
     );

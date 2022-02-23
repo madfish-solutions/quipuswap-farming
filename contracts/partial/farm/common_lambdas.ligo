@@ -166,15 +166,12 @@ function burn_tez_rewards(
         then failwith("QSystem/not-LP-farm")
         else skip;
 
-        const lp_token : address = case farm.stake_params.staked_token of
-          FA12(token_address) -> token_address
-        | FA2(token_info)     -> token_info.token
-        end;
-
         operations := Tezos.transaction(
           WithdrawProfit(s.burner),
           0mutez,
-          get_quipuswap_use_entrypoint(lp_token)
+          get_quipuswap_use_entrypoint(
+            get_token_address(farm.stake_params.staked_token)
+          )
         ) # operations;
       }
     | _                                 -> skip

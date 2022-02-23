@@ -357,7 +357,6 @@ export class TFarmUtils {
         fA12: zeroAddress,
       },
       is_v1_lp: false,
-      qs_pool: zeroAddress,
     };
     const newFarmParams: NewFarmParams = {
       fees: fees,

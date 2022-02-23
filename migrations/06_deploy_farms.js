@@ -41,7 +41,6 @@ module.exports = async (tezos) => {
       id: 0,
     },
   };
-  newFarmParams.stake_params.qs_pool = "KT1DgpR6mXkbgyF3SdduyimNRy9GSR9TgRqp";
   newFarmParams.reward_per_second = 100 * precision;
   newFarmParams.timelock = 0;
   newFarmParams.token_info = MichelsonMap.fromLiteral({

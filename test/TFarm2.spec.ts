@@ -72,7 +72,6 @@ describe("TFarm tests (section 2)", async () => {
     newFarmParams.stake_params.staked_token = {
       fA2: { token: qsGov.contract.address, id: 0 },
     };
-    newFarmParams.stake_params.qs_pool = zeroAddress;
     newFarmParams.reward_token = { fA12: fa12.contract.address };
     newFarmParams.timelock = 0;
     newFarmParams.reward_per_second = 100 * precision;
@@ -194,7 +193,6 @@ describe("TFarm tests (section 2)", async () => {
     newFarmParams.stake_params.staked_token = {
       fA2: { token: qsGov.contract.address, id: 0 },
     };
-    newFarmParams.stake_params.qs_pool = zeroAddress;
     newFarmParams.reward_token = { fA12: fa12.contract.address };
     newFarmParams.timelock = 0;
     newFarmParams.reward_per_second = 100 * precision;
@@ -323,7 +321,6 @@ describe("TFarm tests (section 2)", async () => {
     newFarmParams.stake_params.staked_token = {
       fA2: { token: qsGov.contract.address, id: 0 },
     };
-    newFarmParams.stake_params.qs_pool = zeroAddress;
     newFarmParams.reward_token = { fA12: fa12.contract.address };
     newFarmParams.timelock = 5;
     newFarmParams.reward_per_second = 100 * precision;
@@ -491,7 +488,6 @@ describe("TFarm tests (section 2)", async () => {
     newFarmParams.stake_params.staked_token = {
       fA2: { token: qsGov.contract.address, id: 0 },
     };
-    newFarmParams.stake_params.qs_pool = zeroAddress;
     newFarmParams.reward_token = { fA12: fa12.contract.address };
     newFarmParams.timelock = 5;
     newFarmParams.reward_per_second = 100 * precision;
@@ -680,7 +676,6 @@ describe("TFarm tests (section 2)", async () => {
     newFarmParams.stake_params.staked_token = {
       fA2: { token: qsGov.contract.address, id: 0 },
     };
-    newFarmParams.stake_params.qs_pool = zeroAddress;
     newFarmParams.reward_token = { fA12: fa12.contract.address };
     newFarmParams.timelock = 5;
     newFarmParams.reward_per_second = 100 * precision;

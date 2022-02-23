@@ -17,7 +17,6 @@ export type PauseFarmParam = {
 export type StakeParams = {
   staked_token: Token;
   is_v1_lp: boolean;
-  qs_pool: FA12Token;
 };
 
 export type DepositParams = {

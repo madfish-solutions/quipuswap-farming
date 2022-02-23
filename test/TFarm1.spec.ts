@@ -54,7 +54,6 @@ describe("TFarm tests (section 1)", async () => {
   var fa2: FA2;
   var fa2LP: QSFA2Dex;
   var qsGov: FA2;
-  var qsGovLP: QSFA2Dex;
   var utils: Utils;
   var tFarm: TFarm;
   var burner: Burner;
@@ -134,7 +133,6 @@ describe("TFarm tests (section 1)", async () => {
 
     fa12LP = await QSFA12Dex.init(fa12LPAddress, utils.tezos);
     fa2LP = await QSFA2Dex.init(fa2LPAddress, utils.tezos);
-    qsGovLP = await QSFA2Dex.init(qsGovLPAddress, utils.tezos);
 
     burnerStorage.qsgov_lp = qsGovLPAddress;
     burnerStorage.qsgov.token = qsGov.contract.address;
@@ -472,7 +470,6 @@ describe("TFarm tests (section 1)", async () => {
     newFarmParams.stake_params.staked_token = {
       fA2: { token: qsGov.contract.address, id: 0 },
     };
-    newFarmParams.stake_params.qs_pool = qsGovLP.contract.address;
     newFarmParams.reward_token = { fA12: fa12.contract.address };
     newFarmParams.timelock = 10;
     newFarmParams.end_time = String(
@@ -514,10 +511,6 @@ describe("TFarm tests (section 1)", async () => {
     strictEqual(
       tFarm.storage.storage.farms[0].stake_params.is_v1_lp,
       newFarmParams.stake_params.is_v1_lp
-    );
-    strictEqual(
-      tFarm.storage.storage.farms[0].stake_params.qs_pool,
-      newFarmParams.stake_params.qs_pool
     );
     strictEqual(
       tFarm.storage.storage.farms[0].reward_token.fA12,
@@ -933,7 +926,6 @@ describe("TFarm tests (section 1)", async () => {
     newFarmParams.fees.harvest_fee = 4.2 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 5 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12.contract.address };
-    newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.timelock = 0;
     newFarmParams.reward_token = {
       fA2: { token: qsGov.contract.address, id: 0 },
@@ -1363,7 +1355,6 @@ describe("TFarm tests (section 1)", async () => {
     newFarmParams.fees.withdrawal_fee = 6 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
     newFarmParams.stake_params.is_v1_lp = true;
-    newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.reward_per_second = 4 * precision;
     newFarmParams.timelock = 0;
     newFarmParams.reward_token = { fA12: fa12.contract.address };
@@ -1457,7 +1448,6 @@ describe("TFarm tests (section 1)", async () => {
     newFarmParams.stake_params.staked_token = {
       fA2: { token: fa2.contract.address, id: 0 },
     };
-    newFarmParams.stake_params.qs_pool = fa2LP.contract.address;
     newFarmParams.reward_per_second = 5 * precision;
     newFarmParams.timelock = 0;
     newFarmParams.reward_token = { fA12: fa12.contract.address };
@@ -1543,7 +1533,6 @@ describe("TFarm tests (section 1)", async () => {
       fA2: { token: fa2LP.contract.address, id: 0 },
     };
     newFarmParams.stake_params.is_v1_lp = true;
-    newFarmParams.stake_params.qs_pool = fa2LP.contract.address;
     newFarmParams.reward_per_second = 10 * precision;
     newFarmParams.timelock = 0;
     newFarmParams.reward_token = {
@@ -3936,7 +3925,6 @@ describe("TFarm tests (section 1)", async () => {
     newFarmParams.fees.harvest_fee = 14 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 60 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12.contract.address };
-    newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.timelock = 5;
     newFarmParams.reward_token = {
       fA2: { token: qsGov.contract.address, id: 0 },
@@ -4823,10 +4811,14 @@ describe("TFarm tests (section 1)", async () => {
     await utils.setProvider(alice.sk);
     await fa12LP.approve(tFarm.contract.address, depositParams.amt);
     await tFarm.deposit(depositParams);
+    await tFarm.updateStorage({
+      farms: [depositParams.fid],
+    });
     await utils.setProvider(bob.sk);
 
     const operation = await utils.tezos.contract.transfer({
-      to: tFarm.storage.storage.farms[depositParams.fid].stake_params.qs_pool,
+      to: tFarm.storage.storage.farms[depositParams.fid].stake_params
+        .staked_token["fA12"],
       amount: 500,
       mutez: true,
     });
@@ -5112,7 +5104,6 @@ describe("TFarm tests (section 1)", async () => {
     newFarmParams.fees.withdrawal_fee = 60 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
     newFarmParams.stake_params.is_v1_lp = true;
-    newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.reward_per_second = 2 * precision;
     newFarmParams.timelock = 5;
     newFarmParams.reward_token = { fA12: fa12.contract.address };
@@ -5272,7 +5263,6 @@ describe("TFarm tests (section 1)", async () => {
       fA2: { token: fa2LP.contract.address, id: 0 },
     };
     newFarmParams.stake_params.is_v1_lp = true;
-    newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.reward_per_second = 2 * precision;
     newFarmParams.timelock = 5;
     newFarmParams.reward_token = { fA12: fa12.contract.address };

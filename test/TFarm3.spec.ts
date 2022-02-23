@@ -137,7 +137,6 @@ describe("TFarm tests (section 3)", async () => {
     newFarmParams.fees.withdrawal_fee = 10 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
     newFarmParams.stake_params.is_v1_lp = true;
-    newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.reward_token = { fA12: fa12.contract.address };
     newFarmParams.reward_per_second = 100 * precision;
     newFarmParams.timelock = 5; // 5 seconds

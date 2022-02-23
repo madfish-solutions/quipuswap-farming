@@ -381,7 +381,6 @@ export class QFarmUtils {
         },
       },
       is_v1_lp: false,
-      qs_pool: zeroAddress,
     };
     const newFarmParams: NewFarmParams = {
       fees: fees,

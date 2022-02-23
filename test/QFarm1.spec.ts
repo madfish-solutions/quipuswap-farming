@@ -510,7 +510,6 @@ describe("QFarm tests (section 1)", async () => {
     newFarmParams.fees.withdrawal_fee = 15 * feePrecision;
     newFarmParams.fees.burn_reward = 23 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12.contract.address };
-    newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.reward_per_second = 100 * precision;
     newFarmParams.timelock = 10;
     newFarmParams.token_info = MichelsonMap.fromLiteral({
@@ -544,10 +543,6 @@ describe("QFarm tests (section 1)", async () => {
     strictEqual(
       qFarm.storage.storage.farms[0].stake_params.is_v1_lp,
       newFarmParams.stake_params.is_v1_lp
-    );
-    strictEqual(
-      qFarm.storage.storage.farms[0].stake_params.qs_pool,
-      newFarmParams.stake_params.qs_pool
     );
     strictEqual(
       qFarm.storage.storage.farms[0].reward_token.token,
@@ -1322,7 +1317,6 @@ describe("QFarm tests (section 1)", async () => {
     newFarmParams.fees.burn_reward = 6 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
     newFarmParams.stake_params.is_v1_lp = true;
-    newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.reward_per_second = 200 * precision;
     newFarmParams.timelock = 0;
 
@@ -1407,7 +1401,6 @@ describe("QFarm tests (section 1)", async () => {
     newFarmParams.stake_params.staked_token = {
       fA2: { token: fa2.contract.address, id: 0 },
     };
-    newFarmParams.stake_params.qs_pool = fa2LP.contract.address;
     newFarmParams.reward_per_second = 10 * precision;
     newFarmParams.timelock = 0;
 
@@ -1484,7 +1477,6 @@ describe("QFarm tests (section 1)", async () => {
       fA2: { token: fa2LP.contract.address, id: 0 },
     };
     newFarmParams.stake_params.is_v1_lp = true;
-    newFarmParams.stake_params.qs_pool = fa2LP.contract.address;
     newFarmParams.timelock = 0;
 
     await utils.setProvider(bob.sk);
@@ -3707,10 +3699,14 @@ describe("QFarm tests (section 1)", async () => {
     await utils.setProvider(alice.sk);
     await fa12LP.approve(qFarm.contract.address, depositParams.amt);
     await qFarm.deposit(depositParams);
+    await qFarm.updateStorage({
+      farms: [depositParams.fid],
+    });
     await utils.setProvider(bob.sk);
 
     const operation = await utils.tezos.contract.transfer({
-      to: qFarm.storage.storage.farms[depositParams.fid].stake_params.qs_pool,
+      to: qFarm.storage.storage.farms[depositParams.fid].stake_params
+        .staked_token["fA12"],
       amount: 500,
       mutez: true,
     });
@@ -4005,7 +4001,6 @@ describe("QFarm tests (section 1)", async () => {
     newFarmParams.fees.burn_reward = 20 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
     newFarmParams.stake_params.is_v1_lp = true;
-    newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.reward_per_second = 2 * precision;
     newFarmParams.timelock = 10;
 
@@ -4098,7 +4093,6 @@ describe("QFarm tests (section 1)", async () => {
     newFarmParams.stake_params.staked_token = {
       fA2: { token: fa2.contract.address, id: 0 },
     };
-    newFarmParams.stake_params.qs_pool = fa2LP.contract.address;
     newFarmParams.reward_per_second = 2 * precision;
     newFarmParams.timelock = 5;
 
@@ -4194,7 +4188,6 @@ describe("QFarm tests (section 1)", async () => {
       fA2: { token: fa2LP.contract.address, id: 0 },
     };
     newFarmParams.stake_params.is_v1_lp = true;
-    newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.reward_per_second = 2 * precision;
     newFarmParams.timelock = 10;
 

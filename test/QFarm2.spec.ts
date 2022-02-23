@@ -153,7 +153,6 @@ describe("QFarm tests (section 2)", async () => {
     newFarmParams.fees.burn_reward = 12 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
     newFarmParams.stake_params.is_v1_lp = true;
-    newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.reward_per_second = 100 * precision;
     newFarmParams.timelock = 5; // 5 seconds
 

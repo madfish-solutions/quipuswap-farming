@@ -31,6 +31,7 @@ import {
   WithdrawData,
   UserInfoType,
   StakeParams,
+  IsV1LP,
 } from "../types/Common";
 import {
   NewRewardPerSecond,
@@ -126,7 +127,11 @@ export class QFarm {
       });
     }
 
-    for (let i = qFarmFunctions.length / 2; i < qFarmFunctions.length; ++i) {
+    for (
+      let i = Math.round(qFarmFunctions.length / 2);
+      i < qFarmFunctions.length;
+      ++i
+    ) {
       batch2.push({
         kind: OpKind.TRANSACTION,
         to: this.contract.address,
@@ -226,6 +231,16 @@ export class QFarm {
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .set_baker_registry(newBakerRegistry)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async setIsV1LP(params: IsV1LP): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .set_is_v1_lp(...Utils.destructObj(params))
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

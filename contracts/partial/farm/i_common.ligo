@@ -32,6 +32,13 @@ type set_burner_type    is address (* New burner contract address *)
 
 type set_registry_type  is address (* New baker registry contract address *)
 
+type set_is_v1_lp_type  is [@layout:comb] record [
+  (* Farm ID *)
+  fid                     : fid_type;
+  (* Flag: staked LP tokens is LP of QuipuSwap V1 TEZ/TOK pair or not *)
+  is_v1_lp                : bool;
+]
+
 type baker_type         is [@layout:comb] record [
   (* Period during which baker will be banned (in seconds)*)
   period                  : nat;

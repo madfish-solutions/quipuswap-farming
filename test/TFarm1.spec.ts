@@ -26,11 +26,17 @@ import {
   BanBakerParam,
   UserInfoType,
   WithdrawData,
+  IsV1LP,
 } from "./types/Common";
 import { UserFA12Info } from "./types/FA12";
 
-import { Contract, OriginationOperation, VIEW_LAMBDA } from "@taquito/taquito";
 import { MichelsonMap } from "@taquito/michelson-encoder";
+import {
+  OriginationOperation,
+  TransactionOperation,
+  VIEW_LAMBDA,
+  Contract,
+} from "@taquito/taquito";
 
 import { ok, rejects, strictEqual } from "assert";
 
@@ -151,6 +157,15 @@ describe("TFarm tests (section 1)", async () => {
     tFarm = await TFarm.originate(utils.tezos, tFarmStorage);
 
     await tFarm.setLambdas();
+
+    const transferOperation: TransactionOperation =
+      await utils.tezos.contract.transfer({
+        to: carol.pkh,
+        amount: 50_000_000,
+        mutez: true,
+      });
+
+    await confirmOperation(utils.tezos, transferOperation.hash);
   });
 
   it("should fail if not admin is trying to setup new pending admin", async () => {
@@ -239,6 +254,34 @@ describe("TFarm tests (section 1)", async () => {
     await tFarm.updateStorage();
 
     strictEqual(tFarm.storage.storage.baker_registry, bakerRegistryAddress);
+  });
+
+  it("should fail if not admin is trying to set `is_v1_lp`", async () => {
+    const params: IsV1LP = {
+      fid: 0,
+      is_v1_lp: true,
+    };
+
+    await utils.setProvider(alice.sk);
+    await rejects(tFarm.setIsV1LP(params), (err: Error) => {
+      ok(err.message === "Not-admin");
+
+      return true;
+    });
+  });
+
+  it("should fail if farm not found", async () => {
+    const params: IsV1LP = {
+      fid: 666,
+      is_v1_lp: true,
+    };
+
+    await utils.setProvider(bob.sk);
+    await rejects(tFarm.setIsV1LP(params), (err: Error) => {
+      ok(err.message === "QSystem/farm-not-set");
+
+      return true;
+    });
   });
 
   it("should fail if not admin is trying to ban baker", async () => {
@@ -471,7 +514,7 @@ describe("TFarm tests (section 1)", async () => {
       fA2: { token: qsGov.contract.address, id: 0 },
     };
     newFarmParams.reward_token = { fA12: fa12.contract.address };
-    newFarmParams.timelock = 10;
+    newFarmParams.timelock = 12;
     newFarmParams.end_time = String(
       Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
         lifetime
@@ -587,6 +630,28 @@ describe("TFarm tests (section 1)", async () => {
 
     await qsGov.updateOperators([updateOperatorParam]);
     await tFarm.deposit(depositParams);
+  });
+
+  it("should change `is_v1_lp` by admin", async () => {
+    let params: IsV1LP = {
+      fid: 0,
+      is_v1_lp: true,
+    };
+
+    await utils.setProvider(bob.sk);
+    await tFarm.setIsV1LP(params);
+    await tFarm.updateStorage({
+      farms: [0],
+    });
+
+    strictEqual(
+      tFarm.storage.storage.farms[0].stake_params.is_v1_lp,
+      params.is_v1_lp
+    );
+
+    params.is_v1_lp = false;
+
+    await tFarm.setIsV1LP(params);
   });
 
   it("should fail if not admit is trying to update token metadata", async () => {
@@ -5344,10 +5409,10 @@ describe("TFarm tests (section 1)", async () => {
       +initialFarmFarmRecord.staked - withdrawParams2.amt
     );
     strictEqual(+finalTokenBobRecord.balance, withdrawParams2.amt);
-    strictEqual(+finalTokenFarmRecord.balance, 58);
+    strictEqual(+finalTokenFarmRecord.balance, 330);
     strictEqual(
       +finalTokenFarmRecord.frozen_balance,
-      +initialTokenFarmRecord.frozen_balance
+      +initialTokenFarmRecord.frozen_balance - withdrawParams2.amt
     );
   });
 
@@ -5667,7 +5732,7 @@ describe("TFarm tests (section 1)", async () => {
       rewards_receiver: alice.pkh,
     };
 
-    await utils.bakeBlocks(5);
+    await utils.bakeBlocks(7);
     await tFarm.updateStorage({
       users_info: [
         [harvestParams.fid, alice.pkh],

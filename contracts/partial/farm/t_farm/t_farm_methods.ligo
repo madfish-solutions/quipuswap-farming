@@ -9,19 +9,20 @@
     | Set_fees(_)              -> 2n
     | Set_burner(_)            -> 3n
     | Set_baker_registry(_)    -> 4n
-    | Ban_bakers(_)            -> 5n
-    | Add_new_farm(_)          -> 6n
-    | Pause_farms(_)           -> 7n
-    | Deposit(_)               -> 8n
-    | Withdraw(_)              -> 9n
-    | Harvest(_)               -> 10n
-    | Burn_tez_rewards(_)      -> 11n
-    | Claim_farm_rewards(_)    -> 12n
-    | Withdraw_farm_depo(_)    -> 13n
-    | Transfer(_)              -> 14n
-    | Update_operators(_)      -> 15n
-    | Balance_of(_)            -> 16n
-    | Update_token_metadata(_) -> 17n
+    | Set_is_v1_lp(_)          -> 5n
+    | Ban_bakers(_)            -> 6n
+    | Add_new_farm(_)          -> 7n
+    | Pause_farms(_)           -> 8n
+    | Deposit(_)               -> 9n
+    | Withdraw(_)              -> 10n
+    | Harvest(_)               -> 11n
+    | Burn_tez_rewards(_)      -> 12n
+    | Claim_farm_rewards(_)    -> 13n
+    | Withdraw_farm_depo(_)    -> 14n
+    | Transfer(_)              -> 15n
+    | Update_operators(_)      -> 16n
+    | Balance_of(_)            -> 17n
+    | Update_token_metadata(_) -> 18n
     end;
 
     const lambda_bytes : bytes = case s.t_farm_lambdas[id] of

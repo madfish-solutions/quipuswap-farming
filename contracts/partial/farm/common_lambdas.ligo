@@ -86,6 +86,25 @@ function set_baker_registry(
     end
   } with (no_operations, s)
 
+function set_is_v1_lp(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    case action of
+      Set_is_v1_lp(params) -> {
+        only_admin(s.admin);
+
+        var farm : farm_type := get_farm(params.fid, s.farms);
+
+        farm.stake_params.is_v1_lp := params.is_v1_lp;
+
+        s.farms[farm.fid] := farm;
+      }
+    | _                    -> skip
+    end
+  } with (no_operations, s)
+
 function ban_bakers(
   const action          : action_type;
   var s                 : storage_type)

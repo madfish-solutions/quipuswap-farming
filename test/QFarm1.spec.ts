@@ -20,6 +20,7 @@ import {
   BanBakerParam,
   WithdrawData,
   UserInfoType,
+  IsV1LP,
 } from "./types/Common";
 import {
   NewRewardPerSecond,
@@ -36,8 +37,13 @@ import {
   UserFA2Info,
 } from "./types/FA2";
 
-import { Contract, OriginationOperation, VIEW_LAMBDA } from "@taquito/taquito";
 import { MichelsonMap } from "@taquito/michelson-encoder";
+import {
+  OriginationOperation,
+  TransactionOperation,
+  VIEW_LAMBDA,
+  Contract,
+} from "@taquito/taquito";
 
 import { rejects, ok, strictEqual } from "assert";
 
@@ -174,6 +180,15 @@ describe("QFarm tests (section 1)", async () => {
 
     await qFarm.setLambdas();
     await proxyMinter.addMinter(qFarm.contract.address, true);
+
+    const transferOperation: TransactionOperation =
+      await utils.tezos.contract.transfer({
+        to: carol.pkh,
+        amount: 50_000_000,
+        mutez: true,
+      });
+
+    await confirmOperation(utils.tezos, transferOperation.hash);
   });
 
   it("should fail if not admin is trying to setup new pending admin", async () => {
@@ -313,6 +328,34 @@ describe("QFarm tests (section 1)", async () => {
     await qFarm.updateStorage();
 
     strictEqual(qFarm.storage.storage.baker_registry, bakerRegistryAddress);
+  });
+
+  it("should fail if not admin is trying to set `is_v1_lp`", async () => {
+    const params: IsV1LP = {
+      fid: 0,
+      is_v1_lp: true,
+    };
+
+    await utils.setProvider(alice.sk);
+    await rejects(qFarm.setIsV1LP(params), (err: Error) => {
+      ok(err.message === "Not-admin");
+
+      return true;
+    });
+  });
+
+  it("should fail if farm not found", async () => {
+    const params: IsV1LP = {
+      fid: 666,
+      is_v1_lp: true,
+    };
+
+    await utils.setProvider(bob.sk);
+    await rejects(qFarm.setIsV1LP(params), (err: Error) => {
+      ok(err.message === "QSystem/farm-not-set");
+
+      return true;
+    });
   });
 
   it("should fail if not admin is trying to ban baker", async () => {
@@ -596,6 +639,27 @@ describe("QFarm tests (section 1)", async () => {
       Date.parse(qFarm.storage.storage.farms[0].start_time) >=
         +newFarmParams.start_time * 1000
     );
+  });
+
+  it("should change `is_v1_lp` by admin", async () => {
+    let params: IsV1LP = {
+      fid: 0,
+      is_v1_lp: true,
+    };
+
+    await qFarm.setIsV1LP(params);
+    await qFarm.updateStorage({
+      farms: [0],
+    });
+
+    strictEqual(
+      qFarm.storage.storage.farms[0].stake_params.is_v1_lp,
+      params.is_v1_lp
+    );
+
+    params.is_v1_lp = false;
+
+    await qFarm.setIsV1LP(params);
   });
 
   it("should fail if not admit is trying to update token metadata", async () => {
@@ -4264,7 +4328,7 @@ describe("QFarm tests (section 1)", async () => {
     strictEqual(+finalTokenFarmRecord.balance, 30);
     strictEqual(
       +finalTokenFarmRecord.frozen_balance,
-      +initialTokenFarmRecord.frozen_balance
+      +initialTokenFarmRecord.frozen_balance - withdrawParams2.amt
     );
   });
 

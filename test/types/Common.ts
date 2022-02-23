@@ -73,3 +73,8 @@ export type UpdTokMetaParams = {
   token_id: number;
   token_info: Meta[];
 };
+
+export type IsV1LP = {
+  fid: number;
+  is_v1_lp: boolean;
+};

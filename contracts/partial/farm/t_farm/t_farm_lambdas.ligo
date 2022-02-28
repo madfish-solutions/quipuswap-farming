@@ -1,3 +1,61 @@
+function set_reward_per_second(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    var operations : list(operation) := no_operations;
+
+    case action of
+      Set_reward_per_second(params) -> {
+        only_admin(s.admin);
+
+        var farm : farm_type := get_farm(params.fid, s.farms);
+
+        assert_with_error(
+          params.reward_per_second =/= farm.reward_per_second,
+          "TFarm/wrong-reward-per-second"
+        );
+
+        const upd_res : (storage_type * farm_type) =
+          update_farm_rewards(farm, s);
+
+        s := upd_res.0;
+        farm := upd_res.1;
+
+        if params.reward_per_second > farm.reward_per_second
+        then {
+          const tokens : nat = abs(
+            params.reward_per_second - farm.reward_per_second
+          ) / precision * abs(farm.end_time - Tezos.now);
+
+          operations := transfer_token(
+            Tezos.sender,
+            Tezos.self_address,
+            tokens,
+            farm.reward_token
+          ) # operations;
+        }
+        else {
+          const tokens : nat = abs(
+            farm.reward_per_second - params.reward_per_second
+          ) / precision * abs(farm.end_time - Tezos.now);
+
+          operations := transfer_token(
+            Tezos.self_address,
+            Tezos.sender,
+            tokens,
+            farm.reward_token
+          ) # operations;
+        };
+
+        farm.reward_per_second := params.reward_per_second;
+
+        s.farms[farm.fid] := farm;
+      }
+    | _                             -> skip
+    end
+  } with (operations, s)
+
 function add_new_farm(
   const action          : action_type;
   var s                 : storage_type)

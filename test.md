@@ -229,7 +229,13 @@
    - ✅ should fail if farm not found;
    - ✅ should change `is_v1_lp` by admin.
 
-7. `ban_bakers`:
+7. `set_reward_per_second`:
+
+   - ❌
+   - ❌
+   - ❌
+
+8. `ban_bakers`:
 
    - ✅ should fail if not admin is trying to ban baker;
    - ✅ should ban one baker;
@@ -238,7 +244,7 @@
    - ✅ should unban group of bakers;
    - ✅ should ban/unban group of bakers.
 
-8. `add_new_farm`:
+9. `add_new_farm`:
 
    - ✅ should fail if not admin is trying to add new farm;
    - ✅ should fail if end time is less or equal to start time;
@@ -247,17 +253,17 @@
    - ✅ should transfer correct amount of FA1.2 tokens to the contract as the rewards for users;
    - ✅ should transfer correct amount of FA2 tokens to the contract as the rewards for users.
 
-9. `pause_farms`:
+10. `pause_farms`:
 
-   - ✅ should fail if not admin is trying to pause farm;
-   - ✅ should fail if one farm from list of farms not found;
-   - ✅ should pause one farm;
-   - ✅ should unpause one farm;
-   - ✅ should pause group of farms;
-   - ✅ should unpause group of farms;
-   - ✅ should pause/unpause group of farms.
+    - ✅ should fail if not admin is trying to pause farm;
+    - ✅ should fail if one farm from list of farms not found;
+    - ✅ should pause one farm;
+    - ✅ should unpause one farm;
+    - ✅ should pause group of farms;
+    - ✅ should unpause group of farms;
+    - ✅ should pause/unpause group of farms.
 
-10. `deposit`:
+11. `deposit`:
 
     - ✅ should fail if farm not found;
     - ✅ should fail if farm is paused;
@@ -282,7 +288,7 @@
     - ✅ should vote for the baker if LP token is deposited;
     - ✅ should change current delegated for the next candidate if votes were redistributed.
 
-11. `withdraw`:
+12. `withdraw`:
 
     - ✅ should fail if farm not found;
     - ✅ should fail if staked by user amount is less than amount to withdraw;
@@ -305,7 +311,7 @@
     - ✅ should withdraw tokens to the specified receiver;
     - ✅ should change current delegated for the next candidate if votes were redistributed.
 
-12. `harvest`:
+13. `harvest`:
 
     - ✅ should fail if farm not found;
     - ✅ should fail if timelock is not finished (in farms with timelock);
@@ -318,21 +324,21 @@
     - ✅ should transfer FA2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
     - ✅ should calculate and transfer reward tokens as harvest fee with decimals (like 4.2%).
 
-13. `burn_tez_rewards`:
+14. `burn_tez_rewards`:
 
     - ✅ should fail if not admin is trying to burn TEZ rewards;
     - ✅ should fail if farm not found;
     - ✅ should fail if not LP token is staked on the farm;
     - ✅ should withdraw bakers rewards in TEZ from the QS pool, swap for QS GOV tokens and burn them.
 
-14. `claim_farm_rewards`:
+15. `claim_farm_rewards`:
 
     - ✅ should fail if not admin is trying to claim farm rewards;
     - ✅ should fail if farm not found;
     - ✅ should transfer FA1.2 reward tokens to the admin;
     - ✅ should transfer FA2 reward tokens to the admin.
 
-15. `withdraw_farm_depo`:
+16. `withdraw_farm_depo`:
 
     - ✅ should fail if not admit is trying to withdraw farm depo;
     - ✅ should fail if farm not found;
@@ -342,7 +348,7 @@
     - ✅ should withdraw single FA2 token;
     - ✅ should withdraw LP FA2 token.
 
-16. `transfer`:
+17. `transfer`:
 
     - ✅ should fail if farm not found;
     - ✅ should fail if transfer destination address is equal to contract address;
@@ -354,7 +360,7 @@
     - ✅ should transfer a group of tokens and update values correctly;
     - ✅ should claim rewards after transfer correctly.
 
-17. `update_operators`:
+18. `update_operators`:
 
     - ✅ should fail if not owner is trying to add operator;
     - ✅ should fail if not owner is trying to remove operator;
@@ -363,22 +369,22 @@
     - ✅ should remove operator;
     - ✅ should add/remove operators per one transation.
 
-18. `balance_of`:
+19. `balance_of`:
 
     - ✅ should return correct balance of staked tokens.
 
-19. `update_token_metadata`:
+20. `update_token_metadata`:
 
     - ✅ should fail if not admit is trying to update token metadata;
     - ✅ should fail if farm not found;
     - ✅ should update token metadata.
 
-20. `default`:
+21. `default`:
 
     - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn them (1);
     - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn them (2).
 
-21. `integration tests`:
+22. `integration tests`:
 
     - ✅ should add new farm, stake in the next block and withdraw all rewards (except the first block reward) after farms lifetime finishing (without timelock);
     - ✅ should add new farm and stake in batch, withdraw all rewards after farms lifetime finishing (without timelock);

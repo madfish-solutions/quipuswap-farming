@@ -34,6 +34,7 @@ import {
   IsV1LP,
 } from "../types/Common";
 import {
+  SetRewardPerSecond,
   NewFarmParams,
   SetFeeParams,
   TFarmStorage,
@@ -218,6 +219,18 @@ export class TFarm {
   async setIsV1LP(params: IsV1LP): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .set_is_v1_lp(...Utils.destructObj(params))
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async setRewardPerSecond(
+    params: SetRewardPerSecond
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .set_reward_per_second(...Utils.destructObj(params))
       .send();
 
     await confirmOperation(this.tezos, operation.hash);

@@ -214,3 +214,14 @@ function append_ops(
   const to_             : list(operation))
                         : list(operation) is
   List.fold_right(append_op, to_, what)
+
+function div_ceil(
+  const numerator       : nat;
+  const denominator     : nat)
+                        : nat is
+  case ediv(numerator, denominator) of
+    Some(result) -> if result.1 > 0n
+      then result.0 + 1n
+      else result.0
+  | None -> failwith("QSystem/division-by-zero")
+  end;

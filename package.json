@@ -4,7 +4,6 @@
   "license": "MIT",
   "description": "Quipuswap Farming",
   "scripts": {
-    "postinstall": "patch-package",
     "start-sandbox": "docker run --rm --name my-sandbox -e flextesa_node_cors_origin='*' -e block_time=1 --detach -p 8732:20000 tqtezos/flextesa:20211119 hangzbox start",
     "clean": "rm -rf ./build",
     "compile-qFarm-lambdas": "ts-node scripts/cli.js compile-lambda -j storage/json/QFarmFunctions.json -c contracts/main/q_farm.ligo",
@@ -36,7 +35,6 @@
     "ganache-cli": "^6.12.1-tezos.0",
     "mocha": "^9.0.1",
     "patch-package": "^6.4.7",
-    "truffle": "^5.5.0-tezos.4",
     "ts-mocha": "^8.0.0",
     "ts-node": "^10.0.0",
     "typescript": "^4.3.5",

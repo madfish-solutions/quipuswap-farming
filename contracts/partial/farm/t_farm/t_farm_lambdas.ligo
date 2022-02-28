@@ -1,3 +1,57 @@
+function set_reward_per_second(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    var operations : list(operation) := no_operations;
+
+    case action of
+      Set_reward_per_second(params) -> {
+        only_admin(s.admin);
+
+        var farm : farm_type := get_farm(params.fid, s.farms);
+
+        assert_with_error(
+          params.reward_per_second =/= farm.reward_per_second,
+          "TFarm/wrong-reward-per-second"
+        );
+
+        const upd_res : (storage_type * farm_type) =
+          update_farm_rewards(farm, s);
+
+        s := upd_res.0;
+        farm := upd_res.1;
+
+        const reward_delta : nat = abs(
+          params.reward_per_second - farm.reward_per_second
+        ) * abs(farm.end_time - Tezos.now);
+
+        if params.reward_per_second > farm.reward_per_second
+        then {
+          operations := transfer_token(
+            Tezos.sender,
+            Tezos.self_address,
+            div_ceil(reward_delta, precision),
+            farm.reward_token
+          ) # operations;
+        }
+        else {
+          operations := transfer_token(
+            Tezos.self_address,
+            Tezos.sender,
+            reward_delta / precision,
+            farm.reward_token
+          ) # operations;
+        };
+
+        farm.reward_per_second := params.reward_per_second;
+
+        s.farms[farm.fid] := farm;
+      }
+    | _                             -> skip
+    end
+  } with (operations, s)
+
 function add_new_farm(
   const action          : action_type;
   var s                 : storage_type)
@@ -136,7 +190,7 @@ function deposit(
 
         if params.amt =/= 0n
         then {
-          if farm.stake_params.is_lp_staked_token
+          if farm.stake_params.is_v1_lp
           then {
             if is_banned_baker(params.candidate, s.banned_bakers)
             then failwith("TFarm/baker-is-banned")
@@ -266,7 +320,7 @@ function withdraw(
           farm.stake_params.staked_token
         ) # operations;
 
-        if farm.stake_params.is_lp_staked_token
+        if farm.stake_params.is_v1_lp
         then {
           s := vote(
             get_user_candidate(farm, Tezos.sender, s.candidates),

@@ -31,8 +31,10 @@ import {
   UserInfoType,
   WithdrawData,
   StakeParams,
+  IsV1LP,
 } from "../types/Common";
 import {
+  SetRewardPerSecond,
   NewFarmParams,
   SetFeeParams,
   TFarmStorage,
@@ -125,7 +127,11 @@ export class TFarm {
       });
     }
 
-    for (let i = tFarmFunctions.length / 2; i < tFarmFunctions.length; ++i) {
+    for (
+      let i = Math.round(tFarmFunctions.length / 2);
+      i < tFarmFunctions.length;
+      ++i
+    ) {
       batch2.push({
         kind: OpKind.TRANSACTION,
         to: this.contract.address,
@@ -203,6 +209,28 @@ export class TFarm {
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .set_baker_registry(newBakerRegistry)
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async setIsV1LP(params: IsV1LP): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .set_is_v1_lp(...Utils.destructObj(params))
+      .send();
+
+    await confirmOperation(this.tezos, operation.hash);
+
+    return operation;
+  }
+
+  async setRewardPerSecond(
+    params: SetRewardPerSecond
+  ): Promise<TransactionOperation> {
+    const operation: TransactionOperation = await this.contract.methods
+      .set_reward_per_second(...Utils.destructObj(params))
       .send();
 
     await confirmOperation(this.tezos, operation.hash);
@@ -356,8 +384,7 @@ export class TFarmUtils {
       staked_token: {
         fA12: zeroAddress,
       },
-      is_lp_staked_token: false,
-      qs_pool: zeroAddress,
+      is_v1_lp: false,
     };
     const newFarmParams: NewFarmParams = {
       fees: fees,

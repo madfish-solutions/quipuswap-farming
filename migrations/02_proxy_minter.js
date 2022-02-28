@@ -24,7 +24,7 @@ module.exports = async (tezos) => {
     signer: await InMemorySigner.fromSecretKey(secretKey),
   });
 
-  proxyMinterStorage.qsgov.token = "KT1NfYbYTCRZsNPZ97VdLqSrwPdVupiqniFu";
+  proxyMinterStorage.qsgov.token = "KT1VowcKqZFGhdcDZA3UN1vrjBLmxV5bxgfJ";
   proxyMinterStorage.qsgov.id = 0;
   proxyMinterStorage.admin = deployer;
   proxyMinterStorage.pending_admin = zeroAddress;

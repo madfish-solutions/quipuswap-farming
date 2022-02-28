@@ -61,9 +61,9 @@ const compile = async (
 
   contracts.forEach((contract) => {
     const michelson = execSync(
-      `${ligo} compile-contract ${
-        format === "json" ? "--michelson-format=json" : ""
-      } $PWD/${contractsDir}/${contract}.ligo main`,
+      `${ligo} compile contract $PWD/${contractsDir}/${contract}.ligo ${
+        format === "json" ? "--michelson-format json" : ""
+      } --protocol hangzhou`,
       { maxBuffer: 1024 * 500 }
     ).toString();
 
@@ -113,7 +113,7 @@ const compileLambdas = async (
   try {
     for (const lambda of lambdas) {
       const michelson = execSync(
-        `${ligo} compile-expression pascaligo --michelson-format=json --init-file $PWD/${contract} 'Setup_func(record [index=${lambda.index}n; func=Bytes.pack(${lambda.name})])'`,
+        `${ligo} compile expression pascaligo 'Setup_func(record [index=${lambda.index}n; func=Bytes.pack(${lambda.name})])' --michelson-format json --init-file $PWD/${contract} --protocol hangzhou`,
         { maxBuffer: 1024 * 500 }
       ).toString();
 

@@ -86,6 +86,25 @@ function set_baker_registry(
     end
   } with (no_operations, s)
 
+function set_is_v1_lp(
+  const action          : action_type;
+  var s                 : storage_type)
+                        : return_type is
+  block {
+    case action of
+      Set_is_v1_lp(params) -> {
+        only_admin(s.admin);
+
+        var farm : farm_type := get_farm(params.fid, s.farms);
+
+        farm.stake_params.is_v1_lp := params.is_v1_lp;
+
+        s.farms[farm.fid] := farm;
+      }
+    | _                    -> skip
+    end
+  } with (no_operations, s)
+
 function ban_bakers(
   const action          : action_type;
   var s                 : storage_type)
@@ -162,19 +181,16 @@ function burn_tez_rewards(
 
         const farm : farm_type = get_farm(fid, s.farms);
 
-        if not farm.stake_params.is_lp_staked_token
+        if not farm.stake_params.is_v1_lp
         then failwith("QSystem/not-LP-farm")
         else skip;
-
-        const lp_token : address = case farm.stake_params.staked_token of
-          FA12(token_address) -> token_address
-        | FA2(token_info)     -> token_info.token
-        end;
 
         operations := Tezos.transaction(
           WithdrawProfit(s.burner),
           0mutez,
-          get_quipuswap_use_entrypoint(lp_token)
+          get_quipuswap_use_entrypoint(
+            get_token_address(farm.stake_params.staked_token)
+          )
         ) # operations;
       }
     | _                                 -> skip
@@ -225,7 +241,7 @@ function withdraw_farm_depo(
           farm.stake_params.staked_token
         ) # operations;
 
-        if farm.stake_params.is_lp_staked_token
+        if farm.stake_params.is_v1_lp
         then {
           s := vote(
             get_user_candidate(farm, Tezos.self_address, s.candidates),

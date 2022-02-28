@@ -127,6 +127,7 @@ type action_type        is
 | Set_burner              of set_burner_type
 | Set_proxy_minter        of set_proxy_type
 | Set_baker_registry      of set_registry_type
+| Set_is_v1_lp            of set_is_v1_lp_type
 | Ban_bakers              of ban_bakers_type
 | Add_new_farm            of add_new_farm_type
 | Pause_farms             of pause_farms_type
@@ -166,4 +167,4 @@ type full_action_type   is
 | Setup_func              of setup_func_type
 | Default                 of default_type
 
-[@inline] const q_farm_methods_max_index : nat = 19n;
+[@inline] const q_farm_methods_max_index : nat = 20n;

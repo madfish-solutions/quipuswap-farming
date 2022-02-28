@@ -37,11 +37,10 @@ module.exports = async (tezos) => {
   newFarmParams.fees.burn_reward = 23 * feePrecision;
   newFarmParams.stake_params.staked_token = {
     fA2: {
-      token: "KT1MsQZeAbLuNfhfWdiUsJT4tTDzxymkaxwo",
+      token: "KT1DgpR6mXkbgyF3SdduyimNRy9GSR9TgRqp",
       id: 0,
     },
   };
-  newFarmParams.stake_params.qs_pool = "KT1MsQZeAbLuNfhfWdiUsJT4tTDzxymkaxwo";
   newFarmParams.reward_per_second = 100 * precision;
   newFarmParams.timelock = 0;
   newFarmParams.token_info = MichelsonMap.fromLiteral({
@@ -70,18 +69,6 @@ module.exports = async (tezos) => {
 
   operation = await qFarm.methods
     .add_new_farm(...Utils.destructObj(newFarmParams))
-    .send();
-
-  await confirmOperation(tezos, operation.hash);
-
-  operation = await qFarm.methods
-    .set_admin("tz1hajsAod8pgMpKYF7h5BStd1dBRZYTSNHD")
-    .send();
-
-  await confirmOperation(tezos, operation.hash);
-
-  operation = await tFarm.methods
-    .set_admin("tz1hajsAod8pgMpKYF7h5BStd1dBRZYTSNHD")
     .send();
 
   await confirmOperation(tezos, operation.hash);

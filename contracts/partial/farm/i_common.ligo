@@ -20,10 +20,8 @@ type user_info_type     is [@layout:comb] record [
 type stake_params_type  is [@layout:comb] record [
   (* Token to stake *)
   staked_token            : token_type;
-  (* Flag: LP token staked or not *)
-  is_lp_staked_token      : bool;
-  (* Quipuswap liquidity pool for staked or divested token *)
-  qs_pool                 : address;
+  (* Flag: QuipuSwap V1 LP token staked or not *)
+  is_v1_lp                : bool;
 ]
 
 type set_admin_type     is address (* New admin address *)
@@ -33,6 +31,13 @@ type confirm_admin_type is unit
 type set_burner_type    is address (* New burner contract address *)
 
 type set_registry_type  is address (* New baker registry contract address *)
+
+type set_is_v1_lp_type  is [@layout:comb] record [
+  (* Farm ID *)
+  fid                     : fid_type;
+  (* Flag: staked LP tokens is LP of QuipuSwap V1 TEZ/TOK pair or not *)
+  is_v1_lp                : bool;
+]
 
 type baker_type         is [@layout:comb] record [
   (* Period during which baker will be banned (in seconds)*)

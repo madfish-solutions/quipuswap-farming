@@ -15,7 +15,13 @@ import {
   UserFA2LPInfo,
   UserFA2Info,
 } from "./types/FA2";
-import { NewFarmParams, SetFeeParams, FarmData, Farm } from "./types/TFarm";
+import {
+  SetRewardPerSecond,
+  NewFarmParams,
+  SetFeeParams,
+  FarmData,
+  Farm,
+} from "./types/TFarm";
 import {
   WithdrawFarmDepoParams,
   UpdTokMetaParams,
@@ -652,6 +658,52 @@ describe("TFarm tests (section 1)", async () => {
     params.is_v1_lp = false;
 
     await tFarm.setIsV1LP(params);
+  });
+
+  it("should fail if not admin is trying to set reward per second", async () => {
+    const params: SetRewardPerSecond = {
+      fid: 0,
+      reward_per_second: 0,
+    };
+
+    await utils.setProvider(alice.sk);
+    await rejects(tFarm.setRewardPerSecond(params), (err: Error) => {
+      ok(err.message === "Not-admin");
+
+      return true;
+    });
+  });
+
+  it("should fail if farm not found", async () => {
+    const params: SetRewardPerSecond = {
+      fid: 666,
+      reward_per_second: 0,
+    };
+
+    await utils.setProvider(bob.sk);
+    await rejects(tFarm.setRewardPerSecond(params), (err: Error) => {
+      ok(err.message === "QSystem/farm-not-set");
+
+      return true;
+    });
+  });
+
+  it("should fail if admin is trying to set wrong reward per second", async () => {
+    await tFarm.updateStorage({
+      farms: [0],
+    });
+
+    const params: SetRewardPerSecond = {
+      fid: 0,
+      reward_per_second:
+        tFarm.storage.storage.farms[0].reward_per_second.toNumber(),
+    };
+
+    await rejects(tFarm.setRewardPerSecond(params), (err: Error) => {
+      ok(err.message === "TFarm/wrong-reward-per-second");
+
+      return true;
+    });
   });
 
   it("should fail if not admit is trying to update token metadata", async () => {
@@ -5851,5 +5903,86 @@ describe("TFarm tests (section 1)", async () => {
         resCarol.expectedUserEarnedAfterHarvest
       )
     );
+  });
+
+  it("should change reward per second up", async () => {
+    const params: SetRewardPerSecond = {
+      fid: 0,
+      reward_per_second: 5 * precision,
+    };
+
+    await tFarm.updateStorage({
+      farms: [0],
+    });
+    await fa12.updateStorage({
+      ledger: [bob.pkh, tFarm.contract.address],
+    });
+
+    const initialFarm: Farm = tFarm.storage.storage.farms[params.fid];
+    const transferAmt: number = new BigNumber(params.reward_per_second)
+      .minus(initialFarm.reward_per_second)
+      .dividedBy(precision)
+      .integerValue(BigNumber.ROUND_DOWN)
+      .multipliedBy(
+        Date.parse(initialFarm.end_time) / 1000 -
+          Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000
+      )
+      .toNumber();
+    const bobInitialBalance: number = +fa12.storage.ledger[bob.pkh].balance;
+    const tFarmInitialBalance: number =
+      +fa12.storage.ledger[tFarm.contract.address].balance;
+
+    await utils.setProvider(bob.sk);
+    await fa12.approve(tFarm.contract.address, transferAmt);
+    await tFarm.setRewardPerSecond(params);
+    await tFarm.updateStorage({
+      farms: [0],
+    });
+    await fa12.updateStorage({
+      ledger: [bob.pkh, tFarm.contract.address],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[params.fid];
+    const bobFinalBalance: number = +fa12.storage.ledger[bob.pkh].balance;
+    const tFarmFinalBalance: number =
+      +fa12.storage.ledger[tFarm.contract.address].balance;
+
+    strictEqual(+finalFarm.reward_per_second, params.reward_per_second);
+
+    ok(bobFinalBalance < bobInitialBalance);
+    ok(tFarmFinalBalance > tFarmInitialBalance);
+  });
+
+  it("should change reward per second down", async () => {
+    const params: SetRewardPerSecond = {
+      fid: 0,
+      reward_per_second: 1 * precision,
+    };
+
+    await fa12.updateStorage({
+      ledger: [bob.pkh, tFarm.contract.address],
+    });
+
+    const bobInitialBalance: number = +fa12.storage.ledger[bob.pkh].balance;
+    const tFarmInitialBalance: number =
+      +fa12.storage.ledger[tFarm.contract.address].balance;
+
+    await tFarm.setRewardPerSecond(params);
+    await tFarm.updateStorage({
+      farms: [0],
+    });
+    await fa12.updateStorage({
+      ledger: [bob.pkh, tFarm.contract.address],
+    });
+
+    const finalFarm: Farm = tFarm.storage.storage.farms[params.fid];
+    const bobFinalBalance: number = +fa12.storage.ledger[bob.pkh].balance;
+    const tFarmFinalBalance: number =
+      +fa12.storage.ledger[tFarm.contract.address].balance;
+
+    strictEqual(+finalFarm.reward_per_second, params.reward_per_second);
+
+    ok(bobFinalBalance > bobInitialBalance);
+    ok(tFarmFinalBalance < tFarmInitialBalance);
   });
 });

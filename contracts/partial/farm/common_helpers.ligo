@@ -220,8 +220,9 @@ function div_ceil(
   const denominator     : nat)
                         : nat is
   case ediv(numerator, denominator) of
-    Some(result) -> if result.1 > 0n
+  | Some(result) ->
+      if result.1 > 0n
       then result.0 + 1n
       else result.0
-  | None -> failwith("QSystem/division-by-zero")
-  end;
+  | None         -> failwith("QSystem/division-by-zero")
+  end

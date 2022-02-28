@@ -23,27 +23,23 @@ function set_reward_per_second(
         farm := upd_res.1;
 
         const reward_delta : nat = abs(
-            params.reward_per_second - farm.reward_per_second
-          ) * abs(farm.end_time - Tezos.now);
+          params.reward_per_second - farm.reward_per_second
+        ) * abs(farm.end_time - Tezos.now);
 
         if params.reward_per_second > farm.reward_per_second
         then {
-          const tokens : nat = div_ceil(reward_delta, precision);
-
           operations := transfer_token(
             Tezos.sender,
             Tezos.self_address,
-            tokens,
+            div_ceil(reward_delta, precision),
             farm.reward_token
           ) # operations;
         }
         else {
-          const tokens : nat = reward_delta / precision;
-
           operations := transfer_token(
             Tezos.self_address,
             Tezos.sender,
-            tokens,
+            reward_delta / precision,
             farm.reward_token
           ) # operations;
         };

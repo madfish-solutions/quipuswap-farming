@@ -759,7 +759,7 @@ describe("QFarm tests (section 1)", async () => {
     ];
 
     await rejects(qFarm.transfer(params), (err: Error) => {
-      ok(err.message === "FA2_ILLEGAL_TRANSFER");
+      ok(err.message === "ILLEGAL_TRANSFER");
 
       return true;
     });
@@ -4579,7 +4579,7 @@ describe("QFarm tests (section 1)", async () => {
 
     await utils.setProvider(bob.sk);
     await rejects(qFarm.transfer(params), (err: Error) => {
-      ok(err.message === "FA2_TIMELOCK_NOT_FINISHED");
+      ok(err.message === "TIMELOCK_NOT_FINISHED");
 
       return true;
     });

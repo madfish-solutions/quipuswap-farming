@@ -18,7 +18,7 @@ function iterate_transfer(
         farm := upd_res.1;
 
         if dst.to_ = Tezos.self_address
-        then failwith("FA2_ILLEGAL_TRANSFER")
+        then failwith("ILLEGAL_TRANSFER")
         else skip;
 
         var src_user : user_info_type :=
@@ -34,7 +34,7 @@ function iterate_transfer(
         else skip;
 
         if abs(Tezos.now - src_user.last_staked) < farm.timelock
-        then failwith("FA2_TIMELOCK_NOT_FINISHED")
+        then failwith("TIMELOCK_NOT_FINISHED")
         else skip;
 
         src_user.earned := src_user.earned +

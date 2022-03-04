@@ -193,9 +193,9 @@ function deposit(
           if farm.stake_params.is_v1_lp
           then {
             const candidate : key_hash = case params.candidate of
-              | Some(candidate) -> candidate
-              | None -> failwith("QFarm/baker-is-required")
-              end;
+              Some(candidate) -> candidate
+            | None            -> failwith("TFarm/baker-is-required")
+            end;
 
             if is_banned_baker(candidate, s.banned_bakers)
             then failwith("TFarm/baker-is-banned")

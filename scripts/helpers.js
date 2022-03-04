@@ -144,7 +144,7 @@ const compileLambdas = async (
   }
 };
 
-const migrate = async (tezos, contract, storage) => {
+const migrate = async (tezos, contract, storage, network) => {
   try {
     const artifacts = JSON.parse(
       fs.readFileSync(`${env.buildDir}/${contract}.json`)
@@ -162,7 +162,7 @@ const migrate = async (tezos, contract, storage) => {
 
     await confirmOperation(tezos, operation.hash);
 
-    artifacts.networks[env.network] = { [contract]: operation.contractAddress };
+    artifacts.networks[network] = { [contract]: operation.contractAddress };
 
     if (!fs.existsSync(env.buildDir)) {
       fs.mkdirSync(env.buildDir);
@@ -179,13 +179,13 @@ const migrate = async (tezos, contract, storage) => {
   }
 };
 
-const getDeployedAddress = (contract) => {
+const getDeployedAddress = (contract, network) => {
   try {
     const artifacts = JSON.parse(
       fs.readFileSync(`${env.buildDir}/${contract}.json`)
     );
 
-    return artifacts.networks[env.network][contract];
+    return artifacts.networks[network][contract];
   } catch (e) {
     console.error(e);
   }
@@ -213,7 +213,7 @@ const runMigrations = async (options) => {
     for (const migration of migrations) {
       const execMigration = require(`../${env.migrationsDir}/${migration}.js`);
 
-      await execMigration(tezos);
+      await execMigration(tezos, options.network);
     }
   } catch (e) {
     console.error(e);

@@ -96,11 +96,12 @@ def parse_token_transfers(res):
 
 def parse_token_transfer(op):
     transfers = []
-    if not isinstance(op["parameters"]["value"], list):
-        transfer = parse_as_fa12(op["parameters"]["value"])
+    value = op["parameters"]["value"]
+    if not isinstance(value, list):
+        transfer = parse_as_fa12(value)
         transfers.append(transfer)
     else:
-        transfers += parse_as_fa2(op["parameters"]["value"])
+        transfers += parse_as_fa2(value)
 
     for transfer in transfers:
         transfer["token_address"] = op["destination"]
@@ -178,8 +179,8 @@ def parse_ops(res):
                 mint = parse_mint_list(op)
                 result += mint
             elif entrypoint == "transfer":
-                tx = parse_token_transfer(op)
-                result += tx
+                txs = parse_token_transfer(op)
+                result += txs
             elif entrypoint == "use":
                 tx = parse_vote(op)
                 result.append(tx)
@@ -247,7 +248,15 @@ def operator_add(owner, operator, token_id=0):
         "add_operator": {"owner": owner, "operator": operator, "token_id": token_id}
     }
 
-import json
+def get_map_without_none(map):
+    return {key: value for key,value in map.items() if value != None}
+
+def none_sets_to_lists(full_storage):
+    if "storage" in full_storage:
+        internal = full_storage["storage"]
+        internal["candidates"] = get_map_without_none(internal["candidates"])
+
+    return full_storage
 
 class LocalChain:
     def __init__(self, storage=None):
@@ -269,11 +278,10 @@ class LocalChain:
             source=source,
         )
         self.balance = new_balance
-        self.storage = res.storage
+        self.storage = none_sets_to_lists(res.storage)
 
         # calculate total xtz payouts from contract
         ops = parse_ops(res)
-        json.dump(ops, open("ops.json", "w"))
         for op in ops:
             if op["type"] == "tez":
                 dest = op["destination"]

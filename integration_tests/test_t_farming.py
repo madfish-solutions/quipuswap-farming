@@ -45,8 +45,7 @@ fees={
 
 stake_params={
     "staked_token": fa2_token,
-    "is_lp_staked_token": True,
-    "qs_pool": "KT18fp5rcTW7mbWDmzFwjLDUhs5MeJmagDSZ"
+    "is_v1_lp": True,
 }
 
 class TFarmTest(TestCase):
@@ -380,3 +379,80 @@ class TFarmTest(TestCase):
         res = chain.execute(self.farm.harvest(0, alice), sender=alice)
         farm1_after = res.storage["storage"]["farms"][1]
         self.assertDictEqual(farm1_before, farm1_after)
+
+    def test_tfarm_set_reward_per_second(self):
+        chain = LocalChain(storage=self.storage_with_admin)
+        res = chain.execute(self.farm.add_new_farm(
+            fees=fees,
+            stake_params=stake_params,
+            reward_token=reward_token,
+            paused=False,
+            reward_per_second=100 * PRECISION,
+            timelock=0,
+            start_time=0,
+            end_time=600,
+            token_info={"": ""}
+        ), sender=admin)
+
+        transfers = parse_token_transfers(res)
+        self.assertEqual(transfers[0]["amount"], 60_000)
+        self.assertEqual(transfers[0]["destination"], contract_self_address)
+
+        # interpret reward diminished in half
+        res = chain.interpret(self.farm.set_reward_per_second(0, 50 * PRECISION), sender=admin)
+
+        transfers = parse_token_transfers(res)
+        self.assertEqual(transfers[0]["amount"], 30_000)
+        self.assertEqual(transfers[0]["destination"], admin)
+
+        # interpret reward doubled
+        res = chain.interpret(self.farm.set_reward_per_second(0, 200 * PRECISION), sender=admin)
+
+        transfers = parse_token_transfers(res)
+        self.assertEqual(transfers[0]["amount"], 60_000)
+        self.assertEqual(transfers[0]["destination"], contract_self_address)
+
+        chain.advance_blocks(5)
+
+        # interpret reward diminished in half
+        res = chain.interpret(self.farm.set_reward_per_second(0, 50 * PRECISION), sender=admin)
+        transfers = parse_token_transfers(res)
+        self.assertEqual(transfers[0]["amount"], 15_000)
+        self.assertEqual(transfers[0]["destination"], admin)
+
+        res = chain.interpret(self.farm.set_reward_per_second(0, 200 * PRECISION), sender=admin)
+
+        transfers = parse_token_transfers(res)
+        self.assertEqual(transfers[0]["amount"], 30_000)
+        self.assertEqual(transfers[0]["destination"], contract_self_address)
+
+    def test_tfarm_set_reward_per_second_harvest(self):
+        chain = self.create_with_new_farm({
+            "end_time": 600,
+            "reward_per_second": 100 * PRECISION
+        })
+
+        res = chain.execute(self.farm.deposit(0, 10_000, None, me, candidate))
+
+        chain.advance_blocks(5)
+
+        # interpret harvest before changing reward
+        res = chain.interpret(self.farm.harvest(0, me))
+        transfers = parse_token_transfers(res)
+        self.assertAlmostEqual(transfers[1]["amount"], 30_000, delta=150)
+        self.assertEqual(transfers[1]["destination"], me)
+
+        res = chain.interpret(self.farm.set_reward_per_second(0, 50 * PRECISION), sender=admin)
+
+        # harvest is just the same as before changing reward
+        res = chain.execute(self.farm.harvest(0, me))
+        transfers = parse_token_transfers(res)
+        self.assertAlmostEqual(transfers[1]["amount"], 30_000, delta=150)
+        self.assertEqual(transfers[1]["destination"], me)
+
+        chain.advance_blocks(5)
+
+        res = chain.execute(self.farm.harvest(0, me))
+        transfers = parse_token_transfers(res)
+        self.assertAlmostEqual(transfers[1]["amount"], 30_000, delta=150)
+        self.assertEqual(transfers[1]["destination"], me)

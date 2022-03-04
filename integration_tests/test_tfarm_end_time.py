@@ -45,8 +45,7 @@ fees={
 
 stake_params={
     "staked_token": fa2_token,
-    "is_lp_staked_token": True,
-    "qs_pool": "KT18fp5rcTW7mbWDmzFwjLDUhs5MeJmagDSZ"
+    "is_v1_lp": True,
 }
 
 class TFarmTestEndTime(TestCase):
@@ -82,7 +81,7 @@ class TFarmTestEndTime(TestCase):
 
         return chain
         
-    def test_tfarm_end_time(self):
+    def test_tfarm_end_time_simple(self):
         chain = self.create_with_new_farm({"end_time": 120})
 
         res = chain.execute(self.farm.deposit(0, 50, None, me, candidate))
@@ -203,6 +202,8 @@ class TFarmTestEndTime(TestCase):
         res = chain.execute(self.farm.deposit(0, 10, None, me, candidate))
 
         chain.advance_blocks(1)
+
+        pprint(res.storage["storage"])
 
         res = chain.execute(self.farm.harvest(0, me))
         transfers = parse_token_transfers(res)

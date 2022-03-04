@@ -37,8 +37,7 @@ fees={
 
 stake_params={
     "staked_token": fa2_token,
-    "is_lp_staked_token": True,
-    "qs_pool": "KT18fp5rcTW7mbWDmzFwjLDUhs5MeJmagDSZ"
+    "is_v1_lp": True,
 }
 
 class FarmTest(TestCase):
@@ -392,19 +391,19 @@ class FarmTest(TestCase):
         self.assertDictEqual(farm1_before, farm1_after)
 
 
-    def test_burn_farm_rewards(self):
-        chain = self.create_with_new_farm({"timelock": 120})
+    # def test_burn_farm_rewards(self):
+    #     chain = self.create_with_new_farm({"timelock": 120})
 
-        res = chain.execute(self.farm.deposit(0, 50_000_000, None, me, candidate))
-        res = chain.execute(self.farm.withdraw(0, 50_000_000, me, me))
+    #     res = chain.execute(self.farm.deposit(0, 50_000_000, None, me, candidate))
+    #     res = chain.execute(self.farm.withdraw(0, 50_000_000, me, me))
         
-        chain.advance_blocks(1)
+    #     chain.advance_blocks(1)
 
-        res = chain.execute(self.farm.burn_farm_rewards(0))
-        mints = parse_mints(res)
+    #     res = chain.execute(self.farm.burn_farm_rewards(0))
+    #     mints = parse_mints(res)
         
-        self.assertEqual(len(mints), 1)
-        self.assertEqual(mints[0]["amount"], 3)
+    #     self.assertEqual(len(mints), 1)
+    #     self.assertEqual(mints[0]["amount"], 3)
         # self.assertEqual(mints[1]["amount"], 0)
 
         # total_me_mints = 0

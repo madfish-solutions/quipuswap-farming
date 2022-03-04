@@ -35,8 +35,7 @@ fees={
 
 stake_params={
     "staked_token": fa2_token,
-    "is_lp_staked_token": True,
-    "qs_pool": "KT18fp5rcTW7mbWDmzFwjLDUhs5MeJmagDSZ"
+    "is_v1_lp": True,
 }
 
 class TestTransfers(TestCase):
@@ -168,8 +167,35 @@ class TestTransfers(TestCase):
         self.assertEqual(len(mints), 0)
 
         res = chain.execute(self.farm.harvest(0, alice), sender=alice)
-        self.assertEqual(len(parse_mints(res)), 0)
+        pprint(parse_mints(res))
+        print("--------------------")
         res = chain.execute(self.farm.harvest(0, bob), sender=bob)
+        pprint(parse_mints(res))
+        print("====================")
+
+
+        transfer = self.farm.transfer(
+            [{ "from_" : bob,
+                "txs" : [{
+                    "amount": 50_000,
+                    "to_": alice,
+                    "token_id": 0
+                }]
+            }])
+        res = chain.execute(self.farm.harvest(0, alice), sender=alice)
+        pprint(parse_mints(res))
+        print("--------------------")
+        res = chain.execute(self.farm.harvest(0, bob), sender=bob)
+        pprint(parse_mints(res))
+        print("====================")
+        return
+
+
+        res = chain.execute(self.farm.harvest(0, alice), sender=alice)
+        pprint(parse_mints(res))
+
+        return
+        self.assertEqual(len(parse_mints(res)), 0)
         self.assertEqual(len(parse_mints(res)), 0)
 
         # next block transfer triggers rewards just fine

@@ -456,3 +456,12 @@ class TFarmTest(TestCase):
         transfers = parse_token_transfers(res)
         self.assertAlmostEqual(transfers[1]["amount"], 30_000, delta=150)
         self.assertEqual(transfers[1]["destination"], me)
+
+        chain.advance_blocks(5)
+        res = chain.execute(self.farm.harvest(0, me))
+        transfers = parse_token_transfers(res)
+        self.assertEqual(len(transfers), 0)
+
+        res = chain.interpret(self.farm.set_reward_per_second(0, 50 * PRECISION), sender=admin)
+        transfers = parse_token_transfers(res)
+        self.assertEqual(len(transfers), 0)

@@ -465,3 +465,13 @@ class TFarmTest(TestCase):
         res = chain.interpret(self.farm.set_reward_per_second(0, 50 * PRECISION), sender=admin)
         transfers = parse_token_transfers(res)
         self.assertEqual(len(transfers), 0)
+
+    def test_deposit_no_candidate(self):
+        chain = self.create_with_new_farm()
+
+        with self.assertRaises(MichelsonRuntimeError):
+            res = chain.execute(self.farm.deposit(0, 10, None, me, None))
+
+        chain.execute(self.farm.set_is_v1_lp(0, False), sender=admin)
+
+        res = chain.execute(self.farm.deposit(0, 10, None, me, None))

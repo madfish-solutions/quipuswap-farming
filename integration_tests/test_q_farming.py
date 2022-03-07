@@ -390,34 +390,45 @@ class FarmTest(TestCase):
         farm1_after = res.storage["storage"]["farms"][1]
         self.assertDictEqual(farm1_before, farm1_after)
 
+    def test_deposit_no_candidate(self):
+        chain = self.create_with_new_farm()
 
-    # def test_burn_farm_rewards(self):
-    #     chain = self.create_with_new_farm({"timelock": 120})
+        with self.assertRaises(MichelsonRuntimeError):
+            res = chain.execute(self.farm.deposit(0, 10, None, me, None))
 
-    #     res = chain.execute(self.farm.deposit(0, 50_000_000, None, me, candidate))
-    #     res = chain.execute(self.farm.withdraw(0, 50_000_000, me, me))
+        chain.execute(self.farm.set_is_v1_lp(0, False), sender=admin)
+
+        res = chain.execute(self.farm.deposit(0, 10, None, me, None))
+
+    def test_burn_farm_rewards(self):
+        chain = self.create_with_new_farm({"timelock": 120})
+
+        res = chain.execute(self.farm.deposit(0, 50_000_000, None, me, candidate))
+        res = chain.execute(self.farm.withdraw(0, 50_000_000, me, me))
         
-    #     chain.advance_blocks(1)
+        chain.advance_blocks(1)
 
-    #     res = chain.execute(self.farm.burn_farm_rewards(0))
-    #     mints = parse_mints(res)
+        res = chain.execute(self.farm.burn_farm_rewards(0))
+        mints = parse_mints(res)
         
-    #     self.assertEqual(len(mints), 1)
-    #     self.assertEqual(mints[0]["amount"], 3)
-        # self.assertEqual(mints[1]["amount"], 0)
+        self.assertEqual(len(mints), 2)
+        self.assertEqual(mints[0]["amount"], 30)
+        self.assertEqual(mints[1]["amount"], 5970)
+        self.assertEqual(mints[1]["destination"], burn_address)
 
-        # total_me_mints = 0
-        # total_farm_mints = 0
-        # for i in range(10):
-        #     chain.advance_blocks(1)
+        total_me_mints = 0
+        total_burned_mints = 0
+        for i in range(10):
+            chain.advance_blocks(1)
 
-        #     res = chain.execute(self.farm.burn_farm_rewards(0))
-        #     mints = parse_mints(res)
+            res = chain.execute(self.farm.burn_farm_rewards(0))
+            mints = parse_mints(res)
 
-        #     total_me_mints += mints[0]["amount"]
-        #     total_farm_mints += mints[1]["amount"]
+            total_me_mints += mints[0]["amount"]
+            total_burned_mints += mints[1]["amount"]
 
-        # print("me", total_me_mints, "farm", total_farm_mints)
+        self.assertEqual(total_me_mints, 300)
+        self.assertEqual(total_burned_mints, 59700)
 
 
 

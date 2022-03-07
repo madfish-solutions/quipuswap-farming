@@ -233,6 +233,7 @@
 
    - ✅ should fail if not admin is trying to set reward per second;
    - ✅ should fail if farm not found;
+   - ✅ should fail if farm work time is finished;
    - ✅ should fail if admin is trying to set wrong reward per second;
    - ✅ should change reward per second down;
    - ✅ should change reward per second up.

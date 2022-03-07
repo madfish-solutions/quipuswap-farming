@@ -5372,7 +5372,7 @@ describe("TFarm tests (section 1)", async () => {
     let newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
       utils
     );
-    const lifetime: number = 120; // 2 minutes
+    const lifetime: number = 30; // 30 seconds
 
     newFarmParams.fees.harvest_fee = 21 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 60 * feePrecision;
@@ -5984,5 +5984,19 @@ describe("TFarm tests (section 1)", async () => {
 
     ok(bobFinalBalance > bobInitialBalance);
     ok(tFarmFinalBalance < tFarmInitialBalance);
+  });
+
+  it("should fail if farm work time is finished", async () => {
+    const params: SetRewardPerSecond = {
+      fid: 8,
+      reward_per_second: 1 * precision,
+    };
+
+    await utils.bakeBlocks(10);
+    await rejects(tFarm.setRewardPerSecond(params), (err: Error) => {
+      ok(err.message === "TFarm/farm-work-time-is-finished");
+
+      return true;
+    });
   });
 });

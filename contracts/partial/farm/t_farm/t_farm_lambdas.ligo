@@ -12,6 +12,10 @@ function set_reward_per_second(
         var farm : farm_type := get_farm(params.fid, s.farms);
 
         assert_with_error(
+          Tezos.now < farm.end_time,
+          "TFarm/farm-work-time-is-finished"
+        );
+        assert_with_error(
           params.reward_per_second =/= farm.reward_per_second,
           "TFarm/wrong-reward-per-second"
         );

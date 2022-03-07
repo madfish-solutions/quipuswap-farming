@@ -74,7 +74,7 @@ type deposit_type       is [@layout:comb] record [
   (* Receiver of earned tokens *)
   rewards_receiver        : address;
   (* The baker for voting *)
-  candidate               : key_hash;
+  candidate               : option(key_hash);
 ]
 
 type withdraw_type      is [@layout:comb] record [

@@ -161,11 +161,16 @@ function deposit(
         then {
           if farm.stake_params.is_v1_lp
           then {
-            if is_banned_baker(params.candidate, s.banned_bakers)
+            const candidate : key_hash = case params.candidate of
+              Some(candidate) -> candidate
+            | None            -> failwith("QFarm/baker-is-required")
+            end;
+
+            if is_banned_baker(candidate, s.banned_bakers)
             then failwith("QFarm/baker-is-banned")
             else skip;
 
-            s := vote(params.candidate, Tezos.sender, user, farm, s);
+            s := vote(candidate, Tezos.sender, user, farm, s);
 
             var upd_farm : farm_type := get_farm(params.fid, s.farms);
             const farm_and_ops : (farm_type * list(operation)) =

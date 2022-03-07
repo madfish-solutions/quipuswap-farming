@@ -61,9 +61,9 @@ const compile = async (
 
   contracts.forEach((contract) => {
     const michelson = execSync(
-      `${ligo} compile-contract ${
-        format === "json" ? "--michelson-format=json" : ""
-      } $PWD/${contractsDir}/${contract}.ligo main`,
+      `${ligo} compile contract $PWD/${contractsDir}/${contract}.ligo ${
+        format === "json" ? "--michelson-format json" : ""
+      } --protocol hangzhou`,
       { maxBuffer: 1024 * 500 }
     ).toString();
 
@@ -113,7 +113,7 @@ const compileLambdas = async (
   try {
     for (const lambda of lambdas) {
       const michelson = execSync(
-        `${ligo} compile-expression pascaligo --michelson-format=json --init-file $PWD/${contract} 'Setup_func(record [index=${lambda.index}n; func=Bytes.pack(${lambda.name})])'`,
+        `${ligo} compile expression pascaligo 'Setup_func(record [index=${lambda.index}n; func=Bytes.pack(${lambda.name})])' --michelson-format json --init-file $PWD/${contract} --protocol hangzhou`,
         { maxBuffer: 1024 * 500 }
       ).toString();
 
@@ -144,7 +144,7 @@ const compileLambdas = async (
   }
 };
 
-const migrate = async (tezos, contract, storage) => {
+const migrate = async (tezos, contract, storage, network) => {
   try {
     const artifacts = JSON.parse(
       fs.readFileSync(`${env.buildDir}/${contract}.json`)
@@ -162,7 +162,7 @@ const migrate = async (tezos, contract, storage) => {
 
     await confirmOperation(tezos, operation.hash);
 
-    artifacts.networks[env.network] = { [contract]: operation.contractAddress };
+    artifacts.networks[network] = { [contract]: operation.contractAddress };
 
     if (!fs.existsSync(env.buildDir)) {
       fs.mkdirSync(env.buildDir);
@@ -179,13 +179,13 @@ const migrate = async (tezos, contract, storage) => {
   }
 };
 
-const getDeployedAddress = (contract) => {
+const getDeployedAddress = (contract, network) => {
   try {
     const artifacts = JSON.parse(
       fs.readFileSync(`${env.buildDir}/${contract}.json`)
     );
 
-    return artifacts.networks[env.network][contract];
+    return artifacts.networks[network][contract];
   } catch (e) {
     console.error(e);
   }
@@ -213,7 +213,7 @@ const runMigrations = async (options) => {
     for (const migration of migrations) {
       const execMigration = require(`../${env.migrationsDir}/${migration}.js`);
 
-      await execMigration(tezos);
+      await execMigration(tezos, options.network);
     }
   } catch (e) {
     console.error(e);

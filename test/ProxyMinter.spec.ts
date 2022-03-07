@@ -1,3 +1,5 @@
+import { TransactionOperation } from "@taquito/taquito";
+
 import { FA2 } from "./helpers/FA2";
 import { Utils, zeroAddress } from "./helpers/Utils";
 import { ProxyMinter } from "./helpers/ProxyMinter";
@@ -11,6 +13,8 @@ import { proxyMinterStorage } from "../storage/ProxyMinter";
 
 import { MintParams } from "./types/ProxyMinter";
 import { Minter, MintGovTokenParams } from "./types/FA2";
+
+import { confirmOperation } from "../scripts/confirmation";
 
 describe("ProxyMinter tests", async () => {
   var qsGov: FA2;
@@ -30,6 +34,15 @@ describe("ProxyMinter tests", async () => {
     proxyMinterStorage.qsgov.id = 0;
 
     proxyMinter = await ProxyMinter.originate(utils.tezos, proxyMinterStorage);
+
+    const transferOperation: TransactionOperation =
+      await utils.tezos.contract.transfer({
+        to: carol.pkh,
+        amount: 50_000_000,
+        mutez: true,
+      });
+
+    await confirmOperation(utils.tezos, transferOperation.hash);
   });
 
   it("should fail if not admin is trying to setup new pending admin", async () => {

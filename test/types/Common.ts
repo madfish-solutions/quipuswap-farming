@@ -16,8 +16,7 @@ export type PauseFarmParam = {
 
 export type StakeParams = {
   staked_token: Token;
-  is_lp_staked_token: boolean;
-  qs_pool: FA12Token;
+  is_v1_lp: boolean;
 };
 
 export type DepositParams = {
@@ -73,4 +72,9 @@ export type Meta = {
 export type UpdTokMetaParams = {
   token_id: number;
   token_info: Meta[];
+};
+
+export type IsV1LP = {
+  fid: number;
+  is_v1_lp: boolean;
 };

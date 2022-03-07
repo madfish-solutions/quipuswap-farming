@@ -14,6 +14,11 @@ export type SetFeeParams = {
   fees: TFees;
 };
 
+export type SetRewardPerSecond = {
+  fid: number;
+  reward_per_second: number;
+};
+
 export type NewFarmParams = {
   fees: TFees;
   stake_params: StakeParams;

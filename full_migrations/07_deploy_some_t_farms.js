@@ -37,7 +37,6 @@ module.exports = async (tezos) => {
       id: 0,
     },
   };
-  newFarmParams.stake_params.qs_pool = "KT1RHSyszGjYjqWxSe3RShoAATm4BbqMSwtX";
   newFarmParams.reward_per_second = 10 * precision;
   newFarmParams.reward_token = {
     fA2: {

@@ -7,7 +7,7 @@ module.exports = {
   buildDir: "build",
   migrationsDir: "migrations",
   contractsDir: "contracts/main",
-  ligoVersion: "0.24.0",
+  ligoVersion: "0.35.0",
   network: "development",
   networks: {
     development: {
@@ -19,7 +19,13 @@ module.exports = {
       rpc: "https://hangzhounet.api.tez.ie/",
       port: 443,
       network_id: "*",
-      secretKey: alice.sk,
+      secretKey: dev.sk,
+      qsgov: {
+        token: "KT1VowcKqZFGhdcDZA3UN1vrjBLmxV5bxgfJ",
+        id: 0,
+      },
+      qsgov_lp: "KT1DgpR6mXkbgyF3SdduyimNRy9GSR9TgRqp",
+      admin: dev.pkh,
     },
     mainnet: {
       rpc: "https://mainnet.smartpy.io",

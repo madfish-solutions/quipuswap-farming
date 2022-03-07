@@ -78,6 +78,13 @@ type set_fee_type       is [@layout:comb] record [
 
 type set_fees_type      is list(set_fee_type)
 
+type set_rps_type       is [@layout:comb] record [
+  (* Farm ID *)
+  fid                     : fid_type;
+  (* New reward per second *)
+  reward_per_second       : nat;
+]
+
 type add_new_farm_type  is [@layout:comb] record [
   (* Fees data *)
   fees                    : fees_type;
@@ -116,6 +123,8 @@ type action_type        is
 | Set_fees                of set_fees_type
 | Set_burner              of set_burner_type
 | Set_baker_registry      of set_registry_type
+| Set_is_v1_lp            of set_is_v1_lp_type
+| Set_reward_per_second   of set_rps_type
 | Ban_bakers              of ban_bakers_type
 | Add_new_farm            of add_new_farm_type
 | Pause_farms             of pause_farms_type
@@ -155,4 +164,4 @@ type full_action_type   is
 | Setup_func              of setup_func_type
 | Default                 of default_type
 
-[@inline] const t_farm_methods_max_index : nat = 17n;
+[@inline] const t_farm_methods_max_index : nat = 19n;

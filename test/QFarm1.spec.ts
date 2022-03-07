@@ -20,6 +20,7 @@ import {
   BanBakerParam,
   WithdrawData,
   UserInfoType,
+  IsV1LP,
 } from "./types/Common";
 import {
   NewRewardPerSecond,
@@ -36,8 +37,13 @@ import {
   UserFA2Info,
 } from "./types/FA2";
 
-import { Contract, OriginationOperation, VIEW_LAMBDA } from "@taquito/taquito";
 import { MichelsonMap } from "@taquito/michelson-encoder";
+import {
+  OriginationOperation,
+  TransactionOperation,
+  VIEW_LAMBDA,
+  Contract,
+} from "@taquito/taquito";
 
 import { rejects, ok, strictEqual } from "assert";
 
@@ -174,6 +180,15 @@ describe("QFarm tests (section 1)", async () => {
 
     await qFarm.setLambdas();
     await proxyMinter.addMinter(qFarm.contract.address, true);
+
+    const transferOperation: TransactionOperation =
+      await utils.tezos.contract.transfer({
+        to: carol.pkh,
+        amount: 50_000_000,
+        mutez: true,
+      });
+
+    await confirmOperation(utils.tezos, transferOperation.hash);
   });
 
   it("should fail if not admin is trying to setup new pending admin", async () => {
@@ -313,6 +328,34 @@ describe("QFarm tests (section 1)", async () => {
     await qFarm.updateStorage();
 
     strictEqual(qFarm.storage.storage.baker_registry, bakerRegistryAddress);
+  });
+
+  it("should fail if not admin is trying to set `is_v1_lp`", async () => {
+    const params: IsV1LP = {
+      fid: 0,
+      is_v1_lp: true,
+    };
+
+    await utils.setProvider(alice.sk);
+    await rejects(qFarm.setIsV1LP(params), (err: Error) => {
+      ok(err.message === "Not-admin");
+
+      return true;
+    });
+  });
+
+  it("should fail if farm not found", async () => {
+    const params: IsV1LP = {
+      fid: 666,
+      is_v1_lp: true,
+    };
+
+    await utils.setProvider(bob.sk);
+    await rejects(qFarm.setIsV1LP(params), (err: Error) => {
+      ok(err.message === "QSystem/farm-not-set");
+
+      return true;
+    });
   });
 
   it("should fail if not admin is trying to ban baker", async () => {
@@ -510,7 +553,6 @@ describe("QFarm tests (section 1)", async () => {
     newFarmParams.fees.withdrawal_fee = 15 * feePrecision;
     newFarmParams.fees.burn_reward = 23 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12.contract.address };
-    newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
     newFarmParams.reward_per_second = 100 * precision;
     newFarmParams.timelock = 10;
     newFarmParams.token_info = MichelsonMap.fromLiteral({
@@ -542,12 +584,8 @@ describe("QFarm tests (section 1)", async () => {
       newFarmParams.stake_params.staked_token.fA12
     );
     strictEqual(
-      qFarm.storage.storage.farms[0].stake_params.is_lp_staked_token,
-      newFarmParams.stake_params.is_lp_staked_token
-    );
-    strictEqual(
-      qFarm.storage.storage.farms[0].stake_params.qs_pool,
-      newFarmParams.stake_params.qs_pool
+      qFarm.storage.storage.farms[0].stake_params.is_v1_lp,
+      newFarmParams.stake_params.is_v1_lp
     );
     strictEqual(
       qFarm.storage.storage.farms[0].reward_token.token,
@@ -601,6 +639,27 @@ describe("QFarm tests (section 1)", async () => {
       Date.parse(qFarm.storage.storage.farms[0].start_time) >=
         +newFarmParams.start_time * 1000
     );
+  });
+
+  it("should change `is_v1_lp` by admin", async () => {
+    let params: IsV1LP = {
+      fid: 0,
+      is_v1_lp: true,
+    };
+
+    await qFarm.setIsV1LP(params);
+    await qFarm.updateStorage({
+      farms: [0],
+    });
+
+    strictEqual(
+      qFarm.storage.storage.farms[0].stake_params.is_v1_lp,
+      params.is_v1_lp
+    );
+
+    params.is_v1_lp = false;
+
+    await qFarm.setIsV1LP(params);
   });
 
   it("should fail if not admit is trying to update token metadata", async () => {
@@ -700,7 +759,7 @@ describe("QFarm tests (section 1)", async () => {
     ];
 
     await rejects(qFarm.transfer(params), (err: Error) => {
-      ok(err.message === "FA2_ILLEGAL_TRANSFER");
+      ok(err.message === "ILLEGAL_TRANSFER");
 
       return true;
     });
@@ -1321,8 +1380,7 @@ describe("QFarm tests (section 1)", async () => {
     newFarmParams.fees.withdrawal_fee = 5 * feePrecision;
     newFarmParams.fees.burn_reward = 6 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
-    newFarmParams.stake_params.is_lp_staked_token = true;
-    newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
+    newFarmParams.stake_params.is_v1_lp = true;
     newFarmParams.reward_per_second = 200 * precision;
     newFarmParams.timelock = 0;
 
@@ -1407,7 +1465,6 @@ describe("QFarm tests (section 1)", async () => {
     newFarmParams.stake_params.staked_token = {
       fA2: { token: fa2.contract.address, id: 0 },
     };
-    newFarmParams.stake_params.qs_pool = fa2LP.contract.address;
     newFarmParams.reward_per_second = 10 * precision;
     newFarmParams.timelock = 0;
 
@@ -1483,8 +1540,7 @@ describe("QFarm tests (section 1)", async () => {
     newFarmParams.stake_params.staked_token = {
       fA2: { token: fa2LP.contract.address, id: 0 },
     };
-    newFarmParams.stake_params.is_lp_staked_token = true;
-    newFarmParams.stake_params.qs_pool = fa2LP.contract.address;
+    newFarmParams.stake_params.is_v1_lp = true;
     newFarmParams.timelock = 0;
 
     await utils.setProvider(bob.sk);
@@ -3707,10 +3763,14 @@ describe("QFarm tests (section 1)", async () => {
     await utils.setProvider(alice.sk);
     await fa12LP.approve(qFarm.contract.address, depositParams.amt);
     await qFarm.deposit(depositParams);
+    await qFarm.updateStorage({
+      farms: [depositParams.fid],
+    });
     await utils.setProvider(bob.sk);
 
     const operation = await utils.tezos.contract.transfer({
-      to: qFarm.storage.storage.farms[depositParams.fid].stake_params.qs_pool,
+      to: qFarm.storage.storage.farms[depositParams.fid].stake_params
+        .staked_token["fA12"],
       amount: 500,
       mutez: true,
     });
@@ -4004,8 +4064,7 @@ describe("QFarm tests (section 1)", async () => {
     newFarmParams.fees.withdrawal_fee = 25 * feePrecision;
     newFarmParams.fees.burn_reward = 20 * feePrecision;
     newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
-    newFarmParams.stake_params.is_lp_staked_token = true;
-    newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
+    newFarmParams.stake_params.is_v1_lp = true;
     newFarmParams.reward_per_second = 2 * precision;
     newFarmParams.timelock = 10;
 
@@ -4098,7 +4157,6 @@ describe("QFarm tests (section 1)", async () => {
     newFarmParams.stake_params.staked_token = {
       fA2: { token: fa2.contract.address, id: 0 },
     };
-    newFarmParams.stake_params.qs_pool = fa2LP.contract.address;
     newFarmParams.reward_per_second = 2 * precision;
     newFarmParams.timelock = 5;
 
@@ -4193,8 +4251,7 @@ describe("QFarm tests (section 1)", async () => {
     newFarmParams.stake_params.staked_token = {
       fA2: { token: fa2LP.contract.address, id: 0 },
     };
-    newFarmParams.stake_params.is_lp_staked_token = true;
-    newFarmParams.stake_params.qs_pool = fa12LP.contract.address;
+    newFarmParams.stake_params.is_v1_lp = true;
     newFarmParams.reward_per_second = 2 * precision;
     newFarmParams.timelock = 10;
 
@@ -4271,7 +4328,7 @@ describe("QFarm tests (section 1)", async () => {
     strictEqual(+finalTokenFarmRecord.balance, 30);
     strictEqual(
       +finalTokenFarmRecord.frozen_balance,
-      +initialTokenFarmRecord.frozen_balance
+      +initialTokenFarmRecord.frozen_balance - withdrawParams2.amt
     );
   });
 
@@ -4522,7 +4579,7 @@ describe("QFarm tests (section 1)", async () => {
 
     await utils.setProvider(bob.sk);
     await rejects(qFarm.transfer(params), (err: Error) => {
-      ok(err.message === "FA2_TIMELOCK_NOT_FINISHED");
+      ok(err.message === "TIMELOCK_NOT_FINISHED");
 
       return true;
     });

@@ -21,54 +21,62 @@
   },
   {
     "index": 5,
-    "name": "ban_bakers"
+    "name": "set_is_v1_lp"
   },
   {
     "index": 6,
-    "name": "add_new_farm"
+    "name": "set_reward_per_second"
   },
   {
     "index": 7,
-    "name": "pause_farms"
+    "name": "ban_bakers"
   },
   {
     "index": 8,
-    "name": "deposit"
+    "name": "add_new_farm"
   },
   {
     "index": 9,
-    "name": "withdraw"
+    "name": "pause_farms"
   },
   {
     "index": 10,
-    "name": "harvest"
+    "name": "deposit"
   },
   {
     "index": 11,
-    "name": "burn_tez_rewards"
+    "name": "withdraw"
   },
   {
     "index": 12,
-    "name": "claim_farm_rewards"
+    "name": "harvest"
   },
   {
     "index": 13,
-    "name": "withdraw_farm_depo"
+    "name": "burn_tez_rewards"
   },
   {
     "index": 14,
-    "name": "transfer"
+    "name": "claim_farm_rewards"
   },
   {
     "index": 15,
-    "name": "update_operators"
+    "name": "withdraw_farm_depo"
   },
   {
     "index": 16,
-    "name": "balance_of"
+    "name": "transfer"
   },
   {
     "index": 17,
+    "name": "update_operators"
+  },
+  {
+    "index": 18,
+    "name": "balance_of"
+  },
+  {
+    "index": 19,
     "name": "update_token_metadata"
   }
 ]

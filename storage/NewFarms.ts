@@ -24,8 +24,8 @@ export const farms: NewFarmParams[] = [
     },
     paused: false,
     timelock: 0,
-    start_time: String(Date.now() / 1000 + 1),
-    end_time: String(Date.now() / 1000 + 2592000),
+    start_time: String(Math.ceil(Date.now() / 1000) + 1),
+    end_time: String(Math.floor(Date.now() / 1000) + 2592000),
     reward_per_second: 771604940000000,
   },
   {
@@ -49,8 +49,8 @@ export const farms: NewFarmParams[] = [
     },
     paused: false,
     timelock: 0,
-    start_time: String(Date.now() / 1000 + 1),
-    end_time: String(Date.now() / 1000 + 2592000),
+    start_time: String(Math.ceil(Date.now() / 1000) + 1),
+    end_time: String(Math.floor(Date.now() / 1000) + 2592000),
     reward_per_second: 771604940000000,
   },
 ];

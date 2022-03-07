@@ -18,7 +18,7 @@ module.exports = async (tezos, network) => {
     const updateOperatorParam = {
       add_operator: {
         owner: dev.pkh,
-        operator: "KT1FeLt1D1Amnnjm31RoMzBoXMkn4bVX57y5",
+        operator: tFarm.address,
         token_id: 0,
       },
     };

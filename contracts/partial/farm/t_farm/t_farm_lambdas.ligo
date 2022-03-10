@@ -106,7 +106,7 @@ function add_new_farm(
         s.farms_count := s.farms_count + 1n;
 
         const rew_amt : nat = abs(params.end_time - params.start_time) *
-          (params.reward_per_second / precision);
+          params.reward_per_second / precision;
 
         operations := transfer_token(
           Tezos.sender,

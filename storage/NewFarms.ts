@@ -40,7 +40,7 @@ export const farms: NewFarmParams[] = [
     },
     stake_params: {
       staked_token: {
-        fA12: "KT1Dr8Qf9at75uEvwN4QnGTNFfPMAr8KL4kK",
+        fA12: "KT1Bbw7zHCVrxScig2YZfsHyhqd7s6vU693R",
       },
       is_v1_lp: true,
     },

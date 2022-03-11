@@ -1,12 +1,14 @@
+const { OpKind } = require("@taquito/taquito");
+
 const BakerRegistry = require("../build/baker_registry.json");
 const Burner = require("../build/burner.json");
 
-const { OpKind } = require("@taquito/taquito");
-
 const { migrate } = require("../scripts/helpers");
+
 const { confirmOperation } = require("../scripts/confirmation");
 
 const { tFarmStorage } = require("../storage/TFarm");
+
 const tFarmFunctions = require("../build/lambdas/t_farm_lambdas.json");
 
 const env = require("../env");

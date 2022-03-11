@@ -1,4 +1,5 @@
 const { migrate } = require("../scripts/helpers");
+
 const { burnerStorage } = require("../storage/Burner");
 
 const env = require("../env");

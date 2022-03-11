@@ -1,4 +1,5 @@
 const { migrate } = require("../scripts/helpers");
+
 const { bakerRegistryStorage } = require("../storage/BakerRegistry");
 
 module.exports = async (tezos, network) => {

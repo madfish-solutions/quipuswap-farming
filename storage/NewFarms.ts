@@ -75,7 +75,7 @@ export const farms: NewFarmParams[] = [
       decimals: Buffer.from("6").toString("hex"),
     }),
     reward_token: {
-      fA12: "KT1TbL19JQSGMayyuJByxcqFpYcheni3TFDY",
+      fA12: "KT1QsWm7ir2oDH7jibxuyzQ4Xz5kFtXa8MHg",
     },
     paused: false,
     timelock: 0,
@@ -115,14 +115,14 @@ export const farms: NewFarmParams[] = [
     },
     stake_params: {
       staked_token: {
-        fA12: "KT1GmQSjRg5Ze41dQ7Undhv99sM6BuDgjRUj",
+        fA12: "KT1XagM9vnERYjraxfz8u43NCT3mGtFR7A8H",
       },
       is_v1_lp: false,
     },
     token_info: MichelsonMap.fromLiteral({
       name: Buffer.from("Single FA12 Staking Share").toString("hex"),
       symbol: Buffer.from("QSHR").toString("hex"),
-      decimals: Buffer.from("0").toString("hex"),
+      decimals: Buffer.from("10").toString("hex"),
     }),
     reward_token: {
       fA2: { token: "KT1A2E72tR1abahQgBNi9Lw3LqRDL5eGjjbU", id: 0 },
@@ -140,17 +140,17 @@ export const farms: NewFarmParams[] = [
     },
     stake_params: {
       staked_token: {
-        fA12: "KT1GmQSjRg5Ze41dQ7Undhv99sM6BuDgjRUj",
+        fA12: "KT1XagM9vnERYjraxfz8u43NCT3mGtFR7A8H",
       },
       is_v1_lp: false,
     },
     token_info: MichelsonMap.fromLiteral({
       name: Buffer.from("Single FA12 Staking Share").toString("hex"),
       symbol: Buffer.from("QSHR").toString("hex"),
-      decimals: Buffer.from("0").toString("hex"),
+      decimals: Buffer.from("10").toString("hex"),
     }),
     reward_token: {
-      fA12: "KT1TbL19JQSGMayyuJByxcqFpYcheni3TFDY",
+      fA12: "KT1QsWm7ir2oDH7jibxuyzQ4Xz5kFtXa8MHg",
     },
     paused: false,
     timelock: 0,

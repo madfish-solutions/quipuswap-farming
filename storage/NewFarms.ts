@@ -2,7 +2,7 @@ import { MichelsonMap } from "@taquito/michelson-encoder";
 
 import { NewFarmParams } from "../test/types/TFarm";
 
-const harvestFee = 5000000000000000; // 0.05%
+const harvestFee = 5000000000000000; // 0.5%
 const rewardPerSecond = 1169098400000000; // ≈100 tokens per day
 const lifetime = 10510000; // ≈4 months
 const fiveDays = 432000;
@@ -31,7 +31,7 @@ export const farms: NewFarmParams[] = [
     timelock: 0,
     start_time: String(Math.ceil(Date.now() / 1000)),
     end_time: String(Math.floor(Date.now() / 1000) + lifetime + 1),
-    reward_per_second: rewardPerSecond,
+    reward_per_second: rewardPerSecond * 10 ** 3,
   },
   {
     fees: {
@@ -56,7 +56,7 @@ export const farms: NewFarmParams[] = [
     timelock: 0,
     start_time: String(Math.ceil(Date.now() / 1000)),
     end_time: String(Math.floor(Date.now() / 1000) + lifetime + 1),
-    reward_per_second: rewardPerSecond,
+    reward_per_second: rewardPerSecond * 10 ** 3,
   },
   {
     fees: {
@@ -81,7 +81,7 @@ export const farms: NewFarmParams[] = [
     timelock: 0,
     start_time: String(Math.ceil(Date.now() / 1000)),
     end_time: String(Math.floor(Date.now() / 1000) + lifetime + 1),
-    reward_per_second: rewardPerSecond,
+    reward_per_second: rewardPerSecond * 10 ** 10,
   },
   {
     fees: {
@@ -106,7 +106,7 @@ export const farms: NewFarmParams[] = [
     timelock: 0,
     start_time: String(Math.ceil(Date.now() / 1000)),
     end_time: String(Math.floor(Date.now() / 1000) + lifetime + 1),
-    reward_per_second: rewardPerSecond,
+    reward_per_second: rewardPerSecond * 10 ** 3,
   },
   {
     fees: {
@@ -131,7 +131,7 @@ export const farms: NewFarmParams[] = [
     timelock: 0,
     start_time: String(Math.ceil(Date.now() / 1000)),
     end_time: String(Math.floor(Date.now() / 1000) + lifetime + 1),
-    reward_per_second: rewardPerSecond,
+    reward_per_second: rewardPerSecond * 10 ** 3,
   },
   {
     fees: {
@@ -156,6 +156,6 @@ export const farms: NewFarmParams[] = [
     timelock: 0,
     start_time: String(Math.ceil(Date.now() / 1000)),
     end_time: String(Math.floor(Date.now() / 1000) + fiveDays + 1),
-    reward_per_second: rewardPerSecond,
+    reward_per_second: rewardPerSecond * 10 ** 10,
   },
 ];

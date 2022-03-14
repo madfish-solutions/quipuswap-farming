@@ -403,7 +403,8 @@
     - ✅ should revote for alice, bob must become current delegated;
     - ✅ should withdraw farm deposit and revote for bob, bob must remain current delegated;
     - ✅ should transfer staked tokens to carol, bob must remain current delegated;
-    - ✅ should vote for alice and transfer staked tokens to carol, alice must become current delegated.
+    - ✅ should vote for alice and transfer staked tokens to carol, alice must become current delegated;
+    - ✅ should deposit and after that withdraw all LP FA1.2 token.
 
 ## Burner
 

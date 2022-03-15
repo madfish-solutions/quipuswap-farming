@@ -187,7 +187,7 @@ function form_vote_ops(
       then 0n
       else farm.staked;
 
-    if votes = 0n
+    if votes = 0n and farm.next_candidate =/= zero_key_hash
     then farm.current_delegated := farm.next_candidate;
     else skip;
 

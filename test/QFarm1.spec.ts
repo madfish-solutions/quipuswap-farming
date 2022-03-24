@@ -38,12 +38,7 @@ import {
 } from "./types/FA2";
 
 import { MichelsonMap } from "@taquito/michelson-encoder";
-import {
-  OriginationOperation,
-  TransactionOperation,
-  VIEW_LAMBDA,
-  Contract,
-} from "@taquito/taquito";
+import { TransactionOperation } from "@taquito/taquito";
 
 import { rejects, ok, strictEqual } from "assert";
 
@@ -4713,19 +4708,13 @@ describe("QFarm tests (section 1)", async () => {
   });
 
   it("should return correct balance of staked tokens", async () => {
-    const operation: OriginationOperation =
-      await utils.tezos.contract.originate({
-        code: VIEW_LAMBDA.code,
-        storage: VIEW_LAMBDA.storage,
-      });
-    const lambdaContract: Contract = await operation.contract();
     const balanceOfResult: Promise<any> = await qFarm.contract.views
       .balance_of([
         { owner: alice.pkh, token_id: 0 },
         { owner: alice.pkh, token_id: 6 },
         { owner: bob.pkh, token_id: 0 },
       ])
-      .read(lambdaContract.address);
+      .read();
 
     await qFarm.updateStorage({
       users_info: [

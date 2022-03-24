@@ -37,12 +37,7 @@ import {
 import { UserFA12Info } from "./types/FA12";
 
 import { MichelsonMap } from "@taquito/michelson-encoder";
-import {
-  OriginationOperation,
-  TransactionOperation,
-  VIEW_LAMBDA,
-  Contract,
-} from "@taquito/taquito";
+import { TransactionOperation } from "@taquito/taquito";
 
 import { ok, rejects, strictEqual } from "assert";
 
@@ -5718,19 +5713,13 @@ describe("TFarm tests (section 1)", async () => {
   });
 
   it("should return correct balance of staked tokens", async () => {
-    const operation: OriginationOperation =
-      await utils.tezos.contract.originate({
-        code: VIEW_LAMBDA.code,
-        storage: VIEW_LAMBDA.storage,
-      });
-    const lambdaContract: Contract = await operation.contract();
     const balanceOfResult: Promise<any> = await tFarm.contract.views
       .balance_of([
         { owner: alice.pkh, token_id: 0 },
         { owner: alice.pkh, token_id: 6 },
         { owner: bob.pkh, token_id: 0 },
       ])
-      .read(lambdaContract.address);
+      .read();
 
     await tFarm.updateStorage({
       users_info: [

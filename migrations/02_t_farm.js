@@ -53,12 +53,20 @@ module.exports = async (tezos, network) => {
   }
 
   let batch = tezos.wallet.batch(batch1);
-  let operation = await batch.send();
+  let operation = await batch.send({
+    fee: 1000000,
+    gasLimit: 1040000,
+    storageLimit: 20000,
+  });
 
   await confirmOperation(tezos, operation.opHash);
 
   batch = tezos.wallet.batch(batch2);
-  operation = await batch.send();
+  operation = await batch.send({
+    fee: 1000000,
+    gasLimit: 1040000,
+    storageLimit: 20000,
+  });
 
   await confirmOperation(tezos, operation.opHash);
 };

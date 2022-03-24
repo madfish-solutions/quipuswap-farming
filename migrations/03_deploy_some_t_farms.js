@@ -4,7 +4,7 @@ const { dev } = require("../scripts/sandbox/accounts");
 
 const { Utils } = require("../test/helpers/Utils");
 
-const { farms } = require("../storage/NewFarms");
+const { ithacanetFarms } = require("../storage/NewFarms");
 
 const TFarm = require("../build/t_farm.json");
 
@@ -13,7 +13,7 @@ module.exports = async (tezos, network) => {
   const precision = 10 ** 18;
   let operation = null;
 
-  for (const farm of farms) {
+  for (const farm of ithacanetFarms) {
     if (farm.reward_token.fA2) {
       const updateOperatorParam = {
         add_operator: {

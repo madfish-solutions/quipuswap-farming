@@ -75,7 +75,7 @@ By default, the contracts will be deployed to the `development` network (in the
 Docker container).
 
 Also, you can specify the network for deploying (possible networks:
-`granadanet`, `hangzhounet`, `mainnet`):
+`hangzhounet`, `ithacanet`, `mainnet`):
 
 ```shell
   yarn migrate -n [network_name]
@@ -84,7 +84,7 @@ Also, you can specify the network for deploying (possible networks:
 Or just execute one of this commands:
 
 ```shell
-  yarn migrate-granadanet
   yarn migrate-hangzhounet
+  yarn migrate-ithacanet
   yarn migrate-mainnet
 ```

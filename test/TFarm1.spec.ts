@@ -5773,7 +5773,7 @@ describe("TFarm tests (section 1)", async () => {
       rewards_receiver: alice.pkh,
     };
 
-    await utils.bakeBlocks(7);
+    await utils.bakeBlocks(10);
     await tFarm.updateStorage({
       users_info: [
         [harvestParams.fid, alice.pkh],

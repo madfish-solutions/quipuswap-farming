@@ -26,4 +26,5 @@ export const qFarmStorage: QFarmStorage = {
     farms_count: 0,
   },
   q_farm_lambdas: MichelsonMap.fromLiteral({}),
+  metadata: MichelsonMap.fromLiteral({}),
 };

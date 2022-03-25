@@ -78,4 +78,5 @@ export type QFarmStorage = {
     farms_count: number;
   };
   q_farm_lambdas: MichelsonMap<MichelsonMapKey, unknown>;
+  metadata: MichelsonMap<MichelsonMapKey, unknown>;
 };

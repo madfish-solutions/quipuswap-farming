@@ -77,4 +77,5 @@ export type TFarmStorage = {
     farms_count: number;
   };
   t_farm_lambdas: MichelsonMap<MichelsonMapKey, unknown>;
+  metadata: MichelsonMap<MichelsonMapKey, unknown>;
 };

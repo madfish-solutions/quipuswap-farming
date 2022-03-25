@@ -1,4 +1,4 @@
-const { OpKind } = require("@taquito/taquito");
+const { OpKind, MichelsonMap } = require("@taquito/taquito");
 
 const BakerRegistry = require("../build/baker_registry.json");
 const Burner = require("../build/burner.json");
@@ -14,6 +14,21 @@ const tFarmFunctions = require("../build/lambdas/t_farm_lambdas.json");
 const env = require("../env");
 
 module.exports = async (tezos, network) => {
+  tFarmStorage.metadata = MichelsonMap.fromLiteral({
+    "": Buffer.from("tezos-storage:quipuswap_farm", "ascii").toString("hex"),
+    quipuswap_farm: Buffer.from(
+      JSON.stringify({
+        name: "QuipuSwap Farm",
+        description:
+          "The contract allows you to stake Tezos based tokens for rewards on QuipuSwap.",
+        version: "v1.0.0",
+        authors: ["Madfish.Solutions"],
+        homepage: "https://quipuswap.com/",
+        interfaces: ["TZIP-12", "TZIP-16"],
+      }),
+      "ascii"
+    ).toString("hex"),
+  });
   tFarmStorage.storage.qsgov = env.networks[network].qsgov;
   tFarmStorage.storage.qsgov_lp = env.networks[network].qsgov_lp;
   tFarmStorage.storage.admin = env.networks[network].admin;

@@ -25,4 +25,5 @@ export const tFarmStorage: TFarmStorage = {
     farms_count: 0,
   },
   t_farm_lambdas: MichelsonMap.fromLiteral({}),
+  metadata: MichelsonMap.fromLiteral({}),
 };

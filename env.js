@@ -27,6 +27,18 @@ module.exports = {
       qsgov_lp: "KT1DgpR6mXkbgyF3SdduyimNRy9GSR9TgRqp",
       admin: dev.pkh,
     },
+    ithacanet: {
+      rpc: "https://rpc.ithacanet.teztnets.xyz",
+      port: 443,
+      network_id: "*",
+      secretKey: dev.sk,
+      qsgov: {
+        token: "KT1ArrmPA3QEtcqX4fmmKMjXA5Lm3DzBhscB",
+        id: 0,
+      },
+      qsgov_lp: "KT1K16JFj1L5u4HqVtd4H8dnaBVUxvLG4mjR",
+      admin: dev.pkh,
+    },
     mainnet: {
       rpc: "https://mainnet.smartpy.io",
       port: 443,

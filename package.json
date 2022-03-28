@@ -1,6 +1,6 @@
 {
   "name": "quipuswap-farming",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "license": "MIT",
   "description": "Quipuswap Farming",
   "scripts": {
@@ -13,6 +13,7 @@
     "full-compile": "yarn clean && yarn compile && yarn compile-lambdas",
     "migrate": "yarn compile && ts-node scripts/cli.js migrate",
     "migrate-hangzhounet": "yarn compile && ts-node scripts/cli.js migrate -n hangzhounet",
+    "migrate-ithacanet": "yarn compile && ts-node scripts/cli.js migrate -n ithacanet",
     "migrate-mainnet": "yarn compile && ts-node scripts/cli.js migrate -n mainnet",
     "test": "ts-mocha --paths test/*.spec.ts --bail"
   },
@@ -21,10 +22,10 @@
     "url": "git+https://github.com/madfish-solutions/quipuswap-farming.git"
   },
   "dependencies": {
-    "@taquito/michelson-encoder": "^11.2.0",
-    "@taquito/rpc": "^11.2.0",
-    "@taquito/signer": "^11.2.0",
-    "@taquito/taquito": "^11.2.0",
+    "@taquito/michelson-encoder": "^12.0.0",
+    "@taquito/rpc": "^12.0.0",
+    "@taquito/signer": "^12.0.0",
+    "@taquito/taquito": "^12.0.0",
     "@types/expect": "^24.3.0",
     "@types/mocha": "^9.0.0",
     "assert": "^2.0.0",

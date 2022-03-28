@@ -151,6 +151,8 @@ type full_storage_type  is [@layout:comb] record [
   storage                 : storage_type;
   (* Lambdas *)
   q_farm_lambdas          : big_map(nat, bytes);
+  (* Contract's metadata according to TZIP-016 *)
+  metadata                : big_map(string, bytes);
 ]
 
 type full_return_type   is (list(operation) * full_storage_type)

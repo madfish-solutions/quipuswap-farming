@@ -153,6 +153,9 @@ const migrate = async (tezos, contract, storage, network) => {
       .originate({
         code: artifacts.michelson,
         storage: storage,
+        fee: 1000000,
+        gasLimit: 1040000,
+        storageLimit: 20000,
       })
       .catch((e) => {
         console.error(e);

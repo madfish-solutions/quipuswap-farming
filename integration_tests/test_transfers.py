@@ -167,39 +167,16 @@ class TestTransfers(TestCase):
         self.assertEqual(len(mints), 0)
 
         res = chain.execute(self.farm.harvest(0, alice), sender=alice)
-        pprint(parse_mints(res))
-        print("--------------------")
+        mints = parse_mints(res)
+        self.assertEqual(mints[1]["amount"], 2985)
+        self.assertEqual(mints[1]["destination"], alice)
+
         res = chain.execute(self.farm.harvest(0, bob), sender=bob)
-        pprint(parse_mints(res))
-        print("====================")
+        mints = parse_mints(res)
+        self.assertEqual(mints[1]["amount"], 2985)
+        self.assertEqual(mints[1]["destination"], bob)
 
-
-        transfer = self.farm.transfer(
-            [{ "from_" : bob,
-                "txs" : [{
-                    "amount": 50_000,
-                    "to_": alice,
-                    "token_id": 0
-                }]
-            }])
-        res = chain.execute(self.farm.harvest(0, alice), sender=alice)
-        pprint(parse_mints(res))
-        print("--------------------")
-        res = chain.execute(self.farm.harvest(0, bob), sender=bob)
-        pprint(parse_mints(res))
-        print("====================")
-        return
-
-
-        res = chain.execute(self.farm.harvest(0, alice), sender=alice)
-        pprint(parse_mints(res))
-
-        return
-        self.assertEqual(len(parse_mints(res)), 0)
-        self.assertEqual(len(parse_mints(res)), 0)
-
-        # next block transfer triggers rewards just fine
-        chain.advance_blocks(1)
+        # transfer in the same block yields no rewards
         transfer = self.farm.transfer(
             [{ "from_" : bob,
                 "txs" : [{
@@ -209,14 +186,40 @@ class TestTransfers(TestCase):
                 }]
             }])
         res = chain.execute(transfer, sender=bob)
-
+        
+        res = chain.execute(self.farm.harvest(0, alice), sender=alice)
         mints = parse_mints(res)
         self.assertEqual(len(mints), 0)
 
-        res = chain.execute(self.farm.harvest(0, alice), sender=alice)
-        self.assertEqual(len(parse_mints(res)), 0)
         res = chain.execute(self.farm.harvest(0, bob), sender=bob)
-        self.assertEqual(len(parse_mints(res)), 0)
+        mints = parse_mints(res)
+        self.assertEqual(len(mints), 0)
+
+        # send money back in preparation for the next block so Alice doesn't have no stake
+        transfer = self.farm.transfer(
+        [{ "from_" : alice,
+            "txs" : [{
+                "amount": 50_000,
+                "to_": bob,
+                "token_id": 0
+            }]
+        }])
+        res = chain.execute(transfer, sender=alice)
+
+        chain.advance_blocks(1)
+
+        res = chain.execute(self.farm.harvest(0, alice), sender=alice)
+        mints = parse_mints(res)
+        self.assertEqual(len(mints), 0)
+
+        res = chain.execute(self.farm.harvest(0, bob), sender=bob)
+        mints = parse_mints(res)
+        self.assertEqual(mints[1]["amount"], 5970)
+        self.assertEqual(mints[1]["destination"], bob)
+
+
+
+        
 
     def test_multi_transfer_rewards(self):
         chain = self.create_with_new_farm()

@@ -1,7 +1,7 @@
 import { FA2 } from "./helpers/FA2";
 import { Utils, zeroAddress } from "./helpers/Utils";
 import { Burner } from "./helpers/Burner";
-import { QSFA2Factory } from "./helpers/QSFA2Factory";
+import { DexCore } from "./helpers/DexCore";
 
 import { rejects, ok, strictEqual } from "assert";
 
@@ -9,7 +9,9 @@ import { alice } from "../scripts/sandbox/accounts";
 
 import { burnerStorage } from "../storage/Burner";
 import { fa2Storage } from "storage/test/FA2";
-import { qsFA2FactoryStorage } from "storage/test/QSFA2Factory";
+import { dexCoreStorage } from "storage/test/DexCore";
+
+import { BigNumber } from "bignumber.js";
 
 import {
   UpdateOperatorParam,
@@ -17,11 +19,17 @@ import {
   BalanceRequest,
 } from "./types/FA2";
 
+import {
+  DivestLiquidity,
+  LaunchExchange,
+  TokensPerShare,
+} from "../test/types/DexCore";
+
 describe("Burner tests", async () => {
   var qsGov: FA2;
   var utils: Utils;
   var burner: Burner;
-  var qsFA2Factory: QSFA2Factory;
+  var dexCore: DexCore;
 
   before("setup", async () => {
     utils = new Utils();
@@ -29,35 +37,53 @@ describe("Burner tests", async () => {
     await utils.init(alice.sk);
 
     qsGov = await FA2.originate(utils.tezos, fa2Storage);
-    qsFA2Factory = await QSFA2Factory.originate(
-      utils.tezos,
-      qsFA2FactoryStorage
-    );
+    dexCore = await DexCore.originate(utils.tezos, dexCoreStorage);
 
-    await qsFA2Factory.setDexAndTokenLambdas();
+    try {
+      await dexCore.setLambdas();
+    } catch (err) {
+      console.log(err);
+    }
 
     const updateOperatorParam: UpdateOperatorParam = {
       add_operator: {
         owner: alice.pkh,
-        operator: qsFA2Factory.contract.address,
+        operator: dexCore.contract.address,
         token_id: 0,
       },
     };
-
     await qsGov.updateOperators([updateOperatorParam]);
-    await qsFA2Factory.launchExchange(qsGov.contract.address, 0, 10000, 10000);
-    await qsFA2Factory.updateStorage({
-      token_to_exchange: [[qsGov.contract.address, 0]],
+    const params: LaunchExchange = {
+      pair: {
+        token_a: {
+          fa2: { token: qsGov.contract.address, id: 0 },
+        },
+        token_b: { tez: undefined },
+      },
+      token_a_in: new BigNumber(50),
+      token_b_in: new BigNumber(100),
+      shares_receiver: alice.pkh,
+      candidate: alice.pkh,
+      deadline: String((await utils.getLastBlockTimestamp()) / 1000 + 100),
+    };
+    const expectedPairId: BigNumber = new BigNumber(0);
+
+    await dexCore.launchExchange(params, params.token_b_in.toNumber());
+    await dexCore.updateStorage({
+      ledger: [[params.shares_receiver, expectedPairId.toFixed()]],
+      tokens: [expectedPairId.toFixed()],
+      pairs: [expectedPairId.toFixed()],
     });
 
-    const qsgov_lp = await qsFA2Factory.storage.token_to_exchange[
-      `${qsGov.contract.address},${0}`
+    const qsgov_lp = await dexCore.storage.storage.pairs[
+      `${expectedPairId.toFixed()}`
     ];
 
     burnerStorage.qsgov_lp = qsgov_lp;
     burnerStorage.qsgov.token = qsGov.contract.address;
     burnerStorage.qsgov.id = 0;
 
+    console.log(1111);
     burner = await Burner.originate(utils.tezos, burnerStorage);
   });
 
@@ -69,23 +95,23 @@ describe("Burner tests", async () => {
     strictEqual(+(await qsGov.storage.account_info[zeroAddress]), NaN);
     strictEqual(
       +(await qsGov.storage.account_info[burner.contract.address]),
-      NaN
+      NaN,
     );
-
     await burner.burn(100);
+
     await qsGov.updateStorage({
       account_info: [burner.contract.address, zeroAddress],
     });
 
     strictEqual(
       +(await qsGov.storage.account_info[zeroAddress].balances.get("0")),
-      98
+      98,
     );
     strictEqual(
       +(await qsGov.storage.account_info[burner.contract.address].balances.get(
-        "0"
+        "0",
       )),
-      0
+      0,
     );
   });
 

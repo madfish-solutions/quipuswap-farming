@@ -186,7 +186,12 @@ function burn_tez_rewards(
         else skip;
 
         operations := Tezos.transaction(
-          WithdrawProfit(s.burner),
+          WithdrawProfit(
+            record[
+              receiver = (get_contract(s.burner) : contract(unit));
+              pair_id = fid;
+            ]
+          ),
           0mutez,
           get_quipuswap_use_entrypoint(
             get_token_address(farm.stake_params.staked_token)

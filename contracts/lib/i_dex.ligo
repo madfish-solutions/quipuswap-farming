@@ -43,7 +43,10 @@ type veto_type          is record [
   voter                   : address;
 ]
 
-type withdraw_type      is address (* Receiver of bakers rewards *)
+type withdraw_type      is [@layout:comb] record [
+  receiver                : contract(unit); (* Receiver of bakers rewards *)
+  pair_id                 : nat;
+]
 
 type dex_action_type    is
   InitializeExchange      of init_exchange_type

@@ -86,18 +86,18 @@ function set_baker_registry(
     end
   } with (no_operations, s)
 
-function set_is_v1_lp(
+function set_is_v2_lp(
   const action          : action_type;
   var s                 : storage_type)
                         : return_type is
   block {
     case action of
-      Set_is_v1_lp(params) -> {
+      Set_is_v2_lp(params) -> {
         only_admin(s.admin);
 
         var farm : farm_type := get_farm(params.fid, s.farms);
 
-        farm.stake_params.is_v1_lp := params.is_v1_lp;
+        farm.stake_params.is_v2_lp := params.is_v2_lp;
 
         s.farms[farm.fid] := farm;
       }
@@ -181,12 +181,12 @@ function burn_tez_rewards(
 
         const farm : farm_type = get_farm(fid, s.farms);
 
-        if not farm.stake_params.is_v1_lp
+        if not farm.stake_params.is_v2_lp
         then failwith("QSystem/not-LP-farm")
         else skip;
 
         operations := Tezos.transaction(
-          WithdrawProfit(
+          Withdraw_profit(
             record[
               receiver = (get_contract(s.burner) : contract(unit));
               pair_id = fid;
@@ -246,7 +246,7 @@ function withdraw_farm_depo(
           farm.stake_params.staked_token
         ) # operations;
 
-        if farm.stake_params.is_v1_lp
+        if farm.stake_params.is_v2_lp
         then {
           s := vote(
             get_user_candidate(farm, Tezos.self_address, s.candidates),

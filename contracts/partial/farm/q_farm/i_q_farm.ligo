@@ -127,7 +127,7 @@ type action_type        is
 | Set_burner              of set_burner_type
 | Set_proxy_minter        of set_proxy_type
 | Set_baker_registry      of set_registry_type
-| Set_is_v1_lp            of set_is_v1_lp_type
+| Set_is_v2_lp            of set_is_v1_lp_type
 | Ban_bakers              of ban_bakers_type
 | Add_new_farm            of add_new_farm_type
 | Pause_farms             of pause_farms_type

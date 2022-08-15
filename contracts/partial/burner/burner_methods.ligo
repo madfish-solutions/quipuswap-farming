@@ -15,15 +15,26 @@ function burn(
       )
     ];
 
+    const swap_slice = record[
+      direction = B_to_a;
+      pair_id = s.pool_id;
+    ];
+
+    const swap_param = (record[
+        lambda         = (None : option(unit -> list(operation))) ;
+        swaps          = list[swap_slice];
+        deadline       = Tezos.now + 10000;
+        receiver       = Tezos.self_address;
+        referrer       = s.qsgov_lp;
+        amount_in      = Tezos.amount / 1mutez;
+        min_amount_out = 1n;
+    ] : swap_t);
     const operations : list(operation) = list [
       (* Swap all TEZ from burner to QS GOV tokens *)
       Tezos.transaction(
-        TezToTokenPayment(record [
-          min_out  = 1n;
-          receiver = Tezos.self_address;
-        ]),
+        swap_param,
         Tezos.amount,
-        get_quipuswap_use_entrypoint(s.qsgov_lp)
+        get_swap_entrypoint(s.qsgov_lp)
       );
       (* Get balance of output QS GOV tokens to burn them *)
       Tezos.transaction(

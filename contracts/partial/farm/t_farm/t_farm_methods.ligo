@@ -9,7 +9,7 @@
     | Set_fees(_)              -> 2n
     | Set_burner(_)            -> 3n
     | Set_baker_registry(_)    -> 4n
-    | Set_is_v1_lp(_)          -> 5n
+    | Set_is_v2_lp(_)          -> 5n
     | Set_reward_per_second(_) -> 6n
     | Ban_bakers(_)            -> 7n
     | Add_new_farm(_)          -> 8n

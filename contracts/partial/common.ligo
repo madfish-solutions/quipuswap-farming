@@ -113,6 +113,19 @@ function get_quipuswap_use_entrypoint(
   )
   end
 
+function get_swap_entrypoint(
+  const dex             : address)
+                        : contract(swap_t) is
+  case (
+    Tezos.get_entrypoint_opt("%swap", dex) : option(contract(swap_t))
+  ) of
+    Some(contr) -> contr
+  | None        -> (
+    failwith("QSystem/quipuswap-swap-entrypoint-404")
+                        : contract(swap_t)
+  )
+  end
+
 function wrap_fa12_transfer_trx(
   const from_           : address;
   const to_             : address;

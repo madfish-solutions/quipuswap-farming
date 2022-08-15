@@ -11,7 +11,7 @@
     | Set_burner(_)            -> 4n
     | Set_proxy_minter(_)      -> 5n
     | Set_baker_registry(_)    -> 6n
-    | Set_is_v1_lp(_)          -> 7n
+    | Set_is_v2_lp(_)          -> 7n
     | Ban_bakers(_)            -> 8n
     | Add_new_farm(_)          -> 9n
     | Pause_farms(_)           -> 10n

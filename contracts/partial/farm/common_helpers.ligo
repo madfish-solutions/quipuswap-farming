@@ -77,13 +77,12 @@ function get_votes(
 function get_vote_operation(
   const qs_pool         : address;
   const candidate       : key_hash;
-  const votes_amt       : nat)
+  const pair_id         : nat)
                         : operation is
   Tezos.transaction(
     Vote(record [
       candidate = candidate;
-      value     = votes_amt;
-      voter     = Tezos.self_address;
+      pair_id = pair_id;
     ]),
     0mutez,
     get_quipuswap_use_entrypoint(qs_pool)
@@ -110,6 +109,7 @@ function get_token_address(
     FA12(token_address) -> token_address
   | FA2(token_info)     -> token_info.token
   end
+
 
 function vote(
   const user_candidate  : key_hash;
@@ -191,10 +191,14 @@ function form_vote_ops(
     then farm.current_delegated := farm.next_candidate;
     else skip;
 
+    if not farm.stake_params.is_v2_lp
+    then failwith("Not")
+    else skip;
+    //const pool_id = case farm.sta
     const vote_op : operation = get_vote_operation(
       get_token_address(farm.stake_params.staked_token),
       farm.current_delegated,
-      votes
+      0n
     );
     const validate_baker_op : operation = Tezos.transaction(
       farm.current_delegated,

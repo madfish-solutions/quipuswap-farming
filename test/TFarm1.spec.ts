@@ -4,10 +4,7 @@ import { Utils, zeroAddress } from "./helpers/Utils";
 import { TFarm, TFarmUtils } from "./helpers/TFarm";
 import { Burner } from "./helpers/Burner";
 import { BakerRegistry } from "./helpers/BakerRegistry";
-import { QSFA12Factory } from "./helpers/QSFA12Factory";
-import { QSFA2Factory } from "./helpers/QSFA2Factory";
-import { QSFA12Dex } from "./helpers/QSFA12Dex";
-import { QSFA2Dex } from "./helpers/QSFA2Dex";
+import { DexCore } from "./helpers/DexCore";
 
 import {
   UpdateOperatorParam,
@@ -52,21 +49,17 @@ import { fa2Storage } from "../storage/test/FA2";
 import { tFarmStorage } from "../storage/TFarm";
 import { burnerStorage } from "../storage/Burner";
 import { bakerRegistryStorage } from "../storage/BakerRegistry";
-import { qsFA12FactoryStorage } from "../storage/test/QSFA12Factory";
-import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
+import { dexCoreStorage } from "storage/test/DexCore";
 
 describe("TFarm tests (section 1)", async () => {
   var fa12: FA12;
-  var fa12LP: QSFA12Dex;
   var fa2: FA2;
-  var fa2LP: QSFA2Dex;
   var qsGov: FA2;
   var utils: Utils;
   var tFarm: TFarm;
   var burner: Burner;
   var bakerRegistry: BakerRegistry;
-  var qsFA12Factory: QSFA12Factory;
-  var qsFA2Factory: QSFA2Factory;
+  var dexCore: DexCore;
 
   var precision = 10 ** 18;
   var feePrecision = 10 ** 16;
@@ -85,69 +78,93 @@ describe("TFarm tests (section 1)", async () => {
       bakerRegistryStorage,
     );
 
-    qsFA12FactoryStorage.baker_validator = bakerRegistry.contract.address;
+    dexCoreStorage.storage.baker_registry = bakerRegistry.contract.address;
+    dexCoreStorage.storage.admin = alice.pkh;
+    dexCoreStorage.storage.collecting_period = new BigNumber(12);
+    dexCore = await DexCore.originate(utils.tezos, dexCoreStorage);
 
-    qsFA12Factory = await QSFA12Factory.originate(
-      utils.tezos,
-      qsFA12FactoryStorage,
-    );
-
-    qsFA2FactoryStorage.baker_validator = bakerRegistry.contract.address;
-
-    qsFA2Factory = await QSFA2Factory.originate(
-      utils.tezos,
-      qsFA2FactoryStorage,
-    );
-
-    await qsFA12Factory.setDexAndTokenLambdas();
-    await qsFA2Factory.setDexAndTokenLambdas();
+    await dexCore.setLambdas();
 
     const updateOperatorParam: UpdateOperatorParam = {
       add_operator: {
         owner: alice.pkh,
-        operator: qsFA2Factory.contract.address,
+        operator: dexCore.contract.address,
         token_id: 0,
       },
     };
 
     await qsGov.updateOperators([updateOperatorParam]);
-    await qsFA2Factory.launchExchange(qsGov.contract.address, 0, 10000, 10000);
-    await qsFA2Factory.updateStorage({
-      token_to_exchange: [[qsGov.contract.address, 0]],
-    });
+    await dexCore.launchExchange(
+      {
+        pair: {
+          token_a: {
+            fa2: { token: qsGov.contract.address, id: 0 },
+          },
+          token_b: { tez: undefined },
+        },
+        token_a_in: new BigNumber(10000),
+        token_b_in: new BigNumber(10000),
+        shares_receiver: alice.pkh,
+        candidate: alice.pkh,
+        deadline: String((await utils.getLastBlockTimestamp()) / 1000 + 100),
+      },
+      10000,
+    );
 
-    const qsGovLPAddress = await qsFA2Factory.storage.token_to_exchange[
-      `${qsGov.contract.address},${0}`
-    ];
+    await dexCore.updateStorage({
+      token_to_id: [[qsGov.contract.address, 0]],
+    });
 
     await fa2.updateOperators([updateOperatorParam]);
-    await qsFA2Factory.launchExchange(fa2.contract.address, 0, 10000, 10000);
-    await qsFA2Factory.updateStorage({
-      token_to_exchange: [[fa2.contract.address, 0]],
+    await dexCore.launchExchange(
+      {
+        pair: {
+          token_a: {
+            fa2: { token: fa2.contract.address, id: 0 },
+          },
+          token_b: { tez: undefined },
+        },
+        token_a_in: new BigNumber(10000),
+        token_b_in: new BigNumber(10000),
+        shares_receiver: alice.pkh,
+        candidate: alice.pkh,
+        deadline: String((await utils.getLastBlockTimestamp()) / 1000 + 100),
+      },
+      10000,
+    );
+    await dexCore.updateStorage({
+      token_to_id: [[fa2.contract.address, 2]],
     });
 
-    const fa2LPAddress: string =
-      qsFA2Factory.storage.token_to_exchange[`${fa2.contract.address},${0}`];
+    await fa12.approve(dexCore.contract.address, 10000);
+    await dexCore.launchExchange(
+      {
+        pair: {
+          token_a: {
+            fa12: fa12.contract.address,
+          },
+          token_b: { tez: undefined },
+        },
+        token_a_in: new BigNumber(10000),
+        token_b_in: new BigNumber(10000),
+        shares_receiver: alice.pkh,
+        candidate: alice.pkh,
+        deadline: String((await utils.getLastBlockTimestamp()) / 1000 + 100),
+      },
+      10000,
+    );
 
-    await fa12.approve(qsFA12Factory.contract.address, 10000);
-    await qsFA12Factory.launchExchange(fa12.contract.address, 10000, 10000);
-    await qsFA12Factory.updateStorage({
-      token_to_exchange: [fa12.contract.address],
+    await dexCore.updateStorage({
+      token_to_id: [fa12.contract.address, 1],
     });
 
-    const fa12LPAddress: string =
-      qsFA12Factory.storage.token_to_exchange[fa12.contract.address];
-
-    fa12LP = await QSFA12Dex.init(fa12LPAddress, utils.tezos);
-    fa2LP = await QSFA2Dex.init(fa2LPAddress, utils.tezos);
-
-    burnerStorage.qsgov_lp = qsGovLPAddress;
+    burnerStorage.qsgov_lp = dexCore.contract.address;
     burnerStorage.qsgov.token = qsGov.contract.address;
     burnerStorage.qsgov.id = 0;
 
     tFarmStorage.storage.qsgov.token = qsGov.contract.address;
     tFarmStorage.storage.qsgov.id = 0;
-    tFarmStorage.storage.qsgov_lp = qsGovLPAddress;
+    tFarmStorage.storage.qsgov_lp = dexCore.contract.address;
     tFarmStorage.storage.admin = alice.pkh;
     tFarmStorage.storage.pending_admin = zeroAddress;
     tFarmStorage.storage.burner = zeroAddress;
@@ -1465,7 +1482,9 @@ describe("TFarm tests (section 1)", async () => {
 
     newFarmParams.fees.harvest_fee = 30 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 6 * feePrecision;
-    newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
+    newFarmParams.stake_params.staked_token = {
+      fA2: { token: dexCore.contract.address, id: 2 },
+    };
     newFarmParams.stake_params.is_v2_lp = true;
     newFarmParams.reward_per_second = 4 * precision;
     newFarmParams.timelock = 0;
@@ -1491,40 +1510,52 @@ describe("TFarm tests (section 1)", async () => {
       candidate: bob.pkh,
     };
 
-    await fa12LP.updateStorage({
-      ledger: [alice.pkh],
+    await dexCore.updateStorage({
+      ledger: [[alice.pkh, 2]],
     });
 
-    const initialTokenAliceRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[alice.pkh];
+    const initialTokenAliceBalance: UserFA12Info =
+      dexCore.storage.storage.ledger[`${alice.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${alice.pkh},2`];
 
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
+    await dexCore.updateOperators([
+      {
+        add_operator: {
+          owner: alice.pkh,
+          operator: tFarm.contract.address,
+          token_id: 2,
+        },
+      },
+    ]);
     await tFarm.deposit(depositParams);
     await tFarm.updateStorage({
       users_info: [[depositParams.fid, alice.pkh]],
       farms: [depositParams.fid],
     });
-    await fa12LP.updateStorage({
-      ledger: [tFarm.contract.address, alice.pkh],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 2],
+        [tFarm.contract.address, 2],
+      ],
     });
 
     const finalFarm: Farm = tFarm.storage.storage.farms[depositParams.fid];
     const finalFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${depositParams.fid},${alice.pkh}`];
-    const finalTokenAliceRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[alice.pkh];
-    const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[tFarm.contract.address];
+    const finalTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},2`];
+    const finalTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},2`];
 
     strictEqual(+finalFarm.staked, depositParams.amt);
     strictEqual(+finalFarm.claimed, 0);
     strictEqual(+finalFarmAliceRecord.staked, depositParams.amt);
     strictEqual(
-      +finalTokenAliceRecord.balance,
-      +initialTokenAliceRecord.balance - depositParams.amt,
+      +finalTokenAliceBalance,
+      +initialTokenAliceBalance - depositParams.amt,
     );
-    strictEqual(+finalTokenFarmRecord.balance, 0);
-    strictEqual(+finalTokenFarmRecord.frozen_balance, depositParams.amt);
+    strictEqual(+finalTokenFarmBalance, depositParams.amt);
   });
 
   it("should fail if user's candidate for voting is banned (only for LP farms)", async () => {
@@ -1642,7 +1673,7 @@ describe("TFarm tests (section 1)", async () => {
     newFarmParams.fees.harvest_fee = 15 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 21 * feePrecision;
     newFarmParams.stake_params.staked_token = {
-      fA2: { token: fa2LP.contract.address, id: 0 },
+      fA2: { token: dexCore.contract.address, id: 1 },
     };
     newFarmParams.stake_params.is_v2_lp = true;
     newFarmParams.reward_per_second = 10 * precision;
@@ -1667,47 +1698,51 @@ describe("TFarm tests (section 1)", async () => {
       candidate: bob.pkh,
     };
 
-    await fa2LP.updateStorage({
-      ledger: [alice.pkh],
+    await dexCore.updateStorage({
+      ledger: [[alice.pkh, 1]],
     });
 
-    const initialTokenAliceRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[alice.pkh];
+    const initialTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},1`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${alice.pkh},1`];
     const updateOperatorParam: UpdateOperatorParam = {
       add_operator: {
         owner: alice.pkh,
         operator: tFarm.contract.address,
-        token_id: 0,
+        token_id: 1,
       },
     };
 
-    await fa2LP.updateOperators([updateOperatorParam]);
+    await dexCore.updateOperators([updateOperatorParam]);
     await tFarm.deposit(depositParams);
     await tFarm.updateStorage({
       users_info: [[depositParams.fid, alice.pkh]],
       farms: [depositParams.fid],
     });
-    await fa2LP.updateStorage({
-      ledger: [tFarm.contract.address, alice.pkh],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 1],
+        [tFarm.contract.address, 1],
+      ],
     });
 
     const finalFarm: Farm = tFarm.storage.storage.farms[depositParams.fid];
     const finalFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${depositParams.fid},${alice.pkh}`];
-    const finalTokenAliceRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[alice.pkh];
-    const finalTokenFarmRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[tFarm.contract.address];
+    const finalTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},1`];
+    const finalTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},1`];
 
     strictEqual(+finalFarm.staked, depositParams.amt);
     strictEqual(+finalFarm.claimed, 0);
     strictEqual(+finalFarmAliceRecord.staked, depositParams.amt);
     strictEqual(
-      +finalTokenAliceRecord.balance,
-      +initialTokenAliceRecord.balance - depositParams.amt,
+      +finalTokenAliceBalance,
+      +initialTokenAliceBalance - depositParams.amt,
     );
-    strictEqual(+finalTokenFarmRecord.balance, 0);
-    strictEqual(+finalTokenFarmRecord.frozen_balance, depositParams.amt);
+    strictEqual(+finalTokenFarmBalance, depositParams.amt);
   });
 
   it("should claim user's rewards (in farms without timelock)", async () => {
@@ -2022,7 +2057,6 @@ describe("TFarm tests (section 1)", async () => {
     const initialRewTokFarmRecord: UserFA12Info =
       fa12.storage.ledger[tFarm.contract.address];
 
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
     await tFarm.deposit(depositParams);
     await tFarm.updateStorage({
       users_info: [[depositParams.fid, alice.pkh]],
@@ -2188,7 +2222,6 @@ describe("TFarm tests (section 1)", async () => {
     const initialRewTokFarmRecord: UserFA12Info =
       fa12.storage.ledger[tFarm.contract.address];
 
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
     await tFarm.deposit(depositParams);
     await tFarm.updateStorage({
       users_info: [[depositParams.fid, alice.pkh]],
@@ -2353,7 +2386,6 @@ describe("TFarm tests (section 1)", async () => {
     const initialRewTokFarmRecord: UserFA12Info =
       fa12.storage.ledger[tFarm.contract.address];
 
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
     await tFarm.deposit(depositParams);
     await tFarm.updateStorage({
       users_info: [[depositParams.fid, alice.pkh]],
@@ -2587,10 +2619,24 @@ describe("TFarm tests (section 1)", async () => {
       rewards_receiver: dev.pkh,
       candidate: bob.pkh,
     };
+    await dexCore.transfer([
+      {
+        from_: alice.pkh,
+        txs: [{ to_: dev.pkh, amount: transferAmt, token_id: 2 }],
+      },
+    ]);
 
-    await fa12LP.transfer(alice.pkh, dev.pkh, transferAmt);
     await utils.setProvider(dev.sk);
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
+
+    await dexCore.updateOperators([
+      {
+        add_operator: {
+          owner: dev.pkh,
+          operator: tFarm.contract.address,
+          token_id: 2,
+        },
+      },
+    ]);
     await tFarm.deposit(depositParams);
     await tFarm.updateStorage({
       users_info: [[depositParams.fid, dev.pkh]],
@@ -2635,7 +2681,6 @@ describe("TFarm tests (section 1)", async () => {
     const initialFarmBobVotes: number =
       tFarm.storage.storage.votes[`${depositParams.fid},${bob.pkh}`];
 
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
     await tFarm.deposit(depositParams);
     await tFarm.updateStorage({
       users_info: [[depositParams.fid, dev.pkh]],
@@ -3129,7 +3174,6 @@ describe("TFarm tests (section 1)", async () => {
       rewards_receiver: alice.pkh,
     };
 
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
     await tFarm.deposit(depositParams);
     await utils.bakeBlocks(1);
     await tFarm.updateStorage({
@@ -3481,34 +3525,50 @@ describe("TFarm tests (section 1)", async () => {
       users_info: [[withdrawParams.fid, alice.pkh]],
       farms: [withdrawParams.fid],
     });
-    await fa12LP.updateStorage({
-      ledger: [tFarm.contract.address, alice.pkh],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 2],
+        [tFarm.contract.address, 2],
+      ],
     });
 
     const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
     const initialFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
-    const initialTokenAliceRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[alice.pkh];
-    const initialTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[tFarm.contract.address];
+    const initialTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${carol.pkh},2`];
+    const initialTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},2`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${tFarm.contract.address},2`];
 
     await tFarm.withdraw(withdrawParams);
     await tFarm.updateStorage({
       users_info: [[withdrawParams.fid, alice.pkh]],
       farms: [withdrawParams.fid],
     });
-    await fa12LP.updateStorage({
-      ledger: [tFarm.contract.address, alice.pkh],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 2],
+        [tFarm.contract.address, 2],
+      ],
     });
 
     const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
     const finalFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
-    const finalTokenAliceRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[alice.pkh];
-    const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[tFarm.contract.address];
+    const finalTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${carol.pkh},2`];
+    const finalTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},2`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${tFarm.contract.address},2`];
     const res: FarmData = TFarmUtils.getFarmData(
       initialFarm,
       finalFarm,
@@ -3523,13 +3583,12 @@ describe("TFarm tests (section 1)", async () => {
       +initialFarmAliceRecord.staked - withdrawParams.amt,
     );
     strictEqual(
-      +finalTokenAliceRecord.balance,
-      +initialTokenAliceRecord.balance + withdrawParams.amt,
+      +finalTokenAliceBalance,
+      +initialTokenAliceBalance + withdrawParams.amt,
     );
-    strictEqual(+finalTokenFarmRecord.balance, 0);
     strictEqual(
-      +finalTokenFarmRecord.frozen_balance,
-      +initialTokenFarmRecord.frozen_balance - withdrawParams.amt,
+      +finalTokenFarmBalance,
+      initialTokenFarmBalance - withdrawParams.amt,
     );
 
     ok(
@@ -3624,34 +3683,50 @@ describe("TFarm tests (section 1)", async () => {
       users_info: [[withdrawParams.fid, alice.pkh]],
       farms: [withdrawParams.fid],
     });
-    await fa2LP.updateStorage({
-      ledger: [tFarm.contract.address, alice.pkh],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 1],
+        [tFarm.contract.address, 1],
+      ],
     });
 
     const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
     const initialFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
-    const initialTokenAliceRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[alice.pkh];
-    const initialTokenFarmRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[tFarm.contract.address];
-
+    const initialTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},1`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${carol.pkh},1`];
+    const initialTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},1`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${tFarm.contract.address},1`];
     await tFarm.withdraw(withdrawParams);
     await tFarm.updateStorage({
       users_info: [[withdrawParams.fid, alice.pkh]],
       farms: [withdrawParams.fid],
     });
-    await fa2LP.updateStorage({
-      ledger: [tFarm.contract.address, alice.pkh],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 1],
+        [tFarm.contract.address, 1],
+      ],
     });
 
     const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
     const finalFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
-    const finalTokenAliceRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[alice.pkh];
-    const finalTokenFarmRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[tFarm.contract.address];
+    const finalTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${carol.pkh},2`];
+    const finalTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},1`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${tFarm.contract.address},1`];
+
     const res: FarmData = TFarmUtils.getFarmData(
       initialFarm,
       finalFarm,
@@ -3666,13 +3741,13 @@ describe("TFarm tests (section 1)", async () => {
       +initialFarmAliceRecord.staked - withdrawParams.amt,
     );
     strictEqual(
-      +finalTokenAliceRecord.balance,
-      +initialTokenAliceRecord.balance + withdrawParams.amt,
+      +finalTokenAliceBalance,
+      +initialTokenAliceBalance + withdrawParams.amt,
     );
-    strictEqual(+finalTokenFarmRecord.balance, 0);
+    strictEqual(+finalTokenFarmBalance, 0);
     strictEqual(
-      +finalTokenFarmRecord.frozen_balance,
-      +initialTokenFarmRecord.frozen_balance - withdrawParams.amt,
+      +finalTokenFarmBalance,
+      +initialTokenFarmBalance - withdrawParams.amt,
     );
 
     ok(
@@ -3696,32 +3771,47 @@ describe("TFarm tests (section 1)", async () => {
       users_info: [[withdrawParams.fid, alice.pkh]],
       farms: [withdrawParams.fid],
     });
-    await fa2LP.updateStorage({
-      ledger: [tFarm.contract.address],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 1],
+        [tFarm.contract.address, 1],
+      ],
     });
 
     const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
     const initialFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
-    const initialTokenFarmRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[tFarm.contract.address];
+    const initialTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},1`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${tFarm.contract.address},1`];
 
     await tFarm.withdraw(withdrawParams);
     await tFarm.updateStorage({
       users_info: [[withdrawParams.fid, alice.pkh]],
       farms: [withdrawParams.fid],
     });
-    await fa2LP.updateStorage({
-      ledger: [tFarm.contract.address, dev.pkh],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 1],
+        [tFarm.contract.address, 1],
+      ],
     });
 
     const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
     const finalFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
-    const finalTokenDevRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[dev.pkh];
-    const finalTokenFarmRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[tFarm.contract.address];
+    const finalTokenDevBalance: number =
+      dexCore.storage.storage.ledger[`${dev.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${carol.pkh},2`];
+    const finalTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},1`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${tFarm.contract.address},1`];
+
     const res: FarmData = TFarmUtils.getFarmData(
       initialFarm,
       finalFarm,
@@ -3735,11 +3825,10 @@ describe("TFarm tests (section 1)", async () => {
       +finalFarmAliceRecord.staked,
       +initialFarmAliceRecord.staked - withdrawParams.amt,
     );
-    strictEqual(+finalTokenDevRecord.balance, withdrawParams.amt);
-    strictEqual(+finalTokenFarmRecord.balance, 0);
+    strictEqual(+finalTokenDevBalance, withdrawParams.amt);
     strictEqual(
-      +finalTokenFarmRecord.frozen_balance,
-      +initialTokenFarmRecord.frozen_balance - withdrawParams.amt,
+      +finalTokenFarmBalance,
+      initialTokenFarmBalance - withdrawParams.amt,
     );
 
     ok(
@@ -4577,7 +4666,6 @@ describe("TFarm tests (section 1)", async () => {
       rewards_receiver: alice.pkh,
     };
 
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
     await tFarm.deposit(depositParams);
     await utils.bakeBlocks(1);
     await tFarm.updateStorage({
@@ -4905,8 +4993,8 @@ describe("TFarm tests (section 1)", async () => {
   });
 
   it("should withdraw bakers rewards in TEZ from the QS pool, swap for QS GOV tokens and burn them", async () => {
-    await fa12LP.updateStorage({
-      ledger: [alice.pkh],
+    await dexCore.updateStorage({
+      ledger: [[alice.pkh, 2]],
     });
     await qsGov.updateStorage({
       account_info: [zeroAddress],
@@ -4914,7 +5002,7 @@ describe("TFarm tests (section 1)", async () => {
 
     const depositParams: DepositParams = {
       fid: 3,
-      amt: +fa12LP.storage.storage.ledger[alice.pkh].balance / 2,
+      amt: +dexCore.storage.storage.ledger[`${alice.pkh},2`] / 2,
       referrer: bob.pkh,
       rewards_receiver: alice.pkh,
       candidate: alice.pkh,
@@ -4923,7 +5011,7 @@ describe("TFarm tests (section 1)", async () => {
       qsGov.storage.account_info[zeroAddress];
 
     await utils.setProvider(alice.sk);
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
+
     await tFarm.deposit(depositParams);
     await tFarm.updateStorage({
       farms: [depositParams.fid],
@@ -5208,105 +5296,6 @@ describe("TFarm tests (section 1)", async () => {
     );
   });
 
-  it("should withdraw LP FA1.2 token", async () => {
-    let newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
-      utils,
-    );
-    const lifetime: number = 120; // 2 minutes
-
-    newFarmParams.fees.harvest_fee = 21 * feePrecision;
-    newFarmParams.fees.withdrawal_fee = 60 * feePrecision;
-    newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
-    newFarmParams.stake_params.is_v2_lp = true;
-    newFarmParams.reward_per_second = 2 * precision;
-    newFarmParams.timelock = 5;
-    newFarmParams.reward_token = { fA12: fa12.contract.address };
-    newFarmParams.end_time = String(
-      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
-        lifetime,
-    );
-
-    const rewardsAmount: number =
-      (lifetime * newFarmParams.reward_per_second) / precision;
-
-    await fa12.approve(tFarm.contract.address, rewardsAmount);
-    await tFarm.addNewFarm(newFarmParams);
-
-    const depositParams: DepositParams = {
-      fid: 7,
-      amt: 100,
-      referrer: undefined,
-      rewards_receiver: alice.pkh,
-      candidate: bob.pkh,
-    };
-
-    await utils.setProvider(alice.sk);
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
-    await tFarm.deposit(depositParams);
-
-    const withdrawParams1: WithdrawParams = {
-      fid: depositParams.fid,
-      amt: depositParams.amt,
-      receiver: alice.pkh,
-      rewards_receiver: alice.pkh,
-    };
-
-    await tFarm.withdraw(withdrawParams1);
-    await utils.setProvider(bob.sk);
-
-    const withdrawParams2: WithdrawFarmDepoParams = {
-      fid: depositParams.fid,
-      amt: 10,
-    };
-
-    await tFarm.updateStorage({
-      users_info: [[withdrawParams2.fid, tFarm.contract.address]],
-      farms: [withdrawParams2.fid],
-    });
-    await fa12LP.updateStorage({
-      ledger: [tFarm.contract.address],
-    });
-
-    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams2.fid];
-    const initialFarmFarmRecord: UserInfoType =
-      tFarm.storage.storage.users_info[
-        `${withdrawParams2.fid},${tFarm.contract.address}`
-      ];
-    const initialTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[tFarm.contract.address];
-
-    await tFarm.withdrawFarmDepo(withdrawParams2);
-    await tFarm.updateStorage({
-      users_info: [[withdrawParams2.fid, tFarm.contract.address]],
-      farms: [withdrawParams2.fid],
-    });
-    await fa12LP.updateStorage({
-      ledger: [tFarm.contract.address, bob.pkh],
-    });
-
-    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams2.fid];
-    const finalFarmFarmRecord: UserInfoType =
-      tFarm.storage.storage.users_info[
-        `${withdrawParams2.fid},${tFarm.contract.address}`
-      ];
-    const finalTokenBobRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[bob.pkh];
-    const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[tFarm.contract.address];
-
-    strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams2.amt);
-    strictEqual(
-      +finalFarmFarmRecord.staked,
-      +initialFarmFarmRecord.staked - withdrawParams2.amt,
-    );
-    strictEqual(+finalTokenBobRecord.balance, withdrawParams2.amt);
-    strictEqual(+finalTokenFarmRecord.balance, 5100);
-    strictEqual(
-      +finalTokenFarmRecord.frozen_balance,
-      +initialTokenFarmRecord.frozen_balance - withdrawParams2.amt,
-    );
-  });
-
   it("should withdraw single FA2 token", async () => {
     const withdrawParams: WithdrawFarmDepoParams = {
       fid: 0,
@@ -5374,7 +5363,7 @@ describe("TFarm tests (section 1)", async () => {
     newFarmParams.fees.harvest_fee = 21 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 60 * feePrecision;
     newFarmParams.stake_params.staked_token = {
-      fA2: { token: fa2LP.contract.address, id: 0 },
+      fA2: { token: dexCore.contract.address, id: 1 },
     };
     newFarmParams.stake_params.is_v2_lp = true;
     newFarmParams.reward_per_second = 2 * precision;
@@ -5392,7 +5381,7 @@ describe("TFarm tests (section 1)", async () => {
     await tFarm.addNewFarm(newFarmParams);
 
     const depositParams: DepositParams = {
-      fid: 8,
+      fid: 7,
       amt: 100,
       referrer: undefined,
       rewards_receiver: alice.pkh,
@@ -5421,8 +5410,8 @@ describe("TFarm tests (section 1)", async () => {
       users_info: [[withdrawParams2.fid, tFarm.contract.address]],
       farms: [withdrawParams2.fid],
     });
-    await fa2LP.updateStorage({
-      ledger: [tFarm.contract.address],
+    await dexCore.updateStorage({
+      ledger: [[tFarm.contract.address, 1]],
     });
 
     const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams2.fid];
@@ -5430,16 +5419,22 @@ describe("TFarm tests (section 1)", async () => {
       tFarm.storage.storage.users_info[
         `${withdrawParams2.fid},${tFarm.contract.address}`
       ];
-    const initialTokenFarmRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[tFarm.contract.address];
+    const initialTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},1`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${tFarm.contract.address},1`];
 
     await tFarm.withdrawFarmDepo(withdrawParams2);
     await tFarm.updateStorage({
       users_info: [[withdrawParams2.fid, tFarm.contract.address]],
       farms: [withdrawParams2.fid],
     });
-    await fa2LP.updateStorage({
-      ledger: [tFarm.contract.address, bob.pkh],
+    await dexCore.updateStorage({
+      ledger: [
+        [tFarm.contract.address, 1],
+        [bob.pkh, 1],
+      ],
     });
 
     const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams2.fid];
@@ -5447,22 +5442,24 @@ describe("TFarm tests (section 1)", async () => {
       tFarm.storage.storage.users_info[
         `${withdrawParams2.fid},${tFarm.contract.address}`
       ];
-    const finalTokenBobRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[bob.pkh];
-    const finalTokenFarmRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[tFarm.contract.address];
+    const finalTokenBobBalance: UserFA2LPInfo =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},1`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${bob.pkh},1`];
+    const finalTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},1`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${tFarm.contract.address},1`];
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams2.amt);
     strictEqual(
       +finalFarmFarmRecord.staked,
       +initialFarmFarmRecord.staked - withdrawParams2.amt,
     );
-    strictEqual(+finalTokenBobRecord.balance, withdrawParams2.amt);
-    strictEqual(+finalTokenFarmRecord.balance, 330);
-    strictEqual(
-      +finalTokenFarmRecord.frozen_balance,
-      +initialTokenFarmRecord.frozen_balance - withdrawParams2.amt,
-    );
+    strictEqual(+finalTokenBobBalance, withdrawParams2.amt);
+    strictEqual(+finalTokenFarmBalance, 330);
   });
 
   it("should transfer one token and update values correctly", async () => {

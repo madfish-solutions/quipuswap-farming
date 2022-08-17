@@ -10,7 +10,8 @@ import { alice } from "../scripts/sandbox/accounts";
 import { burnerStorage } from "../storage/Burner";
 import { fa2Storage } from "storage/test/FA2";
 import { dexCoreStorage } from "storage/test/DexCore";
-
+import { bakerRegistryStorage } from "../storage/BakerRegistry";
+import { BakerRegistry } from "./helpers/BakerRegistry";
 import { BigNumber } from "bignumber.js";
 
 import {
@@ -30,21 +31,24 @@ describe("Burner tests", async () => {
   var utils: Utils;
   var burner: Burner;
   var dexCore: DexCore;
+  var bakerRegistry: BakerRegistry;
 
   before("setup", async () => {
     utils = new Utils();
 
     await utils.init(alice.sk);
+    dexCoreStorage.storage.admin = alice.pkh;
+    bakerRegistry = await BakerRegistry.originate(
+      utils.tezos,
+      bakerRegistryStorage,
+    );
+
+    dexCoreStorage.storage.baker_registry = bakerRegistry.contract.address;
 
     qsGov = await FA2.originate(utils.tezos, fa2Storage);
     dexCore = await DexCore.originate(utils.tezos, dexCoreStorage);
 
-    try {
-      await dexCore.setLambdas();
-    } catch (err) {
-      console.log(err);
-    }
-
+    await dexCore.setLambdas();
     const updateOperatorParam: UpdateOperatorParam = {
       add_operator: {
         owner: alice.pkh,
@@ -60,8 +64,8 @@ describe("Burner tests", async () => {
         },
         token_b: { tez: undefined },
       },
-      token_a_in: new BigNumber(50),
-      token_b_in: new BigNumber(100),
+      token_a_in: new BigNumber(10000),
+      token_b_in: new BigNumber(10000),
       shares_receiver: alice.pkh,
       candidate: alice.pkh,
       deadline: String((await utils.getLastBlockTimestamp()) / 1000 + 100),
@@ -69,21 +73,17 @@ describe("Burner tests", async () => {
     const expectedPairId: BigNumber = new BigNumber(0);
 
     await dexCore.launchExchange(params, params.token_b_in.toNumber());
+
     await dexCore.updateStorage({
       ledger: [[params.shares_receiver, expectedPairId.toFixed()]],
       tokens: [expectedPairId.toFixed()],
       pairs: [expectedPairId.toFixed()],
     });
 
-    const qsgov_lp = await dexCore.storage.storage.pairs[
-      `${expectedPairId.toFixed()}`
-    ];
-
-    burnerStorage.qsgov_lp = qsgov_lp;
+    burnerStorage.qsgov_lp = dexCore.contract.address;
     burnerStorage.qsgov.token = qsGov.contract.address;
     burnerStorage.qsgov.id = 0;
-
-    console.log(1111);
+    burnerStorage.pool_id = expectedPairId.toNumber();
     burner = await Burner.originate(utils.tezos, burnerStorage);
   });
 
@@ -97,15 +97,15 @@ describe("Burner tests", async () => {
       +(await qsGov.storage.account_info[burner.contract.address]),
       NaN,
     );
-    await burner.burn(100);
 
+    await burner.burn(100);
     await qsGov.updateStorage({
       account_info: [burner.contract.address, zeroAddress],
     });
 
     strictEqual(
       +(await qsGov.storage.account_info[zeroAddress].balances.get("0")),
-      98,
+      99,
     );
     strictEqual(
       +(await qsGov.storage.account_info[burner.contract.address].balances.get(
@@ -117,15 +117,7 @@ describe("Burner tests", async () => {
 
   it("should fail if zero TEZ amount have been sent", async () => {
     await rejects(burner.burn(0), (err: Error) => {
-      ok(err.message === "Dex/zero-amount-in");
-
-      return true;
-    });
-  });
-
-  it("should fail if small liquidity amount in the pool", async () => {
-    await rejects(burner.burn(1000000), (err: Error) => {
-      ok(err.message === "Dex/high-out");
+      ok(err.message === "118");
 
       return true;
     });

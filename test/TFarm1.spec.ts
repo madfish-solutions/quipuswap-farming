@@ -32,7 +32,7 @@ import {
   BanBakerParam,
   UserInfoType,
   WithdrawData,
-  IsV1LP,
+  IsV2LP,
 } from "./types/Common";
 import { UserFA12Info } from "./types/FA12";
 
@@ -258,13 +258,13 @@ describe("TFarm tests (section 1)", async () => {
   });
 
   it("should fail if not admin is trying to set `is_v2_lp`", async () => {
-    const params: IsV1LP = {
+    const params: IsV2LP = {
       fid: 0,
       is_v2_lp: true,
     };
 
     await utils.setProvider(alice.sk);
-    await rejects(tFarm.setIsV1LP(params), (err: Error) => {
+    await rejects(tFarm.setIsV2LP(params), (err: Error) => {
       ok(err.message === "Not-admin");
 
       return true;
@@ -272,13 +272,13 @@ describe("TFarm tests (section 1)", async () => {
   });
 
   it("should fail if farm not found", async () => {
-    const params: IsV1LP = {
+    const params: IsV2LP = {
       fid: 666,
       is_v2_lp: true,
     };
 
     await utils.setProvider(bob.sk);
-    await rejects(tFarm.setIsV1LP(params), (err: Error) => {
+    await rejects(tFarm.setIsV2LP(params), (err: Error) => {
       ok(err.message === "QSystem/farm-not-set");
 
       return true;
@@ -634,13 +634,13 @@ describe("TFarm tests (section 1)", async () => {
   });
 
   it("should change `is_v2_lp` by admin", async () => {
-    let params: IsV1LP = {
+    let params: IsV2LP = {
       fid: 0,
       is_v2_lp: true,
     };
 
     await utils.setProvider(bob.sk);
-    await tFarm.setIsV1LP(params);
+    await tFarm.setIsV2LP(params);
     await tFarm.updateStorage({
       farms: [0],
     });
@@ -652,7 +652,7 @@ describe("TFarm tests (section 1)", async () => {
 
     params.is_v2_lp = false;
 
-    await tFarm.setIsV1LP(params);
+    await tFarm.setIsV2LP(params);
   });
 
   it("should fail if not admin is trying to set reward per second", async () => {

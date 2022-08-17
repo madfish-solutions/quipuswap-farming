@@ -17,7 +17,7 @@ export const ithacanetFarms: NewFarmParams[] = [
       staked_token: {
         fA2: { token: "KT1PDsZcMs7QuixpeGHTPpi14s2SF1RhiTSM", id: 0 },
       },
-      is_v1_lp: true,
+      is_v2_lp: true,
     },
     token_info: MichelsonMap.fromLiteral({
       name: Buffer.from("wWBTC/TEZ FA2 Staking Share").toString("hex"),
@@ -42,7 +42,7 @@ export const ithacanetFarms: NewFarmParams[] = [
       staked_token: {
         fA12: "KT1W6RyVDyGLwazwfJCphcYwb4g2Ltr82ebg",
       },
-      is_v1_lp: true,
+      is_v2_lp: true,
     },
     token_info: MichelsonMap.fromLiteral({
       name: Buffer.from("Apple/TEZ FA12 Staking Share").toString("hex"),
@@ -67,7 +67,7 @@ export const ithacanetFarms: NewFarmParams[] = [
       staked_token: {
         fA2: { token: "KT1PnmpVWmA5CBUsA5ZAx1HoDW67mPYurAL5", id: 19 },
       },
-      is_v1_lp: false,
+      is_v2_lp: false,
     },
     token_info: MichelsonMap.fromLiteral({
       name: Buffer.from("GOLD/QUIPU FA2 Staking Share").toString("hex"),
@@ -92,7 +92,7 @@ export const ithacanetFarms: NewFarmParams[] = [
       staked_token: {
         fA2: { token: "KT1SMhGgVwhm2JQjU4hDcpt4w1p7brxxFRPD", id: 0 },
       },
-      is_v1_lp: false,
+      is_v2_lp: false,
     },
     token_info: MichelsonMap.fromLiteral({
       name: Buffer.from("wWBTC FA2 Staking Share").toString("hex"),
@@ -117,7 +117,7 @@ export const ithacanetFarms: NewFarmParams[] = [
       staked_token: {
         fA12: "KT1BRxbKjhRabGSB6saqK6QrBenaSvFJSgHu",
       },
-      is_v1_lp: false,
+      is_v2_lp: false,
     },
     token_info: MichelsonMap.fromLiteral({
       name: Buffer.from("Apple FA12 Staking Share").toString("hex"),
@@ -142,7 +142,7 @@ export const ithacanetFarms: NewFarmParams[] = [
       staked_token: {
         fA12: "KT1PzyU2nXYW8RkoFqmqWPFCA7bgC7yGNRoC",
       },
-      is_v1_lp: false,
+      is_v2_lp: false,
     },
     token_info: MichelsonMap.fromLiteral({
       name: Buffer.from("GOLD FA12 Staking Share").toString("hex"),
@@ -170,7 +170,7 @@ export const hangzhounetFarms: NewFarmParams[] = [
       staked_token: {
         fA2: { token: "KT1DaP41e8fk4BsRB2pPk1HXuX3R47dp7mnU", id: 0 },
       },
-      is_v1_lp: true,
+      is_v2_lp: true,
     },
     token_info: MichelsonMap.fromLiteral({
       name: Buffer.from("TOK/TEZ FA2 Staking Share").toString("hex"),
@@ -195,7 +195,7 @@ export const hangzhounetFarms: NewFarmParams[] = [
       staked_token: {
         fA12: "KT1Ds5C4KNLMi9g7hy4hf29GKfdR3MYSFaMn",
       },
-      is_v1_lp: true,
+      is_v2_lp: true,
     },
     token_info: MichelsonMap.fromLiteral({
       name: Buffer.from("TOK/TEZ FA12 Staking Share").toString("hex"),
@@ -220,7 +220,7 @@ export const hangzhounetFarms: NewFarmParams[] = [
       staked_token: {
         fA2: { token: "KT1Ni6JpXqGyZKXhJCPQJZ9x5x5bd7tXPNPC", id: 19 },
       },
-      is_v1_lp: false,
+      is_v2_lp: false,
     },
     token_info: MichelsonMap.fromLiteral({
       name: Buffer.from("TOK/TOK FA2 Staking Share").toString("hex"),
@@ -245,7 +245,7 @@ export const hangzhounetFarms: NewFarmParams[] = [
       staked_token: {
         fA2: { token: "KT1UF2uAyzVWbvL9GkcEKL8yBwbd9sYCnXbP", id: 0 },
       },
-      is_v1_lp: false,
+      is_v2_lp: false,
     },
     token_info: MichelsonMap.fromLiteral({
       name: Buffer.from("Single FA2 Staking Share").toString("hex"),
@@ -270,7 +270,7 @@ export const hangzhounetFarms: NewFarmParams[] = [
       staked_token: {
         fA12: "KT1XagM9vnERYjraxfz8u43NCT3mGtFR7A8H",
       },
-      is_v1_lp: false,
+      is_v2_lp: false,
     },
     token_info: MichelsonMap.fromLiteral({
       name: Buffer.from("Single FA12 Staking Share").toString("hex"),
@@ -295,7 +295,7 @@ export const hangzhounetFarms: NewFarmParams[] = [
       staked_token: {
         fA12: "KT1XagM9vnERYjraxfz8u43NCT3mGtFR7A8H",
       },
-      is_v1_lp: false,
+      is_v2_lp: false,
     },
     token_info: MichelsonMap.fromLiteral({
       name: Buffer.from("Single FA12 Staking Share").toString("hex"),

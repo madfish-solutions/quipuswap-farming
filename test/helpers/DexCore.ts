@@ -164,7 +164,7 @@ export class DexCore {
     let params: WalletParamsWithKind[] = [];
     const parts: number = 7;
 
-    for (let i: number = 0; i < 2; ) {
+    for (let i: number = 0; i < dexCoreLambdas.length; ) {
       for (
         let j: number = 0;
         j < Math.ceil(dexCoreLambdas.length / parts);

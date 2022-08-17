@@ -33,17 +33,17 @@ export class FA2 {
 
   static async originate(
     tezos: TezosToolkit,
-    storage: FA2Storage
+    storage: FA2Storage,
   ): Promise<FA2> {
     const artifacts: any = JSON.parse(
-      fs.readFileSync(`test/contracts/fa2.json`).toString()
+      fs.readFileSync(`test/contracts/fa2.json`).toString(),
     );
     const operation: OriginationOperation = await tezos.contract
       .originate({
         code: artifacts.michelson,
         storage: storage,
       })
-      .catch((e) => {
+      .catch(e => {
         console.error(e);
 
         return null;
@@ -74,7 +74,7 @@ export class FA2 {
             };
           }
         },
-        Promise.resolve({})
+        Promise.resolve({}),
       );
     }
   }
@@ -90,7 +90,7 @@ export class FA2 {
   }
 
   async updateOperators(
-    updateOperatorsParams: UpdateOperatorParam[]
+    updateOperatorsParams: UpdateOperatorParam[],
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .update_operators(updateOperatorsParams)
@@ -112,7 +112,7 @@ export class FA2 {
   }
 
   async mintGovToken(
-    mintGovTokenParams: MintGovTokenParams[]
+    mintGovTokenParams: MintGovTokenParams[],
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .mint_gov_token(mintGovTokenParams)

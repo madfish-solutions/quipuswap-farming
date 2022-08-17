@@ -31,7 +31,7 @@ import {
   UserInfoType,
   WithdrawData,
   StakeParams,
-  IsV1LP,
+  IsV2LP,
 } from "../types/Common";
 import {
   SetRewardPerSecond,
@@ -62,17 +62,17 @@ export class TFarm {
 
   static async originate(
     tezos: TezosToolkit,
-    storage: TFarmStorage
+    storage: TFarmStorage,
   ): Promise<TFarm> {
     const artifacts: any = JSON.parse(
-      fs.readFileSync(`${env.buildDir}/t_farm.json`).toString()
+      fs.readFileSync(`${env.buildDir}/t_farm.json`).toString(),
     );
     const operation: OriginationOperation = await tezos.contract
       .originate({
         code: artifacts.michelson,
         storage: storage,
       })
-      .catch((e) => {
+      .catch(e => {
         console.error(e);
 
         return null;
@@ -106,7 +106,7 @@ export class TFarm {
             };
           }
         },
-        Promise.resolve({})
+        Promise.resolve({}),
       );
     }
   }
@@ -205,7 +205,7 @@ export class TFarm {
   }
 
   async setBakerRegistry(
-    newBakerRegistry: string
+    newBakerRegistry: string,
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .set_baker_registry(newBakerRegistry)
@@ -216,9 +216,9 @@ export class TFarm {
     return operation;
   }
 
-  async setIsV1LP(params: IsV1LP): Promise<TransactionOperation> {
+  async setIsV2LP(params: IsV2LP): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
-      .set_is_v1_lp(...Utils.destructObj(params))
+      .set_is_v2_lp(...Utils.destructObj(params))
       .send();
 
     await confirmOperation(this.tezos, operation.hash);
@@ -227,7 +227,7 @@ export class TFarm {
   }
 
   async setRewardPerSecond(
-    params: SetRewardPerSecond
+    params: SetRewardPerSecond,
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .set_reward_per_second(...Utils.destructObj(params))
@@ -249,7 +249,7 @@ export class TFarm {
   }
 
   async addNewFarm(
-    newFarmParams: NewFarmParams
+    newFarmParams: NewFarmParams,
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .add_new_farm(...Utils.destructObj(newFarmParams))
@@ -261,7 +261,7 @@ export class TFarm {
   }
 
   async pauseFarms(
-    pauseFarmParams: PauseFarmParam[]
+    pauseFarmParams: PauseFarmParam[],
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .pause_farms(pauseFarmParams)
@@ -283,7 +283,7 @@ export class TFarm {
   }
 
   async withdraw(
-    withdrawParams: WithdrawParams
+    withdrawParams: WithdrawParams,
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .withdraw(...Utils.destructObj(withdrawParams))
@@ -325,7 +325,7 @@ export class TFarm {
   }
 
   async withdrawFarmDepo(
-    params: WithdrawFarmDepoParams
+    params: WithdrawFarmDepoParams,
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .withdraw_farm_depo(...Utils.destructObj(params))
@@ -347,7 +347,7 @@ export class TFarm {
   }
 
   async updateOperators(
-    params: UpdateOperatorParam[]
+    params: UpdateOperatorParam[],
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .update_operators(params)
@@ -359,7 +359,7 @@ export class TFarm {
   }
 
   async updateTokenMetadata(
-    params: UpdTokMetaParams
+    params: UpdTokMetaParams,
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .update_token_metadata(...Utils.destructObj(params))
@@ -374,7 +374,7 @@ export class TFarm {
 export class TFarmUtils {
   static async getMockNewFarmParams(utils: Utils): Promise<NewFarmParams> {
     const time: string = String(
-      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000
+      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000,
     );
     const fees: TFees = {
       harvest_fee: 0,
@@ -384,7 +384,7 @@ export class TFarmUtils {
       staked_token: {
         fA12: zeroAddress,
       },
-      is_v1_lp: false,
+      is_v2_lp: false,
     };
     const newFarmParams: NewFarmParams = {
       fees: fees,
@@ -408,7 +408,7 @@ export class TFarmUtils {
     finalFarm: Farm,
     initialFarmUserRecord: UserInfoType,
     finalFarmUserRecord: UserInfoType,
-    precision: number
+    precision: number,
   ): FarmData {
     let timeLeft: number = 0;
 
@@ -424,28 +424,28 @@ export class TFarmUtils {
     }
 
     const newReward: BigNumber = new BigNumber(
-      timeLeft * finalFarm.reward_per_second
+      timeLeft * finalFarm.reward_per_second,
     );
     const expectedShareReward: BigNumber = new BigNumber(
-      initialFarm.reward_per_share
+      initialFarm.reward_per_share,
     ).plus(
-      newReward.div(initialFarm.staked).integerValue(BigNumber.ROUND_DOWN)
+      newReward.div(initialFarm.staked).integerValue(BigNumber.ROUND_DOWN),
     );
     const expectedUserPrevEarned: BigNumber = expectedShareReward.multipliedBy(
-      finalFarmUserRecord.staked
+      finalFarmUserRecord.staked,
     );
     const expectedUserEarned: BigNumber = new BigNumber(
-      initialFarmUserRecord.earned
+      initialFarmUserRecord.earned,
     ).plus(
       expectedShareReward
         .multipliedBy(initialFarmUserRecord.staked)
-        .minus(initialFarmUserRecord.prev_earned)
+        .minus(initialFarmUserRecord.prev_earned),
     );
     const expectedUserEarnedAfterHarvest: BigNumber = expectedUserEarned.minus(
       expectedUserEarned
         .div(precision)
         .integerValue(BigNumber.ROUND_DOWN)
-        .multipliedBy(precision)
+        .multipliedBy(precision),
     );
     const actualUserBurned: BigNumber = expectedUserEarned
       .div(precision)
@@ -475,14 +475,14 @@ export class TFarmUtils {
   static getWithdrawData(
     initialFarm: Farm,
     withdrawValue: number,
-    precision: number
+    precision: number,
   ): WithdrawData {
     const wirthdrawCommission: BigNumber = new BigNumber(withdrawValue)
       .multipliedBy(initialFarm.fees.withdrawal_fee)
       .dividedBy(precision)
       .integerValue(BigNumber.ROUND_DOWN);
     const actualUserWithdraw: BigNumber = new BigNumber(withdrawValue).minus(
-      wirthdrawCommission
+      wirthdrawCommission,
     );
 
     return {

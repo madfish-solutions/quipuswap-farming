@@ -203,19 +203,11 @@ describe("QFarm tests (section 2)", async () => {
       ledger: [[alice.pkh, 2]],
     });
 
-    const initialTokenAliceRecord: UserFA2Info =
-      dexCore.storage.storage.ledger[(alice.pkh, 2)];
-    const initialTokenFarmRecord: UserFA2Info =
-      dexCore.storage.storage.ledger[(qFarm.contract.address, 2)];
+    const initialTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},2`];
 
     const initialAliceBalance: number =
-      initialTokenAliceRecord === undefined
-        ? 0
-        : +(await initialTokenAliceRecord.balances.get("2"));
-    const initialFarmBalance: number =
-      initialTokenFarmRecord === undefined
-        ? 0
-        : +(await initialTokenFarmRecord.balances.get("2"));
+      initialTokenAliceBalance === undefined ? 0 : +initialTokenAliceBalance;
 
     await dexCore.updateOperators([
       {
@@ -247,32 +239,26 @@ describe("QFarm tests (section 2)", async () => {
       qFarm.storage.storage.candidates[`${depositParams.fid},${alice.pkh}`];
     const finalFarmBobVotes: number =
       qFarm.storage.storage.votes[`${depositParams.fid},${bob.pkh}`];
-    const finalTokenAliceRecord: UserFA2Info =
+    const finalTokenAliceBalance: number =
       dexCore.storage.storage.ledger[`${alice.pkh},2`];
-    const finalTokenFarmRecord: UserFA2Info =
+    const finalTokenFarmBalance: number =
       dexCore.storage.storage.ledger[`${qFarm.contract.address},2`];
-    //const s = await finalTokenAliceRecord.balances.get("2");
     const aliceBalance: number =
-      finalTokenAliceRecord === undefined
-        ? 0
-        : +(await finalTokenAliceRecord.balances.get("2"));
+      finalTokenAliceBalance === undefined ? 0 : +finalTokenAliceBalance;
     const farmBalance: number =
-      finalTokenFarmRecord === undefined
-        ? 0
-        : +(await finalTokenFarmRecord.balances.get("2"));
+      finalTokenFarmBalance === undefined ? 0 : +finalTokenFarmBalance;
     strictEqual(finalFarm.current_delegated, depositParams.candidate);
     strictEqual(finalFarm.next_candidate, zeroAddress);
     strictEqual(+finalFarmAliceRecord.prev_staked, depositParams.amt);
     strictEqual(finalFarmAliceCandidate, depositParams.candidate);
     strictEqual(+finalFarmBobVotes, depositParams.amt);
-    console.log(finalTokenAliceRecord);
 
     ok(
       new BigNumber(aliceBalance).isEqualTo(
         new BigNumber(initialAliceBalance).minus(depositParams.amt),
       ),
     );
-    ok(new BigNumber(farmBalance).isEqualTo(0));
+    ok(new BigNumber(farmBalance).isEqualTo(depositParams.amt));
   });
 
   it("should vote for alice, alice must became next candidate", async () => {
@@ -284,19 +270,44 @@ describe("QFarm tests (section 2)", async () => {
       candidate: alice.pkh,
     };
 
-    await fa12LP.transfer(alice.pkh, carol.pkh, 1000);
-    await fa12LP.transfer(alice.pkh, bob.pkh, 1000);
-    await fa12LP.updateStorage({
-      ledger: [carol.pkh, qFarm.contract.address],
+    await dexCore.transfer([
+      {
+        from_: alice.pkh,
+        txs: [{ to_: carol.pkh, amount: 1000, token_id: 2 }],
+      },
+    ]);
+    await dexCore.transfer([
+      {
+        from_: alice.pkh,
+        txs: [{ to_: bob.pkh, amount: 1000, token_id: 2 }],
+      },
+    ]);
+    await dexCore.updateStorage({
+      ledger: [
+        [carol.pkh, 2],
+        [qFarm.contract.address, 2],
+      ],
     });
-
-    const initialTokenCarolRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[carol.pkh];
-    const initialTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+    const initialTokenCarolBalance: number =
+      dexCore.storage.storage.ledger[`${carol.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${carol.pkh},2`];
+    const initialTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${qFarm.contract.address},2`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${qFarm.contract.address},2`];
 
     await utils.setProvider(carol.sk);
-    await fa12LP.approve(qFarm.contract.address, depositParams.amt);
+    await dexCore.updateOperators([
+      {
+        add_operator: {
+          owner: carol.pkh,
+          operator: qFarm.contract.address,
+          token_id: 2,
+        },
+      },
+    ]);
     await qFarm.deposit(depositParams);
     await qFarm.updateStorage({
       users_info: [[depositParams.fid, carol.pkh]],
@@ -304,8 +315,11 @@ describe("QFarm tests (section 2)", async () => {
       votes: [[depositParams.fid, alice.pkh]],
       farms: [depositParams.fid],
     });
-    await fa12LP.updateStorage({
-      ledger: [carol.pkh, qFarm.contract.address],
+    await dexCore.updateStorage({
+      ledger: [
+        [carol.pkh, 2],
+        [qFarm.contract.address, 2],
+      ],
     });
 
     const finalFarm: Farm = qFarm.storage.storage.farms[depositParams.fid];
@@ -315,10 +329,15 @@ describe("QFarm tests (section 2)", async () => {
       qFarm.storage.storage.candidates[`${depositParams.fid},${carol.pkh}`];
     const finalFarmAliceVotes: number =
       qFarm.storage.storage.votes[`${depositParams.fid},${alice.pkh}`];
-    const finalTokenCarolRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[carol.pkh];
-    const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+    const finalTokenCarolBalance: number =
+      dexCore.storage.storage.ledger[`${carol.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${carol.pkh},2`];
+    const finalTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${qFarm.contract.address},2`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${qFarm.contract.address},2`];
 
     strictEqual(finalFarm.current_delegated, bob.pkh);
     strictEqual(finalFarm.next_candidate, depositParams.candidate);
@@ -327,16 +346,13 @@ describe("QFarm tests (section 2)", async () => {
     strictEqual(+finalFarmAliceVotes, depositParams.amt);
 
     ok(
-      new BigNumber(finalTokenCarolRecord.balance).isEqualTo(
-        new BigNumber(initialTokenCarolRecord.balance).minus(depositParams.amt),
+      new BigNumber(finalTokenCarolBalance).isEqualTo(
+        new BigNumber(initialTokenCarolBalance).minus(depositParams.amt),
       ),
     );
-    ok(new BigNumber(finalTokenFarmRecord.balance).isEqualTo(0));
     ok(
-      new BigNumber(finalTokenFarmRecord.frozen_balance).isEqualTo(
-        new BigNumber(initialTokenFarmRecord.frozen_balance).plus(
-          depositParams.amt,
-        ),
+      new BigNumber(finalTokenFarmBalance).isEqualTo(
+        new BigNumber(initialTokenFarmBalance).plus(depositParams.amt),
       ),
     );
   });
@@ -354,20 +370,27 @@ describe("QFarm tests (section 2)", async () => {
       users_info: [[depositParams.fid, carol.pkh]],
       votes: [[depositParams.fid, alice.pkh]],
     });
-    await fa12LP.updateStorage({
-      ledger: [carol.pkh, qFarm.contract.address],
+    await dexCore.updateStorage({
+      ledger: [
+        [carol.pkh, 2],
+        [qFarm.contract.address, 2],
+      ],
     });
 
     const initialFarmCarolRecord: UserInfoType =
       qFarm.storage.storage.users_info[`${depositParams.fid},${carol.pkh}`];
     const initialFarmAliceVotes: number =
       qFarm.storage.storage.votes[`${depositParams.fid},${alice.pkh}`];
-    const initialTokenCarolRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[carol.pkh];
-    const initialTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+    const initialTokenCarolBalance: number =
+      dexCore.storage.storage.ledger[`${carol.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${carol.pkh},2`];
+    const initialTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${qFarm.contract.address},2`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${qFarm.contract.address},2`];
 
-    await fa12LP.approve(qFarm.contract.address, depositParams.amt);
     await qFarm.deposit(depositParams);
     await qFarm.updateStorage({
       users_info: [[depositParams.fid, carol.pkh]],
@@ -375,8 +398,11 @@ describe("QFarm tests (section 2)", async () => {
       votes: [[depositParams.fid, alice.pkh]],
       farms: [depositParams.fid],
     });
-    await fa12LP.updateStorage({
-      ledger: [carol.pkh, qFarm.contract.address],
+    await dexCore.updateStorage({
+      ledger: [
+        [carol.pkh, 2],
+        [qFarm.contract.address, 2],
+      ],
     });
 
     const finalFarm: Farm = qFarm.storage.storage.farms[depositParams.fid];
@@ -386,10 +412,15 @@ describe("QFarm tests (section 2)", async () => {
       qFarm.storage.storage.candidates[`${depositParams.fid},${carol.pkh}`];
     const finalFarmAliceVotes: number =
       qFarm.storage.storage.votes[`${depositParams.fid},${alice.pkh}`];
-    const finalTokenCarolRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[carol.pkh];
-    const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+    const finalTokenCarolBalance: number =
+      dexCore.storage.storage.ledger[`${carol.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${carol.pkh},2`];
+    const finalTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${qFarm.contract.address},2`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${qFarm.contract.address},2`];
 
     strictEqual(finalFarm.current_delegated, bob.pkh);
     strictEqual(finalFarm.next_candidate, depositParams.candidate);
@@ -404,16 +435,13 @@ describe("QFarm tests (section 2)", async () => {
     );
 
     ok(
-      new BigNumber(finalTokenCarolRecord.balance).isEqualTo(
-        new BigNumber(initialTokenCarolRecord.balance).minus(depositParams.amt),
+      new BigNumber(finalTokenCarolBalance).isEqualTo(
+        new BigNumber(initialTokenCarolBalance).minus(depositParams.amt),
       ),
     );
-    ok(new BigNumber(finalTokenFarmRecord.balance).isEqualTo(0));
     ok(
-      new BigNumber(finalTokenFarmRecord.frozen_balance).isEqualTo(
-        new BigNumber(initialTokenFarmRecord.frozen_balance).plus(
-          depositParams.amt,
-        ),
+      new BigNumber(finalTokenFarmBalance).isEqualTo(
+        new BigNumber(initialTokenFarmBalance).plus(depositParams.amt),
       ),
     );
   });
@@ -431,20 +459,27 @@ describe("QFarm tests (section 2)", async () => {
       users_info: [[depositParams.fid, carol.pkh]],
       votes: [[depositParams.fid, alice.pkh]],
     });
-    await fa12LP.updateStorage({
-      ledger: [carol.pkh, qFarm.contract.address],
+    await dexCore.updateStorage({
+      ledger: [
+        [carol.pkh, 2],
+        [qFarm.contract.address, 2],
+      ],
     });
 
     const initialFarmCarolRecord: UserInfoType =
       qFarm.storage.storage.users_info[`${depositParams.fid},${carol.pkh}`];
     const initialFarmAliceVotes: number =
       qFarm.storage.storage.votes[`${depositParams.fid},${alice.pkh}`];
-    const initialTokenCarolRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[carol.pkh];
-    const initialTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+    const initialTokenCarolBalance: number =
+      dexCore.storage.storage.ledger[`${carol.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${carol.pkh},2`];
+    const initialTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${qFarm.contract.address},2`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${qFarm.contract.address},2`];
 
-    await fa12LP.approve(qFarm.contract.address, depositParams.amt);
     await qFarm.deposit(depositParams);
     await qFarm.updateStorage({
       users_info: [[depositParams.fid, carol.pkh]],
@@ -452,8 +487,11 @@ describe("QFarm tests (section 2)", async () => {
       votes: [[depositParams.fid, alice.pkh]],
       farms: [depositParams.fid],
     });
-    await fa12LP.updateStorage({
-      ledger: [carol.pkh, qFarm.contract.address],
+    await dexCore.updateStorage({
+      ledger: [
+        [carol.pkh, 2],
+        [qFarm.contract.address, 2],
+      ],
     });
 
     const finalFarm: Farm = qFarm.storage.storage.farms[depositParams.fid];
@@ -463,10 +501,15 @@ describe("QFarm tests (section 2)", async () => {
       qFarm.storage.storage.candidates[`${depositParams.fid},${carol.pkh}`];
     const finalFarmAliceVotes: number =
       qFarm.storage.storage.votes[`${depositParams.fid},${alice.pkh}`];
-    const finalTokenCarolRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[carol.pkh];
-    const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+    const finalTokenCarolBalance: number =
+      dexCore.storage.storage.ledger[`${carol.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${carol.pkh},2`];
+    const finalTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${qFarm.contract.address},2`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${qFarm.contract.address},2`];
 
     strictEqual(finalFarm.current_delegated, depositParams.candidate);
     strictEqual(finalFarm.next_candidate, bob.pkh);
@@ -481,16 +524,13 @@ describe("QFarm tests (section 2)", async () => {
     );
 
     ok(
-      new BigNumber(finalTokenCarolRecord.balance).isEqualTo(
-        new BigNumber(initialTokenCarolRecord.balance).minus(depositParams.amt),
+      new BigNumber(finalTokenCarolBalance).isEqualTo(
+        new BigNumber(initialTokenCarolBalance).minus(depositParams.amt),
       ),
     );
-    ok(new BigNumber(finalTokenFarmRecord.balance).isEqualTo(0));
     ok(
-      new BigNumber(finalTokenFarmRecord.frozen_balance).isEqualTo(
-        new BigNumber(initialTokenFarmRecord.frozen_balance).plus(
-          depositParams.amt,
-        ),
+      new BigNumber(finalTokenFarmBalance).isEqualTo(
+        new BigNumber(initialTokenFarmBalance).plus(depositParams.amt),
       ),
     );
   });
@@ -509,8 +549,11 @@ describe("QFarm tests (section 2)", async () => {
       votes: [[depositParams.fid, bob.pkh]],
       farms: [depositParams.fid],
     });
-    await fa12LP.updateStorage({
-      ledger: [alice.pkh, qFarm.contract.address],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 2],
+        [qFarm.contract.address, 2],
+      ],
     });
 
     const initialFarm: Farm = qFarm.storage.storage.farms[depositParams.fid];
@@ -518,13 +561,26 @@ describe("QFarm tests (section 2)", async () => {
       qFarm.storage.storage.users_info[`${depositParams.fid},${alice.pkh}`];
     const initialFarmBobVotes: number =
       qFarm.storage.storage.votes[`${depositParams.fid},${bob.pkh}`];
-    const initialTokenAliceRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[alice.pkh];
-    const initialTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+    const initialTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${alice.pkh},2`];
+    const initialTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${qFarm.contract.address},2`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${qFarm.contract.address},2`];
 
     await utils.setProvider(alice.sk);
-    await fa12LP.approve(qFarm.contract.address, depositParams.amt);
+    await dexCore.updateOperators([
+      {
+        add_operator: {
+          owner: alice.pkh,
+          operator: qFarm.contract.address,
+          token_id: 2,
+        },
+      },
+    ]);
     await qFarm.deposit(depositParams);
     await qFarm.updateStorage({
       users_info: [[depositParams.fid, alice.pkh]],
@@ -532,8 +588,11 @@ describe("QFarm tests (section 2)", async () => {
       votes: [[depositParams.fid, bob.pkh]],
       farms: [depositParams.fid],
     });
-    await fa12LP.updateStorage({
-      ledger: [alice.pkh, qFarm.contract.address],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 2],
+        [qFarm.contract.address, 2],
+      ],
     });
 
     const finalFarm: Farm = qFarm.storage.storage.farms[depositParams.fid];
@@ -543,10 +602,15 @@ describe("QFarm tests (section 2)", async () => {
       qFarm.storage.storage.candidates[`${depositParams.fid},${alice.pkh}`];
     const finalFarmBobVotes: number =
       qFarm.storage.storage.votes[`${depositParams.fid},${bob.pkh}`];
-    const finalTokenAliceRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[alice.pkh];
-    const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+    const finalTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${alice.pkh},2`];
+    const finalTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${qFarm.contract.address},2`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${qFarm.contract.address},2`];
 
     strictEqual(finalFarm.current_delegated, depositParams.candidate);
     strictEqual(finalFarm.next_candidate, initialFarm.current_delegated);
@@ -558,16 +622,13 @@ describe("QFarm tests (section 2)", async () => {
     strictEqual(+finalFarmBobVotes, +initialFarmBobVotes + depositParams.amt);
 
     ok(
-      new BigNumber(finalTokenAliceRecord.balance).isEqualTo(
-        new BigNumber(initialTokenAliceRecord.balance).minus(depositParams.amt),
+      new BigNumber(finalTokenAliceBalance).isEqualTo(
+        new BigNumber(initialTokenAliceBalance).minus(depositParams.amt),
       ),
     );
-    ok(new BigNumber(finalTokenFarmRecord.balance).isEqualTo(0));
     ok(
-      new BigNumber(finalTokenFarmRecord.frozen_balance).isEqualTo(
-        new BigNumber(initialTokenFarmRecord.frozen_balance).plus(
-          depositParams.amt,
-        ),
+      new BigNumber(finalTokenFarmBalance).isEqualTo(
+        new BigNumber(initialTokenFarmBalance).plus(depositParams.amt),
       ),
     );
   });
@@ -588,8 +649,11 @@ describe("QFarm tests (section 2)", async () => {
       ],
       farms: [withdrawParams.fid],
     });
-    await fa12LP.updateStorage({
-      ledger: [alice.pkh, qFarm.contract.address],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 2],
+        [qFarm.contract.address, 2],
+      ],
     });
 
     const initialFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
@@ -599,10 +663,15 @@ describe("QFarm tests (section 2)", async () => {
       qFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
     const initialFarmBobVotes: number =
       qFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
-    const initialTokenAliceRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[alice.pkh];
-    const initialTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+    const initialTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${alice.pkh},2`];
+    const initialTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${qFarm.contract.address},2`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${qFarm.contract.address},2`];
 
     await qFarm.withdraw(withdrawParams);
     await qFarm.updateStorage({
@@ -614,8 +683,11 @@ describe("QFarm tests (section 2)", async () => {
       ],
       farms: [withdrawParams.fid],
     });
-    await fa12LP.updateStorage({
-      ledger: [alice.pkh, qFarm.contract.address],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 2],
+        [qFarm.contract.address, 2],
+      ],
     });
 
     const finalFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
@@ -627,10 +699,16 @@ describe("QFarm tests (section 2)", async () => {
       qFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
     const finalFarmBobVotes: number =
       qFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
-    const finalTokenAliceRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[alice.pkh];
-    const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+    const finalTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${alice.pkh},2`];
+    const finalTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${qFarm.contract.address},2`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${qFarm.contract.address},2`];
+
     const res: WithdrawData = QFarmUtils.getWithdrawData(
       initialFarm,
       withdrawParams.amt,
@@ -651,18 +729,15 @@ describe("QFarm tests (section 2)", async () => {
     );
 
     ok(
-      new BigNumber(finalTokenAliceRecord.balance).isEqualTo(
-        new BigNumber(initialTokenAliceRecord.balance)
+      new BigNumber(finalTokenAliceBalance).isEqualTo(
+        new BigNumber(initialTokenAliceBalance)
           .plus(withdrawParams.amt)
           .minus(res.wirthdrawCommission),
       ),
     );
-    ok(new BigNumber(finalTokenFarmRecord.balance).isEqualTo(0));
     ok(
-      new BigNumber(finalTokenFarmRecord.frozen_balance).isEqualTo(
-        new BigNumber(initialTokenFarmRecord.frozen_balance).minus(
-          res.actualUserWithdraw,
-        ),
+      new BigNumber(finalTokenFarmBalance).isEqualTo(
+        new BigNumber(initialTokenFarmBalance).minus(res.actualUserWithdraw),
       ),
     );
   });
@@ -683,8 +758,11 @@ describe("QFarm tests (section 2)", async () => {
       ],
       farms: [withdrawParams.fid],
     });
-    await fa12LP.updateStorage({
-      ledger: [carol.pkh, qFarm.contract.address],
+    await dexCore.updateStorage({
+      ledger: [
+        [carol.pkh, 2],
+        [qFarm.contract.address, 2],
+      ],
     });
 
     const initialFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
@@ -694,10 +772,15 @@ describe("QFarm tests (section 2)", async () => {
       qFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
     const initialFarmBobVotes: number =
       qFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
-    const initialTokenCarolRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[carol.pkh];
-    const initialTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+    const initialTokenCarolBalance: number =
+      dexCore.storage.storage.ledger[`${carol.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${carol.pkh},2`];
+    const initialTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${qFarm.contract.address},2`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${qFarm.contract.address},2`];
 
     await utils.setProvider(carol.sk);
     await qFarm.withdraw(withdrawParams);
@@ -710,8 +793,11 @@ describe("QFarm tests (section 2)", async () => {
       ],
       farms: [withdrawParams.fid],
     });
-    await fa12LP.updateStorage({
-      ledger: [carol.pkh, qFarm.contract.address],
+    await dexCore.updateStorage({
+      ledger: [
+        [carol.pkh, 2],
+        [qFarm.contract.address, 2],
+      ],
     });
 
     const finalFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
@@ -723,10 +809,16 @@ describe("QFarm tests (section 2)", async () => {
       qFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
     const finalFarmBobVotes: number =
       qFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
-    const finalTokenCarolRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[carol.pkh];
-    const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+    const finalTokenCarolBalance: number =
+      dexCore.storage.storage.ledger[`${carol.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${carol.pkh},2`];
+    const finalTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${qFarm.contract.address},2`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${qFarm.contract.address},2`];
+
     const res: WithdrawData = QFarmUtils.getWithdrawData(
       initialFarm,
       withdrawParams.amt,
@@ -749,18 +841,15 @@ describe("QFarm tests (section 2)", async () => {
     strictEqual(+finalFarmBobVotes, +initialFarmBobVotes);
 
     ok(
-      new BigNumber(finalTokenCarolRecord.balance).isEqualTo(
-        new BigNumber(initialTokenCarolRecord.balance)
+      new BigNumber(finalTokenCarolBalance).isEqualTo(
+        new BigNumber(initialTokenCarolBalance)
           .plus(withdrawParams.amt)
           .minus(res.wirthdrawCommission),
       ),
     );
-    ok(new BigNumber(finalTokenFarmRecord.balance).isEqualTo(0));
     ok(
-      new BigNumber(finalTokenFarmRecord.frozen_balance).isEqualTo(
-        new BigNumber(initialTokenFarmRecord.frozen_balance).minus(
-          res.actualUserWithdraw,
-        ),
+      new BigNumber(finalTokenFarmBalance).isEqualTo(
+        new BigNumber(initialTokenFarmBalance).minus(res.actualUserWithdraw),
       ),
     );
   });
@@ -778,8 +867,11 @@ describe("QFarm tests (section 2)", async () => {
         [withdrawParams.fid, bob.pkh],
       ],
     });
-    await fa12LP.updateStorage({
-      ledger: [alice.pkh, qFarm.contract.address],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 2],
+        [qFarm.contract.address, 2],
+      ],
     });
 
     const initialFarmFarmRecord: UserInfoType =
@@ -790,10 +882,15 @@ describe("QFarm tests (section 2)", async () => {
       qFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
     const initialFarmBobVotes: number =
       qFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
-    const initialTokenAliceRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[alice.pkh];
-    const initialTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+    const initialTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${alice.pkh},2`];
+    const initialTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${qFarm.contract.address},2`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${qFarm.contract.address},2`];
 
     await utils.setProvider(alice.sk);
     await qFarm.withdrawFarmDepo(withdrawParams);
@@ -806,8 +903,11 @@ describe("QFarm tests (section 2)", async () => {
       ],
       farms: [withdrawParams.fid],
     });
-    await fa12LP.updateStorage({
-      ledger: [alice.pkh, qFarm.contract.address],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 2],
+        [qFarm.contract.address, 2],
+      ],
     });
 
     const finalFarm: Farm = qFarm.storage.storage.farms[withdrawParams.fid];
@@ -823,10 +923,15 @@ describe("QFarm tests (section 2)", async () => {
       qFarm.storage.storage.votes[`${withdrawParams.fid},${alice.pkh}`];
     const finalFarmBobVotes: number =
       qFarm.storage.storage.votes[`${withdrawParams.fid},${bob.pkh}`];
-    const finalTokenAliceRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[alice.pkh];
-    const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[qFarm.contract.address];
+    const finalTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${alice.pkh},2`];
+    const finalTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${qFarm.contract.address},2`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${qFarm.contract.address},2`];
 
     strictEqual(finalFarm.current_delegated, bob.pkh);
     strictEqual(finalFarm.next_candidate, alice.pkh);
@@ -842,16 +947,13 @@ describe("QFarm tests (section 2)", async () => {
     );
 
     ok(
-      new BigNumber(finalTokenAliceRecord.balance).isEqualTo(
-        new BigNumber(initialTokenAliceRecord.balance).plus(withdrawParams.amt),
+      new BigNumber(finalTokenAliceBalance).isEqualTo(
+        new BigNumber(initialTokenAliceBalance).plus(withdrawParams.amt),
       ),
     );
-    ok(new BigNumber(finalTokenFarmRecord.balance).isEqualTo(0));
     ok(
-      new BigNumber(finalTokenFarmRecord.frozen_balance).isEqualTo(
-        new BigNumber(initialTokenFarmRecord.frozen_balance).minus(
-          withdrawParams.amt,
-        ),
+      new BigNumber(finalTokenFarmBalance).isEqualTo(
+        new BigNumber(initialTokenFarmBalance).minus(withdrawParams.amt),
       ),
     );
   });
@@ -951,7 +1053,15 @@ describe("QFarm tests (section 2)", async () => {
     };
 
     await utils.setProvider(bob.sk);
-    await fa12LP.approve(qFarm.contract.address, depositParams.amt);
+    await dexCore.updateOperators([
+      {
+        add_operator: {
+          owner: bob.pkh,
+          operator: qFarm.contract.address,
+          token_id: 2,
+        },
+      },
+    ]);
     await qFarm.deposit(depositParams);
     await utils.bakeBlocks(5);
     await qFarm.updateStorage({

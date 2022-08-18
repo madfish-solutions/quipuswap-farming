@@ -508,7 +508,7 @@ describe("TFarm tests (section 3)", async () => {
         ? 0
         : dexCore.storage.storage.ledger[`${alice.pkh},1`];
     const initialTokenFarmBalance: number =
-      dexCore.storage.storage.ledger[`${alice.pkh},1`];
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},1`];
 
     await utils.setProvider(alice.sk);
 
@@ -951,7 +951,7 @@ describe("TFarm tests (section 3)", async () => {
       {
         add_operator: {
           owner: bob.pkh,
-          operator: dexCore.contract.address,
+          operator: tFarm.contract.address,
           token_id: 1,
         },
       },

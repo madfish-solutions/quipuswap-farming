@@ -184,16 +184,14 @@ function burn_tez_rewards(
         if not farm.stake_params.is_v2_lp
         then failwith("QSystem/not-LP-farm")
         else skip;
-
+        const pool_id = get_pool_id(farm.stake_params.staked_token);
         operations := Tezos.transaction(
-          Withdraw_profit(
-            record[
-              receiver = (get_contract(s.burner) : contract(unit));
-              pair_id = fid;
-            ]
-          ),
+          record[
+            receiver = (get_contract(s.burner) : contract(unit));
+            pair_id = pool_id;
+          ],
           0mutez,
-          get_quipuswap_use_entrypoint(
+          get_withdraw_profit_entrypoint(
             get_token_address(farm.stake_params.staked_token)
           )
         ) # operations;

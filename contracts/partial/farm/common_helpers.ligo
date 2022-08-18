@@ -88,6 +88,20 @@ function get_vote_entrypoint(
   )
   end
 
+function get_withdraw_profit_entrypoint(
+  const qs_pool         : address)
+                        : contract(withdraw_profit_t) is
+  case (
+    Tezos.get_entrypoint_opt("%withdraw_profit", qs_pool)
+                        : option(contract(withdraw_profit_t))
+  ) of
+  |  Some(contr) -> contr
+  | None        -> (
+    failwith("Farm/withdraw-profit-entrypoint-404")
+                        : contract(withdraw_profit_t)
+  )
+  end
+
 function get_vote_operation(
   const qs_pool         : address;
   const candidate       : key_hash;

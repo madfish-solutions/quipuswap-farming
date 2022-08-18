@@ -1514,7 +1514,7 @@ describe("TFarm tests (section 1)", async () => {
       ledger: [[alice.pkh, 2]],
     });
 
-    const initialTokenAliceBalance: UserFA12Info =
+    const initialTokenAliceBalance: number =
       dexCore.storage.storage.ledger[`${alice.pkh},2`] === undefined
         ? 0
         : dexCore.storage.storage.ledger[`${alice.pkh},2`];

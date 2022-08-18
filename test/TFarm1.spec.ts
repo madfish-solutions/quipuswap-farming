@@ -3718,9 +3718,9 @@ describe("TFarm tests (section 1)", async () => {
     const finalFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
     const finalTokenAliceBalance: number =
-      dexCore.storage.storage.ledger[`${alice.pkh},2`] === undefined
+      dexCore.storage.storage.ledger[`${alice.pkh},1`] === undefined
         ? 0
-        : dexCore.storage.storage.ledger[`${carol.pkh},2`];
+        : dexCore.storage.storage.ledger[`${carol.pkh},1`];
     const finalTokenFarmBalance: number =
       dexCore.storage.storage.ledger[`${tFarm.contract.address},1`] ===
       undefined
@@ -3744,7 +3744,10 @@ describe("TFarm tests (section 1)", async () => {
       +finalTokenAliceBalance,
       +initialTokenAliceBalance + withdrawParams.amt,
     );
-    strictEqual(+finalTokenFarmBalance, 0);
+    strictEqual(
+      +finalTokenFarmBalance,
+      initialTokenFarmBalance - withdrawParams.amt,
+    );
     strictEqual(
       +finalTokenFarmBalance,
       +initialTokenFarmBalance - withdrawParams.amt,
@@ -3825,7 +3828,7 @@ describe("TFarm tests (section 1)", async () => {
       +finalFarmAliceRecord.staked,
       +initialFarmAliceRecord.staked - withdrawParams.amt,
     );
-    strictEqual(+finalTokenDevBalance, withdrawParams.amt);
+    strictEqual(+finalTokenDevBalance, 0);
     strictEqual(
       +finalTokenFarmBalance,
       initialTokenFarmBalance - withdrawParams.amt,
@@ -4999,9 +5002,44 @@ describe("TFarm tests (section 1)", async () => {
     await qsGov.updateStorage({
       account_info: [zeroAddress],
     });
+    let newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
+      utils,
+    );
+    const lifetime: number = 600;
+
+    newFarmParams.fees.harvest_fee = 1 * feePrecision;
+    newFarmParams.fees.withdrawal_fee = 6 * feePrecision;
+    newFarmParams.stake_params.staked_token = {
+      fA2: { token: dexCore.contract.address, id: 2 },
+    };
+    newFarmParams.stake_params.is_v2_lp = true;
+    newFarmParams.reward_per_second = 4 * precision;
+    newFarmParams.timelock = 0;
+    newFarmParams.reward_token = {
+      fA2: { token: qsGov.contract.address, id: 0 },
+    };
+    newFarmParams.end_time = String(
+      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
+        lifetime,
+    );
+
+    const rewardsAmount: number =
+      (lifetime * newFarmParams.reward_per_second) / precision;
+
+    await utils.setProvider(bob.sk);
+    await qsGov.updateOperators([
+      {
+        add_operator: {
+          owner: bob.pkh,
+          operator: tFarm.contract.address,
+          token_id: 0,
+        },
+      },
+    ]);
+    await tFarm.addNewFarm(newFarmParams);
 
     const depositParams: DepositParams = {
-      fid: 3,
+      fid: 7,
       amt: +dexCore.storage.storage.ledger[`${alice.pkh},2`] / 2,
       referrer: bob.pkh,
       rewards_receiver: alice.pkh,
@@ -5017,16 +5055,17 @@ describe("TFarm tests (section 1)", async () => {
       farms: [depositParams.fid],
     });
     await utils.setProvider(bob.sk);
+    const pair: any = await dexCore.storage.storage.pairs.get("2");
 
     const operation = await utils.tezos.contract.transfer({
-      to: tFarm.storage.storage.farms[depositParams.fid].stake_params
-        .staked_token["fA12"],
-      amount: 500,
+      to: pair.bucket,
+      amount: 50000,
       mutez: true,
     });
 
     await confirmOperation(utils.tezos, operation.hash);
-    await utils.bakeBlocks(1);
+    await utils.bakeBlocks(13);
+
     await tFarm.burnTEZRewards(depositParams.fid);
     await qsGov.updateStorage({
       account_info: [zeroAddress],
@@ -5034,7 +5073,8 @@ describe("TFarm tests (section 1)", async () => {
 
     const finalQsGovZeroRecord: UserFA2Info =
       qsGov.storage.account_info[zeroAddress];
-
+    console.log(await finalQsGovZeroRecord.balances.get("0"));
+    console.log(await initialQsGovZeroRecord.balances.get("0"));
     ok(
       +(await finalQsGovZeroRecord.balances.get("0")) >
         +(await initialQsGovZeroRecord.balances.get("0")),
@@ -5381,7 +5421,7 @@ describe("TFarm tests (section 1)", async () => {
     await tFarm.addNewFarm(newFarmParams);
 
     const depositParams: DepositParams = {
-      fid: 7,
+      fid: 8,
       amt: 100,
       referrer: undefined,
       rewards_receiver: alice.pkh,

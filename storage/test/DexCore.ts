@@ -36,6 +36,7 @@ export const dexCoreStorage: DexCoreStorage = {
     entered: false,
     tokens_count: new BigNumber(0),
     collecting_period: new BigNumber(0),
+    baker_rate_f: new BigNumber(0),
   },
   dex_core_lambdas: MichelsonMap.fromLiteral({}),
   metadata: MichelsonMap.fromLiteral({

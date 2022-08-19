@@ -41,11 +41,11 @@
    - ✅ should fail if not admin is trying to set baker registry;
    - ✅ should change baker registry by admin.
 
-8. `set_is_v1_lp`:
+8. `set_is_v2_lp`:
 
-   - ✅ should fail if not admin is trying to set `is_v1_lp`;
+   - ✅ should fail if not admin is trying to set `is_v2_lp`;
    - ✅ should fail if farm not found;
-   - ✅ should change `is_v1_lp` by admin.
+   - ✅ should change `is_v2_lp` by admin.
 
 9. `ban_bakers`:
 
@@ -75,14 +75,20 @@
 
     - ✅ should fail if farm not found;
     - ✅ should fail if farm is paused;
-    - ✅ should fail if user's candidate for voting is banned (only for LP farms);
+    - ✅ should fail if user's candidate for voting is banned (only for LP
+      farms);
     - ✅ should claim user's rewards (in farms without timelock);
-    - ✅ should claim user's rewards if timelock is finished (in farms with timelock);
-    - ✅ should not claim user's rewards if timelock is not finished (in farms with timelock);
+    - ✅ should claim user's rewards if timelock is finished (in farms with
+      timelock);
+    - ✅ should not claim user's rewards if timelock is not finished (in farms
+      with timelock);
     - ✅ should mint QS GOV tokens as reward to rewards receiver;
-    - ✅ should mint QS GOV tokens as harvest fee to referrer (in case when user have referrer);
-    - ✅ should mint QS GOV tokens as harvest fee to zero address (in case when user does not have referrer);
-    - ✅ should calculate and mint QS GOV tokens as harvest fee with decimals (like 4.2%);
+    - ✅ should mint QS GOV tokens as harvest fee to referrer (in case when user
+      have referrer);
+    - ✅ should mint QS GOV tokens as harvest fee to zero address (in case when
+      user does not have referrer);
+    - ✅ should calculate and mint QS GOV tokens as harvest fee with decimals
+      (like 4.2%);
     - ✅ should fail if user is trying to refer himself;
     - ✅ should set/update referrer;
     - ✅ should not set/update referrer if referrer param not passed;
@@ -91,26 +97,33 @@
     - ✅ should deposit single FA2 token;
     - ✅ should deposit LP FA2 token;
     - ✅ should vote for the baker if LP token is deposited;
-    - ✅ should change current delegated for the next candidate if votes were redistributed.
+    - ✅ should change current delegated for the next candidate if votes were
+      redistributed.
 
 13. `withdraw`:
 
     - ✅ should fail if farm not found;
     - ✅ should fail if staked by user amount is less than amount to withdraw;
     - ✅ should claim user's rewards (in farms without timelock);
-    - ✅ should claim user's rewards if timelock is finished (in farms with timelock);
-    - ✅ should burn user's rewards if timelock is not finished (in farms with timelock);
+    - ✅ should claim user's rewards if timelock is finished (in farms with
+      timelock);
+    - ✅ should burn user's rewards if timelock is not finished (in farms with
+      timelock);
     - ✅ should stake withdrawal fee from farm's name;
     - ✅ should mint QS GOV tokens as reward to rewards receiver;
-    - ✅ should mint QS GOV tokens as harvest fee to referrer (in case when user have referrer);
-    - ✅ should mint QS GOV tokens as harvest fee to zero address (in case when user does not have referrer);
-    - ✅ should calculate and mint QS GOV tokens as harvest fee with decimals (like 4.2%);
+    - ✅ should mint QS GOV tokens as harvest fee to referrer (in case when user
+      have referrer);
+    - ✅ should mint QS GOV tokens as harvest fee to zero address (in case when
+      user does not have referrer);
+    - ✅ should calculate and mint QS GOV tokens as harvest fee with decimals
+      (like 4.2%);
     - ✅ should withdraw single FA1.2 token;
     - ✅ should withdraw LP FA1.2 token;
     - ✅ should withdraw single FA2 token;
     - ✅ should withdraw LP FA2 token;
     - ✅ should withdraw tokens to the specified receiver;
-    - ✅ should change current delegated for the next candidate if votes were redistributed.
+    - ✅ should change current delegated for the next candidate if votes were
+      redistributed.
 
 14. `harvest`:
 
@@ -118,16 +131,20 @@
     - ✅ should fail if timelock is not finished (in farms with timelock);
     - ✅ should claim user's rewards;
     - ✅ should mint QS GOV tokens as reward to rewards receiver;
-    - ✅ should mint QS GOV tokens as harvest fee to referrer (in case when user have referrer);
-    - ✅ should mint QS GOV tokens as harvest fee to zero address (in case when user does not have referrer);
-    - ✅ should calculate and mint QS GOV tokens as harvest fee with decimals (like 4.2%).
+    - ✅ should mint QS GOV tokens as harvest fee to referrer (in case when user
+      have referrer);
+    - ✅ should mint QS GOV tokens as harvest fee to zero address (in case when
+      user does not have referrer);
+    - ✅ should calculate and mint QS GOV tokens as harvest fee with decimals
+      (like 4.2%).
 
 15. `burn_tez_rewards`:
 
     - ✅ should fail if not admin is trying to burn TEZ rewards;
     - ✅ should fail if farm not found;
     - ✅ should fail if not LP token is staked on the farm;
-    - ✅ should withdraw bakers rewards in TEZ from the QS pool, swap for QS GOV tokens and burn them.
+    - ✅ should withdraw bakers rewards in TEZ from the QS pool, swap for QS GOV
+      tokens and burn them.
 
 16. `burn_farm_rewards`:
 
@@ -148,10 +165,12 @@
 18. `transfer`:
 
     - ✅ should fail if farm not found;
-    - ✅ should fail if transfer destination address is equal to contract address;
+    - ✅ should fail if transfer destination address is equal to contract
+      address;
     - ✅ should fail if not operator is trying to transfer tokens;
     - ✅ should fail if insufficient balance;
-    - ✅ should fail if timelock for the sender is not finished (in farms with timelock);
+    - ✅ should fail if timelock for the sender is not finished (in farms with
+      timelock);
     - ✅ should fail if one transaction from a group fails;
     - ✅ should transfer one token and update values correctly;
     - ✅ should transfer a group of tokens and update values correctly;
@@ -178,8 +197,10 @@
 
 22. `default`:
 
-    - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn them (1);
-    - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn them (2).
+    - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn
+      them (1);
+    - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn
+      them (2).
 
 23. `integration_tests`:
 
@@ -190,9 +211,12 @@
     - ✅ should vote for bob, bob must become current delegated after alice;
     - ✅ should revote for bob, alice must become current delegated;
     - ✅ should revote for alice, bob must become current delegated;
-    - ✅ should withdraw farm deposit and revote for bob, bob must remain current delegated;
-    - ✅ should transfer staked tokens to carol, bob must remain current delegated;
-    - ✅ should vote for alice and transfer staked tokens to carol, alice must become current delegated.
+    - ✅ should withdraw farm deposit and revote for bob, bob must remain
+      current delegated;
+    - ✅ should transfer staked tokens to carol, bob must remain current
+      delegated;
+    - ✅ should vote for alice and transfer staked tokens to carol, alice must
+      become current delegated.
 
 ## TFarm
 
@@ -223,11 +247,11 @@
    - ✅ should fail if not admin is trying to set baker registry;
    - ✅ should change baker registry by admin.
 
-6. `set_is_v1_lp`:
+6. `set_is_v2_lp`:
 
-   - ✅ should fail if not admin is trying to set `is_v1_lp`;
+   - ✅ should fail if not admin is trying to set `is_v2_lp`;
    - ✅ should fail if farm not found;
-   - ✅ should change `is_v1_lp` by admin.
+   - ✅ should change `is_v2_lp` by admin.
 
 7. `set_reward_per_second`:
 
@@ -253,8 +277,10 @@
    - ✅ should fail if end time is less or equal to start time;
    - ✅ should fail if timelock is more than farm's lifetime;
    - ✅ should add new farm by admin and set all farm's fields correctly;
-   - ✅ should transfer correct amount of FA1.2 tokens to the contract as the rewards for users;
-   - ✅ should transfer correct amount of FA2 tokens to the contract as the rewards for users.
+   - ✅ should transfer correct amount of FA1.2 tokens to the contract as the
+     rewards for users;
+   - ✅ should transfer correct amount of FA2 tokens to the contract as the
+     rewards for users.
 
 10. `pause_farms`:
 
@@ -270,17 +296,25 @@
 
     - ✅ should fail if farm not found;
     - ✅ should fail if farm is paused;
-    - ✅ should fail if user's candidate for voting is banned (only for LP farms);
+    - ✅ should fail if user's candidate for voting is banned (only for LP
+      farms);
     - ✅ should claim user's rewards (in farms without timelock);
-    - ✅ should claim user's rewards if timelock is finished (in farms with timelock);
-    - ✅ should not claim user's rewards if timelock is not finished (in farms with timelock);
+    - ✅ should claim user's rewards if timelock is finished (in farms with
+      timelock);
+    - ✅ should not claim user's rewards if timelock is not finished (in farms
+      with timelock);
     - ✅ should transfer FA1.2 reward tokens as reward to rewards receiver;
     - ✅ should transfer FA2 reward tokens as reward to rewards receiver;
-    - ✅ should transfer FA1.2 reward tokens as harvest fee to referrer (in case when user have referrer);
-    - ✅ should transfer FA2 reward tokens as harvest fee to referrer (in case when user have referrer);
-    - ✅ should transfer FA1.2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
-    - ✅ should transfer FA2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
-    - ✅ should calculate and transfer reward tokens as harvest fee with decimals (like 4.2%);
+    - ✅ should transfer FA1.2 reward tokens as harvest fee to referrer (in case
+      when user have referrer);
+    - ✅ should transfer FA2 reward tokens as harvest fee to referrer (in case
+      when user have referrer);
+    - ✅ should transfer FA1.2 reward tokens as harvest fee to zero address (in
+      case when user does not have referrer);
+    - ✅ should transfer FA2 reward tokens as harvest fee to zero address (in
+      case when user does not have referrer);
+    - ✅ should calculate and transfer reward tokens as harvest fee with
+      decimals (like 4.2%);
     - ✅ should fail if user is trying to refer himself;
     - ✅ should set/update referrer;
     - ✅ should not set/update referrer if referrer param not passed;
@@ -289,30 +323,40 @@
     - ✅ should deposit single FA2 token;
     - ✅ should deposit LP FA2 token;
     - ✅ should vote for the baker if LP token is deposited;
-    - ✅ should change current delegated for the next candidate if votes were redistributed.
+    - ✅ should change current delegated for the next candidate if votes were
+      redistributed.
 
 12. `withdraw`:
 
     - ✅ should fail if farm not found;
     - ✅ should fail if staked by user amount is less than amount to withdraw;
     - ✅ should claim user's rewards (in farms without timelock);
-    - ✅ should claim user's rewards if timelock is finished (in farms with timelock);
-    - ✅ should transfer FA1.2 user's rewards to admin if timelock is not finished (in farms with timelock);
-    - ✅ should transfer FA2 user's rewards to admin if timelock is not finished (in farms with timelock);
+    - ✅ should claim user's rewards if timelock is finished (in farms with
+      timelock);
+    - ✅ should transfer FA1.2 user's rewards to admin if timelock is not
+      finished (in farms with timelock);
+    - ✅ should transfer FA2 user's rewards to admin if timelock is not finished
+      (in farms with timelock);
     - ✅ should stake withdrawal fee from farm's name;
     - ✅ should transfer FA1.2 reward tokens as reward to rewards receiver;
     - ✅ should transfer FA2 reward tokens as reward to rewards receiver;
-    - ✅ should transfer FA1.2 reward tokens as harvest fee to referrer (in case when user have referrer);
-    - ✅ should transfer FA2 reward tokens as harvest fee to referrer (in case when user have referrer);
-    - ✅ should transfer FA1.2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
-    - ✅ should transfer FA2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
-    - ✅ should calculate and transfer reward tokens as harvest fee with decimals (like 4.2%);
+    - ✅ should transfer FA1.2 reward tokens as harvest fee to referrer (in case
+      when user have referrer);
+    - ✅ should transfer FA2 reward tokens as harvest fee to referrer (in case
+      when user have referrer);
+    - ✅ should transfer FA1.2 reward tokens as harvest fee to zero address (in
+      case when user does not have referrer);
+    - ✅ should transfer FA2 reward tokens as harvest fee to zero address (in
+      case when user does not have referrer);
+    - ✅ should calculate and transfer reward tokens as harvest fee with
+      decimals (like 4.2%);
     - ✅ should withdraw single FA1.2 token;
     - ✅ should withdraw LP FA1.2 token;
     - ✅ should withdraw single FA2 token;
     - ✅ should withdraw LP FA2 token;
     - ✅ should withdraw tokens to the specified receiver;
-    - ✅ should change current delegated for the next candidate if votes were redistributed.
+    - ✅ should change current delegated for the next candidate if votes were
+      redistributed.
 
 13. `harvest`:
 
@@ -321,18 +365,24 @@
     - ✅ should claim user's rewards;
     - ✅ should transfer FA1.2 reward tokens as reward to rewards receiver;
     - ✅ should transfer FA2 reward tokens as reward to rewards receiver;
-    - ✅ should transfer FA1.2 reward tokens as harvest fee to referrer (in case when user have referrer);
-    - ✅ should transfer FA2 reward tokens as harvest fee to referrer (in case when user have referrer);
-    - ✅ should transfer FA1.2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
-    - ✅ should transfer FA2 reward tokens as harvest fee to zero address (in case when user does not have referrer);
-    - ✅ should calculate and transfer reward tokens as harvest fee with decimals (like 4.2%).
+    - ✅ should transfer FA1.2 reward tokens as harvest fee to referrer (in case
+      when user have referrer);
+    - ✅ should transfer FA2 reward tokens as harvest fee to referrer (in case
+      when user have referrer);
+    - ✅ should transfer FA1.2 reward tokens as harvest fee to zero address (in
+      case when user does not have referrer);
+    - ✅ should transfer FA2 reward tokens as harvest fee to zero address (in
+      case when user does not have referrer);
+    - ✅ should calculate and transfer reward tokens as harvest fee with
+      decimals (like 4.2%).
 
 14. `burn_tez_rewards`:
 
     - ✅ should fail if not admin is trying to burn TEZ rewards;
     - ✅ should fail if farm not found;
     - ✅ should fail if not LP token is staked on the farm;
-    - ✅ should withdraw bakers rewards in TEZ from the QS pool, swap for QS GOV tokens and burn them.
+    - ✅ should withdraw bakers rewards in TEZ from the QS pool, swap for QS GOV
+      tokens and burn them.
 
 15. `claim_farm_rewards`:
 
@@ -354,10 +404,12 @@
 17. `transfer`:
 
     - ✅ should fail if farm not found;
-    - ✅ should fail if transfer destination address is equal to contract address;
+    - ✅ should fail if transfer destination address is equal to contract
+      address;
     - ✅ should fail if not operator is trying to transfer tokens;
     - ✅ should fail if insufficient balance;
-    - ✅ should fail if timelock for the sender is not finished (in farms with timelock);
+    - ✅ should fail if timelock for the sender is not finished (in farms with
+      timelock);
     - ✅ should fail if one transaction from a group fails;
     - ✅ should transfer one token and update values correctly;
     - ✅ should transfer a group of tokens and update values correctly;
@@ -384,16 +436,24 @@
 
 21. `default`:
 
-    - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn them (1);
-    - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn them (2).
+    - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn
+      them (1);
+    - ✅ should transfer received TEZ to the burner, swap for QUIPU and burn
+      them (2).
 
 22. `integration tests`:
 
-    - ✅ should add new farm, stake in the next block and withdraw all rewards (except the first block reward) after farms lifetime finishing (without timelock);
-    - ✅ should add new farm and stake in batch, withdraw all rewards after farms lifetime finishing (without timelock);
-    - ✅ should claim rewards in time of depositing after farms finishing when timelock is not finished;
-    - ✅ should claim rewards in time of withdrawing after farms finishing when timelock is not finished;
-    - ✅ should claim rewards in time of claiming after farms finishing when timelock is not finished;
+    - ✅ should add new farm, stake in the next block and withdraw all rewards
+      (except the first block reward) after farms lifetime finishing (without
+      timelock);
+    - ✅ should add new farm and stake in batch, withdraw all rewards after
+      farms lifetime finishing (without timelock);
+    - ✅ should claim rewards in time of depositing after farms finishing when
+      timelock is not finished;
+    - ✅ should claim rewards in time of withdrawing after farms finishing when
+      timelock is not finished;
+    - ✅ should claim rewards in time of claiming after farms finishing when
+      timelock is not finished;
     - ✅ should vote for bob, bob must become first current delegated;
     - ✅ should vote for alice, alice must became next candidate;
     - ✅ should vote for alice, alice must not become current delegated;
@@ -401,9 +461,12 @@
     - ✅ should vote for bob, bob must become current delegated after alice;
     - ✅ should revote for bob, alice must become current delegated;
     - ✅ should revote for alice, bob must become current delegated;
-    - ✅ should withdraw farm deposit and revote for bob, bob must remain current delegated;
-    - ✅ should transfer staked tokens to carol, bob must remain current delegated;
-    - ✅ should vote for alice and transfer staked tokens to carol, alice must become current delegated;
+    - ✅ should withdraw farm deposit and revote for bob, bob must remain
+      current delegated;
+    - ✅ should transfer staked tokens to carol, bob must remain current
+      delegated;
+    - ✅ should vote for alice and transfer staked tokens to carol, alice must
+      become current delegated;
     - ✅ should deposit and after that withdraw all LP FA1.2 token.
 
 ## Burner
@@ -424,7 +487,8 @@
 
    - ✅ should do nothing if baker is registered;
    - ✅ should register new baker if baker is not already registered;
-   - ✅ should fail if the baker is not already registered and the address to register is not a baker.
+   - ✅ should fail if the baker is not already registered and the address to
+     register is not a baker.
 
 2. `register`:
 
@@ -448,9 +512,11 @@
 3. `withdraw_tokens`:
 
    - ✅ should fail if not admin is trying to withdraw QS GOV tokens;
-   - ✅ should transfer the specified amount of QS GOV tokens from proxy minter contract to admin address;
+   - ✅ should transfer the specified amount of QS GOV tokens from proxy minter
+     contract to admin address;
    - ✅ should withdraw all QS GOV tokens from the contract;
-   - ✅ should fail if the specified amount of QS GOV tokens is more than actual balance on the contract.
+   - ✅ should fail if the specified amount of QS GOV tokens is more than actual
+     balance on the contract.
 
 4. `set_admin`:
 

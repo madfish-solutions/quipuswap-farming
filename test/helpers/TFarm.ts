@@ -275,7 +275,7 @@ export class TFarm {
   async deposit(depositParams: DepositParams): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .deposit(...Utils.destructObj(depositParams))
-      .send();
+      .send({ gasLimit: 120000, fee: 200000 });
 
     await confirmOperation(this.tezos, operation.hash);
 
@@ -307,7 +307,7 @@ export class TFarm {
   async burnTEZRewards(fid: number): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .burn_tez_rewards(fid)
-      .send();
+      .send({ gasLimit: 120000, fee: 200000 });
 
     await confirmOperation(this.tezos, operation.hash);
 

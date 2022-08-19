@@ -234,15 +234,11 @@ describe("TFarm tests (section 1)", async () => {
 
   it("should change burner by admin", async () => {
     const burnerAddress: string = burner.contract.address;
-
     await utils.setProvider(bob.sk);
     await tFarm.updateStorage();
-
     strictEqual(tFarm.storage.storage.burner, zeroAddress);
-
     await tFarm.setBurner(burnerAddress);
     await tFarm.updateStorage();
-
     strictEqual(tFarm.storage.storage.burner, burnerAddress);
   });
 
@@ -4996,6 +4992,7 @@ describe("TFarm tests (section 1)", async () => {
   });
 
   it("should withdraw bakers rewards in TEZ from the QS pool, swap for QS GOV tokens and burn them", async () => {
+    await tFarm.setBurner(carol.pkh);
     await dexCore.updateStorage({
       ledger: [[alice.pkh, 2]],
     });
@@ -5045,24 +5042,33 @@ describe("TFarm tests (section 1)", async () => {
       rewards_receiver: alice.pkh,
       candidate: alice.pkh,
     };
-    const initialQsGovZeroRecord: UserFA2Info =
-      qsGov.storage.account_info[zeroAddress];
 
     await utils.setProvider(alice.sk);
+    await dexCore.updateOperators([
+      {
+        add_operator: {
+          owner: alice.pkh,
+          operator: tFarm.contract.address,
+          token_id: 2,
+        },
+      },
+    ]);
 
     await tFarm.deposit(depositParams);
+
     await tFarm.updateStorage({
       farms: [depositParams.fid],
     });
     await utils.setProvider(bob.sk);
     const pair: any = await dexCore.storage.storage.pairs.get("2");
-
     const operation = await utils.tezos.contract.transfer({
       to: pair.bucket,
-      amount: 50000,
+      amount: 5000,
       mutez: true,
+      gasLimit: 120000,
+      fee: 200000,
     });
-
+    const prevCarolBalance = await utils.tezos.tz.getBalance(carol.pkh);
     await confirmOperation(utils.tezos, operation.hash);
     await utils.bakeBlocks(13);
 
@@ -5071,16 +5077,9 @@ describe("TFarm tests (section 1)", async () => {
       account_info: [zeroAddress],
     });
 
-    const finalQsGovZeroRecord: UserFA2Info =
-      qsGov.storage.account_info[zeroAddress];
-    console.log(await finalQsGovZeroRecord.balances.get("0"));
-    console.log(await initialQsGovZeroRecord.balances.get("0"));
-    ok(
-      +(await finalQsGovZeroRecord.balances.get("0")) >
-        +(await initialQsGovZeroRecord.balances.get("0")),
-    );
+    const carolBalance = await utils.tezos.tz.getBalance(carol.pkh);
+    strictEqual(carolBalance > prevCarolBalance, true);
   });
-
   it("should fail if not admin is trying to claim farm rewards", async () => {
     await utils.setProvider(alice.sk);
     await rejects(tFarm.claimFarmRewards(0), (err: Error) => {
@@ -5499,7 +5498,10 @@ describe("TFarm tests (section 1)", async () => {
       +initialFarmFarmRecord.staked - withdrawParams2.amt,
     );
     strictEqual(+finalTokenBobBalance, withdrawParams2.amt);
-    strictEqual(+finalTokenFarmBalance, 330);
+    strictEqual(
+      +finalTokenFarmBalance,
+      initialTokenFarmBalance - withdrawParams2.amt,
+    );
   });
 
   it("should transfer one token and update values correctly", async () => {

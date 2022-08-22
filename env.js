@@ -39,6 +39,18 @@ module.exports = {
       qsgov_lp: "KT1K16JFj1L5u4HqVtd4H8dnaBVUxvLG4mjR",
       admin: dev.pkh,
     },
+    ghostnet: {
+      rpc: "https://ghostnet.ecadinfra.com/",
+      port: 443,
+      network_id: "*",
+      secretKey: dev.sk,
+      qsgov: {
+        token: "KT1K16JFj1L5u4HqVtd4H8dnaBVUxvLG4mjR",
+        id: 0,
+      },
+      qsgov_lp: "KT1K16JFj1L5u4HqVtd4H8dnaBVUxvLG4mjR",
+      admin: dev.pkh,
+    },
     mainnet: {
       rpc: "https://mainnet.smartpy.io",
       port: 443,

@@ -27,17 +27,17 @@ export class FA12 {
 
   static async originate(
     tezos: TezosToolkit,
-    storage: FA12Storage
+    storage: FA12Storage,
   ): Promise<FA12> {
     const artifacts: any = JSON.parse(
-      fs.readFileSync(`test/contracts/fa12.json`).toString()
+      fs.readFileSync(`test/contracts/fa12.json`).toString(),
     );
     const operation: OriginationOperation = await tezos.contract
       .originate({
         code: artifacts.michelson,
         storage: storage,
       })
-      .catch((e) => {
+      .catch(e => {
         console.error(e);
 
         return null;
@@ -68,7 +68,7 @@ export class FA12 {
             };
           }
         },
-        Promise.resolve({})
+        Promise.resolve({}),
       );
     }
   }
@@ -76,7 +76,7 @@ export class FA12 {
   async transfer(
     from: string,
     to: string,
-    value: number
+    value: number,
   ): Promise<TransactionOperation> {
     const operation: TransactionOperation = await this.contract.methods
       .transfer(from, to, value)

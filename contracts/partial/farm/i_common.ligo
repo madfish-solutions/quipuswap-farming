@@ -21,7 +21,7 @@ type stake_params_type  is [@layout:comb] record [
   (* Token to stake *)
   staked_token            : token_type;
   (* Flag: QuipuSwap V1 LP token staked or not *)
-  is_v1_lp                : bool;
+  is_v2_lp                : bool;
 ]
 
 type set_admin_type     is address (* New admin address *)
@@ -36,7 +36,7 @@ type set_is_v1_lp_type  is [@layout:comb] record [
   (* Farm ID *)
   fid                     : fid_type;
   (* Flag: staked LP tokens is LP of QuipuSwap V1 TEZ/TOK pair or not *)
-  is_v1_lp                : bool;
+  is_v2_lp                : bool;
 ]
 
 type baker_type         is [@layout:comb] record [

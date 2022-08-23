@@ -2,7 +2,7 @@ import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 
 import { BigNumber } from "bignumber.js";
 
-import { StakeParams, Token, FA2Token } from "./Common";
+import { StakeParams, FarmToken, FA2Token } from "./Common";
 
 export type TFees = {
   harvest_fee: number;
@@ -23,7 +23,7 @@ export type NewFarmParams = {
   fees: TFees;
   stake_params: StakeParams;
   token_info: MichelsonMap<MichelsonMapKey, unknown>;
-  reward_token: Token;
+  reward_token: FarmToken;
   paused: boolean;
   timelock: number;
   start_time: string;
@@ -45,7 +45,7 @@ export type Farm = {
   fees: TFees;
   upd: string;
   stake_params: StakeParams;
-  reward_token: Token;
+  reward_token: FarmToken;
   timelock: number;
   current_delegated: string;
   next_candidate: string;

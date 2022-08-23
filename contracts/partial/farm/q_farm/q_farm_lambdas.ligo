@@ -159,7 +159,7 @@ function deposit(
 
         if params.amt =/= 0n
         then {
-          if farm.stake_params.is_v1_lp
+          if farm.stake_params.is_v2_lp
           then {
             const candidate : key_hash = case params.candidate of
               Some(candidate) -> candidate
@@ -284,7 +284,7 @@ function withdraw(
           farm.stake_params.staked_token
         ) # operations;
 
-        if farm.stake_params.is_v1_lp
+        if farm.stake_params.is_v2_lp
         then {
           s := vote(
             get_user_candidate(farm, Tezos.sender, s.candidates),

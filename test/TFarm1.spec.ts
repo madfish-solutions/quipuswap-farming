@@ -4,10 +4,7 @@ import { Utils, zeroAddress } from "./helpers/Utils";
 import { TFarm, TFarmUtils } from "./helpers/TFarm";
 import { Burner } from "./helpers/Burner";
 import { BakerRegistry } from "./helpers/BakerRegistry";
-import { QSFA12Factory } from "./helpers/QSFA12Factory";
-import { QSFA2Factory } from "./helpers/QSFA2Factory";
-import { QSFA12Dex } from "./helpers/QSFA12Dex";
-import { QSFA2Dex } from "./helpers/QSFA2Dex";
+import { DexCore } from "./helpers/DexCore";
 
 import {
   UpdateOperatorParam,
@@ -32,7 +29,7 @@ import {
   BanBakerParam,
   UserInfoType,
   WithdrawData,
-  IsV1LP,
+  IsV2LP,
 } from "./types/Common";
 import { UserFA12Info } from "./types/FA12";
 
@@ -52,21 +49,17 @@ import { fa2Storage } from "../storage/test/FA2";
 import { tFarmStorage } from "../storage/TFarm";
 import { burnerStorage } from "../storage/Burner";
 import { bakerRegistryStorage } from "../storage/BakerRegistry";
-import { qsFA12FactoryStorage } from "../storage/test/QSFA12Factory";
-import { qsFA2FactoryStorage } from "../storage/test/QSFA2Factory";
+import { dexCoreStorage } from "storage/test/DexCore";
 
 describe("TFarm tests (section 1)", async () => {
   var fa12: FA12;
-  var fa12LP: QSFA12Dex;
   var fa2: FA2;
-  var fa2LP: QSFA2Dex;
   var qsGov: FA2;
   var utils: Utils;
   var tFarm: TFarm;
   var burner: Burner;
   var bakerRegistry: BakerRegistry;
-  var qsFA12Factory: QSFA12Factory;
-  var qsFA2Factory: QSFA2Factory;
+  var dexCore: DexCore;
 
   var precision = 10 ** 18;
   var feePrecision = 10 ** 16;
@@ -82,72 +75,96 @@ describe("TFarm tests (section 1)", async () => {
 
     bakerRegistry = await BakerRegistry.originate(
       utils.tezos,
-      bakerRegistryStorage
+      bakerRegistryStorage,
     );
 
-    qsFA12FactoryStorage.baker_validator = bakerRegistry.contract.address;
+    dexCoreStorage.storage.baker_registry = bakerRegistry.contract.address;
+    dexCoreStorage.storage.admin = alice.pkh;
+    dexCoreStorage.storage.collecting_period = new BigNumber(12);
+    dexCore = await DexCore.originate(utils.tezos, dexCoreStorage);
 
-    qsFA12Factory = await QSFA12Factory.originate(
-      utils.tezos,
-      qsFA12FactoryStorage
-    );
-
-    qsFA2FactoryStorage.baker_validator = bakerRegistry.contract.address;
-
-    qsFA2Factory = await QSFA2Factory.originate(
-      utils.tezos,
-      qsFA2FactoryStorage
-    );
-
-    await qsFA12Factory.setDexAndTokenLambdas();
-    await qsFA2Factory.setDexAndTokenLambdas();
+    await dexCore.setLambdas();
 
     const updateOperatorParam: UpdateOperatorParam = {
       add_operator: {
         owner: alice.pkh,
-        operator: qsFA2Factory.contract.address,
+        operator: dexCore.contract.address,
         token_id: 0,
       },
     };
 
     await qsGov.updateOperators([updateOperatorParam]);
-    await qsFA2Factory.launchExchange(qsGov.contract.address, 0, 10000, 10000);
-    await qsFA2Factory.updateStorage({
-      token_to_exchange: [[qsGov.contract.address, 0]],
-    });
+    await dexCore.launchExchange(
+      {
+        pair: {
+          token_a: {
+            fa2: { token: qsGov.contract.address, id: 0 },
+          },
+          token_b: { tez: undefined },
+        },
+        token_a_in: new BigNumber(10000),
+        token_b_in: new BigNumber(10000),
+        shares_receiver: alice.pkh,
+        candidate: alice.pkh,
+        deadline: String((await utils.getLastBlockTimestamp()) / 1000 + 100),
+      },
+      10000,
+    );
 
-    const qsGovLPAddress = await qsFA2Factory.storage.token_to_exchange[
-      `${qsGov.contract.address},${0}`
-    ];
+    await dexCore.updateStorage({
+      token_to_id: [[qsGov.contract.address, 0]],
+    });
 
     await fa2.updateOperators([updateOperatorParam]);
-    await qsFA2Factory.launchExchange(fa2.contract.address, 0, 10000, 10000);
-    await qsFA2Factory.updateStorage({
-      token_to_exchange: [[fa2.contract.address, 0]],
+    await dexCore.launchExchange(
+      {
+        pair: {
+          token_a: {
+            fa2: { token: fa2.contract.address, id: 0 },
+          },
+          token_b: { tez: undefined },
+        },
+        token_a_in: new BigNumber(10000),
+        token_b_in: new BigNumber(10000),
+        shares_receiver: alice.pkh,
+        candidate: alice.pkh,
+        deadline: String((await utils.getLastBlockTimestamp()) / 1000 + 100),
+      },
+      10000,
+    );
+    await dexCore.updateStorage({
+      token_to_id: [[fa2.contract.address, 2]],
     });
 
-    const fa2LPAddress: string =
-      qsFA2Factory.storage.token_to_exchange[`${fa2.contract.address},${0}`];
+    await fa12.approve(dexCore.contract.address, 10000);
+    await dexCore.launchExchange(
+      {
+        pair: {
+          token_a: {
+            fa12: fa12.contract.address,
+          },
+          token_b: { tez: undefined },
+        },
+        token_a_in: new BigNumber(10000),
+        token_b_in: new BigNumber(10000),
+        shares_receiver: alice.pkh,
+        candidate: alice.pkh,
+        deadline: String((await utils.getLastBlockTimestamp()) / 1000 + 100),
+      },
+      10000,
+    );
 
-    await fa12.approve(qsFA12Factory.contract.address, 10000);
-    await qsFA12Factory.launchExchange(fa12.contract.address, 10000, 10000);
-    await qsFA12Factory.updateStorage({
-      token_to_exchange: [fa12.contract.address],
+    await dexCore.updateStorage({
+      token_to_id: [fa12.contract.address, 1],
     });
 
-    const fa12LPAddress: string =
-      qsFA12Factory.storage.token_to_exchange[fa12.contract.address];
-
-    fa12LP = await QSFA12Dex.init(fa12LPAddress, utils.tezos);
-    fa2LP = await QSFA2Dex.init(fa2LPAddress, utils.tezos);
-
-    burnerStorage.qsgov_lp = qsGovLPAddress;
+    burnerStorage.qsgov_lp = dexCore.contract.address;
     burnerStorage.qsgov.token = qsGov.contract.address;
     burnerStorage.qsgov.id = 0;
 
     tFarmStorage.storage.qsgov.token = qsGov.contract.address;
     tFarmStorage.storage.qsgov.id = 0;
-    tFarmStorage.storage.qsgov_lp = qsGovLPAddress;
+    tFarmStorage.storage.qsgov_lp = dexCore.contract.address;
     tFarmStorage.storage.admin = alice.pkh;
     tFarmStorage.storage.pending_admin = zeroAddress;
     tFarmStorage.storage.burner = zeroAddress;
@@ -217,15 +234,11 @@ describe("TFarm tests (section 1)", async () => {
 
   it("should change burner by admin", async () => {
     const burnerAddress: string = burner.contract.address;
-
     await utils.setProvider(bob.sk);
     await tFarm.updateStorage();
-
     strictEqual(tFarm.storage.storage.burner, zeroAddress);
-
     await tFarm.setBurner(burnerAddress);
     await tFarm.updateStorage();
-
     strictEqual(tFarm.storage.storage.burner, burnerAddress);
   });
 
@@ -239,7 +252,7 @@ describe("TFarm tests (section 1)", async () => {
         ok(err.message === "Not-admin");
 
         return true;
-      }
+      },
     );
   });
 
@@ -257,14 +270,14 @@ describe("TFarm tests (section 1)", async () => {
     strictEqual(tFarm.storage.storage.baker_registry, bakerRegistryAddress);
   });
 
-  it("should fail if not admin is trying to set `is_v1_lp`", async () => {
-    const params: IsV1LP = {
+  it("should fail if not admin is trying to set `is_v2_lp`", async () => {
+    const params: IsV2LP = {
       fid: 0,
-      is_v1_lp: true,
+      is_v2_lp: true,
     };
 
     await utils.setProvider(alice.sk);
-    await rejects(tFarm.setIsV1LP(params), (err: Error) => {
+    await rejects(tFarm.setIsV2LP(params), (err: Error) => {
       ok(err.message === "Not-admin");
 
       return true;
@@ -272,13 +285,13 @@ describe("TFarm tests (section 1)", async () => {
   });
 
   it("should fail if farm not found", async () => {
-    const params: IsV1LP = {
+    const params: IsV2LP = {
       fid: 666,
-      is_v1_lp: true,
+      is_v2_lp: true,
     };
 
     await utils.setProvider(bob.sk);
-    await rejects(tFarm.setIsV1LP(params), (err: Error) => {
+    await rejects(tFarm.setIsV2LP(params), (err: Error) => {
       ok(err.message === "QSystem/farm-not-set");
 
       return true;
@@ -305,12 +318,12 @@ describe("TFarm tests (section 1)", async () => {
 
     strictEqual(
       +tFarm.storage.storage.banned_bakers[alice.pkh].period,
-      banParams[0].period
+      banParams[0].period,
     );
 
     ok(
       Date.parse(tFarm.storage.storage.banned_bakers[alice.pkh].start) <=
-        Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
+        Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp),
     );
   });
 
@@ -324,7 +337,7 @@ describe("TFarm tests (section 1)", async () => {
 
     ok(
       Date.parse(tFarm.storage.storage.banned_bakers[alice.pkh].start) <=
-        Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
+        Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp),
     );
   });
 
@@ -340,13 +353,13 @@ describe("TFarm tests (section 1)", async () => {
     for (let i = 0; i < banParams.length; ++i) {
       strictEqual(
         +tFarm.storage.storage.banned_bakers[banParams[i].baker].period,
-        banParams[i].period
+        banParams[i].period,
       );
 
       ok(
         Date.parse(
-          tFarm.storage.storage.banned_bakers[banParams[i].baker].start
-        ) <= Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
+          tFarm.storage.storage.banned_bakers[banParams[i].baker].start,
+        ) <= Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp),
       );
     }
   });
@@ -363,13 +376,13 @@ describe("TFarm tests (section 1)", async () => {
     for (let i = 0; i < banParams.length; ++i) {
       strictEqual(
         +tFarm.storage.storage.banned_bakers[banParams[i].baker].period,
-        0
+        0,
       );
 
       ok(
         Date.parse(
-          tFarm.storage.storage.banned_bakers[banParams[i].baker].start
-        ) <= Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
+          tFarm.storage.storage.banned_bakers[banParams[i].baker].start,
+        ) <= Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp),
       );
     }
   });
@@ -390,13 +403,13 @@ describe("TFarm tests (section 1)", async () => {
     for (let i = 1; i < banParams.length - 1; ++i) {
       strictEqual(
         +tFarm.storage.storage.banned_bakers[banParams[i].baker].period,
-        banParams[i].period
+        banParams[i].period,
       );
 
       ok(
         Date.parse(
-          tFarm.storage.storage.banned_bakers[banParams[i].baker].start
-        ) <= Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
+          tFarm.storage.storage.banned_bakers[banParams[i].baker].start,
+        ) <= Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp),
       );
     }
 
@@ -404,7 +417,7 @@ describe("TFarm tests (section 1)", async () => {
 
     ok(
       Date.parse(tFarm.storage.storage.banned_bakers[alice.pkh].start) <=
-        Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp)
+        Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp),
     );
   });
 
@@ -454,13 +467,13 @@ describe("TFarm tests (section 1)", async () => {
 
     ok(
       +(await finalQsGovZeroRecord.balances.get("0")) >
-        +(await initialQsGovZeroRecord.balances.get("0"))
+        +(await initialQsGovZeroRecord.balances.get("0")),
     );
   });
 
   it("should fail if not admin is trying to add new farm", async () => {
     const newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
-      utils
+      utils,
     );
 
     await utils.setProvider(alice.sk);
@@ -473,7 +486,7 @@ describe("TFarm tests (section 1)", async () => {
 
   it("should fail if end time is less or equal to start time", async () => {
     const newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
-      utils
+      utils,
     );
 
     await utils.setProvider(bob.sk);
@@ -486,14 +499,14 @@ describe("TFarm tests (section 1)", async () => {
 
   it("should fail if timelock is more than farm's lifetime", async () => {
     const newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
-      utils
+      utils,
     );
     const lifetime: number = 10; // 10 seconds
 
     newFarmParams.timelock = 20;
     newFarmParams.end_time = String(
       Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
-        lifetime
+        lifetime,
     );
 
     await rejects(tFarm.addNewFarm(newFarmParams), (err: Error) => {
@@ -505,7 +518,7 @@ describe("TFarm tests (section 1)", async () => {
 
   it("should add new farm by admin and set all farm's fields correctly", async () => {
     let newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
-      utils
+      utils,
     );
     const lifetime: number = 600; // 10 minutes
 
@@ -518,7 +531,7 @@ describe("TFarm tests (section 1)", async () => {
     newFarmParams.timelock = 12;
     newFarmParams.end_time = String(
       Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
-        lifetime
+        lifetime,
     );
     newFarmParams.reward_per_second = 1 * precision;
     newFarmParams.token_info = MichelsonMap.fromLiteral({
@@ -529,7 +542,7 @@ describe("TFarm tests (section 1)", async () => {
 
     await fa12.approve(
       tFarm.contract.address,
-      (lifetime * newFarmParams.reward_per_second) / precision
+      (lifetime * newFarmParams.reward_per_second) / precision,
     );
     await tFarm.addNewFarm(newFarmParams);
     await tFarm.updateStorage({ farms: [0], token_metadata: [0] });
@@ -538,38 +551,38 @@ describe("TFarm tests (section 1)", async () => {
 
     strictEqual(
       +tFarm.storage.storage.farms[0].fees.harvest_fee,
-      newFarmParams.fees.harvest_fee
+      newFarmParams.fees.harvest_fee,
     );
     strictEqual(
       +tFarm.storage.storage.farms[0].fees.withdrawal_fee,
-      newFarmParams.fees.withdrawal_fee
+      newFarmParams.fees.withdrawal_fee,
     );
     strictEqual(
       tFarm.storage.storage.farms[0].stake_params.staked_token.fA2.token,
-      newFarmParams.stake_params.staked_token.fA2.token
+      newFarmParams.stake_params.staked_token.fA2.token,
     );
     strictEqual(
       +tFarm.storage.storage.farms[0].stake_params.staked_token.fA2.id,
-      newFarmParams.stake_params.staked_token.fA2.id
+      newFarmParams.stake_params.staked_token.fA2.id,
     );
     strictEqual(
-      tFarm.storage.storage.farms[0].stake_params.is_v1_lp,
-      newFarmParams.stake_params.is_v1_lp
+      tFarm.storage.storage.farms[0].stake_params.is_v2_lp,
+      newFarmParams.stake_params.is_v2_lp,
     );
     strictEqual(
       tFarm.storage.storage.farms[0].reward_token.fA12,
-      newFarmParams.reward_token.fA12
+      newFarmParams.reward_token.fA12,
     );
     strictEqual(
       +tFarm.storage.storage.farms[0].timelock,
-      newFarmParams.timelock
+      newFarmParams.timelock,
     );
     strictEqual(tFarm.storage.storage.farms[0].current_delegated, zeroAddress);
     strictEqual(tFarm.storage.storage.farms[0].next_candidate, zeroAddress);
     strictEqual(tFarm.storage.storage.farms[0].paused, newFarmParams.paused);
     strictEqual(
       +tFarm.storage.storage.farms[0].reward_per_second,
-      newFarmParams.reward_per_second
+      newFarmParams.reward_per_second,
     );
     strictEqual(+tFarm.storage.storage.farms[0].reward_per_share, 0);
     strictEqual(+tFarm.storage.storage.farms[0].staked, 0);
@@ -578,38 +591,38 @@ describe("TFarm tests (section 1)", async () => {
     strictEqual(
       Buffer.from(
         await tFarm.storage.storage.token_metadata[0].token_info.get("name"),
-        "hex"
+        "hex",
       ).toString(),
-      "HELLO"
+      "HELLO",
     );
     strictEqual(
       Buffer.from(
         await tFarm.storage.storage.token_metadata[0].token_info.get("symbol"),
-        "hex"
+        "hex",
       ).toString(),
-      "WORLD"
+      "WORLD",
     );
     strictEqual(
       Buffer.from(
         await tFarm.storage.storage.token_metadata[0].token_info.get(
-          "decimals"
+          "decimals",
         ),
-        "hex"
+        "hex",
       ).toString(),
-      "2021"
+      "2021",
     );
 
     ok(
       Date.parse(tFarm.storage.storage.farms[0].upd) >=
-        +newFarmParams.start_time * 1000
+        +newFarmParams.start_time * 1000,
     );
     ok(
       Date.parse(tFarm.storage.storage.farms[0].start_time) >=
-        +newFarmParams.start_time * 1000
+        +newFarmParams.start_time * 1000,
     );
     ok(
       Date.parse(tFarm.storage.storage.farms[0].end_time) >
-        +newFarmParams.start_time * 1000
+        +newFarmParams.start_time * 1000,
     );
 
     await utils.setProvider(alice.sk);
@@ -633,26 +646,26 @@ describe("TFarm tests (section 1)", async () => {
     await tFarm.deposit(depositParams);
   });
 
-  it("should change `is_v1_lp` by admin", async () => {
-    let params: IsV1LP = {
+  it("should change `is_v2_lp` by admin", async () => {
+    let params: IsV2LP = {
       fid: 0,
-      is_v1_lp: true,
+      is_v2_lp: true,
     };
 
     await utils.setProvider(bob.sk);
-    await tFarm.setIsV1LP(params);
+    await tFarm.setIsV2LP(params);
     await tFarm.updateStorage({
       farms: [0],
     });
 
     strictEqual(
-      tFarm.storage.storage.farms[0].stake_params.is_v1_lp,
-      params.is_v1_lp
+      tFarm.storage.storage.farms[0].stake_params.is_v2_lp,
+      params.is_v2_lp,
     );
 
-    params.is_v1_lp = false;
+    params.is_v2_lp = false;
 
-    await tFarm.setIsV1LP(params);
+    await tFarm.setIsV2LP(params);
   });
 
   it("should fail if not admin is trying to set reward per second", async () => {
@@ -745,32 +758,32 @@ describe("TFarm tests (section 1)", async () => {
     strictEqual(
       Buffer.from(
         await tFarm.storage.storage.token_metadata[0].token_info.get("A"),
-        "hex"
+        "hex",
       ).toString(),
-      "B"
+      "B",
     );
     strictEqual(
       Buffer.from(
         await tFarm.storage.storage.token_metadata[0].token_info.get("name"),
-        "hex"
+        "hex",
       ).toString(),
-      "TEST"
+      "TEST",
     );
     strictEqual(
       Buffer.from(
         await tFarm.storage.storage.token_metadata[0].token_info.get("symbol"),
-        "hex"
+        "hex",
       ).toString(),
-      "WORLD"
+      "WORLD",
     );
     strictEqual(
       Buffer.from(
         await tFarm.storage.storage.token_metadata[0].token_info.get(
-          "decimals"
+          "decimals",
         ),
-        "hex"
+        "hex",
       ).toString(),
-      "8"
+      "8",
     );
   });
 
@@ -997,14 +1010,14 @@ describe("TFarm tests (section 1)", async () => {
 
   it("should transfer correct amount of FA1.2 tokens to the contract as the rewards for users", async () => {
     let newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
-      utils
+      utils,
     );
     const lifetime: number = 120; // 2 minutes
 
     newFarmParams.reward_token = { fA12: fa12.contract.address };
     newFarmParams.end_time = String(
       Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
-        lifetime
+        lifetime,
     );
     newFarmParams.reward_per_second = 2 * precision;
 
@@ -1021,17 +1034,17 @@ describe("TFarm tests (section 1)", async () => {
 
     strictEqual(
       +fa12.storage.ledger[bob.pkh].balance,
-      bobInitialBalance - rewardsAmount
+      bobInitialBalance - rewardsAmount,
     );
     strictEqual(
       +fa12.storage.ledger[tFarm.contract.address].balance,
-      rewardsAmount + 600 // 600 from the previous test
+      rewardsAmount + 600, // 600 from the previous test
     );
   });
 
   it("should transfer correct amount of FA2 tokens to the contract as the rewards for users", async () => {
     let newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
-      utils
+      utils,
     );
     const lifetime: number = 300; // 5 minutes
 
@@ -1044,7 +1057,7 @@ describe("TFarm tests (section 1)", async () => {
     };
     newFarmParams.end_time = String(
       Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
-        lifetime
+        lifetime,
     );
     newFarmParams.reward_per_second = 2 * precision;
 
@@ -1071,15 +1084,15 @@ describe("TFarm tests (section 1)", async () => {
 
     strictEqual(
       +(await qsGov.storage.account_info[bob.pkh].balances.get(
-        String(newFarmParams.reward_token.fA2.id)
+        String(newFarmParams.reward_token.fA2.id),
       )),
-      bobInitialBalance - rewardsAmount
+      bobInitialBalance - rewardsAmount,
     );
     strictEqual(
       +(await qsGov.storage.account_info[tFarm.contract.address].balances.get(
-        String(newFarmParams.reward_token.fA2.id)
+        String(newFarmParams.reward_token.fA2.id),
       )),
-      rewardsAmount + 100 // 100 from the previous test
+      rewardsAmount + 100, // 100 from the previous test
     );
   });
 
@@ -1144,11 +1157,11 @@ describe("TFarm tests (section 1)", async () => {
 
     strictEqual(
       +tFarm.storage.storage.farms[0].fees.harvest_fee,
-      fees[0].fees.harvest_fee
+      fees[0].fees.harvest_fee,
     );
     strictEqual(
       +tFarm.storage.storage.farms[0].fees.withdrawal_fee,
-      fees[0].fees.withdrawal_fee
+      fees[0].fees.withdrawal_fee,
     );
   });
 
@@ -1183,11 +1196,11 @@ describe("TFarm tests (section 1)", async () => {
     for (let i = 0; i < fees.length; ++i) {
       strictEqual(
         +tFarm.storage.storage.farms[i].fees.harvest_fee,
-        fees[i].fees.harvest_fee
+        fees[i].fees.harvest_fee,
       );
       strictEqual(
         +tFarm.storage.storage.farms[i].fees.withdrawal_fee,
-        fees[i].fees.withdrawal_fee
+        fees[i].fees.withdrawal_fee,
       );
     }
   });
@@ -1222,7 +1235,7 @@ describe("TFarm tests (section 1)", async () => {
 
     strictEqual(
       tFarm.storage.storage.farms[0].paused,
-      pauseFarmParams[0].pause
+      pauseFarmParams[0].pause,
     );
   });
 
@@ -1234,7 +1247,7 @@ describe("TFarm tests (section 1)", async () => {
 
     strictEqual(
       tFarm.storage.storage.farms[0].paused,
-      pauseFarmParams[0].pause
+      pauseFarmParams[0].pause,
     );
   });
 
@@ -1251,7 +1264,7 @@ describe("TFarm tests (section 1)", async () => {
     for (let pauseFarmParam of pauseFarmParams) {
       strictEqual(
         tFarm.storage.storage.farms[pauseFarmParam.fid].paused,
-        pauseFarmParam.pause
+        pauseFarmParam.pause,
       );
     }
   });
@@ -1268,7 +1281,7 @@ describe("TFarm tests (section 1)", async () => {
     for (let pauseFarmParam of pauseFarmParams) {
       strictEqual(
         tFarm.storage.storage.farms[pauseFarmParam.fid].paused,
-        pauseFarmParam.pause
+        pauseFarmParam.pause,
       );
     }
   });
@@ -1285,7 +1298,7 @@ describe("TFarm tests (section 1)", async () => {
     for (let pauseFarmParam of pauseFarmParams) {
       strictEqual(
         tFarm.storage.storage.farms[pauseFarmParam.fid].paused,
-        pauseFarmParam.pause
+        pauseFarmParam.pause,
       );
     }
   });
@@ -1360,7 +1373,7 @@ describe("TFarm tests (section 1)", async () => {
 
     strictEqual(
       tFarm.storage.storage.referrers[alice.pkh],
-      depositParams.referrer
+      depositParams.referrer,
     );
   });
 
@@ -1431,48 +1444,50 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked + depositParams.amt);
     strictEqual(
       +finalFarmAliceRecord.staked,
-      +initialFarmAliceRecord.staked + depositParams.amt
+      +initialFarmAliceRecord.staked + depositParams.amt,
     );
     strictEqual(
       +finalTokenAliceRecord.balance,
-      +initialTokenAliceRecord.balance - depositParams.amt
+      +initialTokenAliceRecord.balance - depositParams.amt,
     );
     strictEqual(
       +finalTokenFarmRecord.balance,
-      +initialTokenFarmRecord.balance + depositParams.amt
+      +initialTokenFarmRecord.balance + depositParams.amt,
     );
 
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
   it("should deposit LP FA1.2 token", async () => {
     let newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
-      utils
+      utils,
     );
     const lifetime: number = 600; // 10 minutes
 
     newFarmParams.fees.harvest_fee = 30 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 6 * feePrecision;
-    newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
-    newFarmParams.stake_params.is_v1_lp = true;
+    newFarmParams.stake_params.staked_token = {
+      fA2: { token: dexCore.contract.address, id: 2 },
+    };
+    newFarmParams.stake_params.is_v2_lp = true;
     newFarmParams.reward_per_second = 4 * precision;
     newFarmParams.timelock = 0;
     newFarmParams.reward_token = { fA12: fa12.contract.address };
     newFarmParams.end_time = String(
       Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
-        lifetime
+        lifetime,
     );
 
     const rewardsAmount: number =
@@ -1491,40 +1506,52 @@ describe("TFarm tests (section 1)", async () => {
       candidate: bob.pkh,
     };
 
-    await fa12LP.updateStorage({
-      ledger: [alice.pkh],
+    await dexCore.updateStorage({
+      ledger: [[alice.pkh, 2]],
     });
 
-    const initialTokenAliceRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[alice.pkh];
+    const initialTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${alice.pkh},2`];
 
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
+    await dexCore.updateOperators([
+      {
+        add_operator: {
+          owner: alice.pkh,
+          operator: tFarm.contract.address,
+          token_id: 2,
+        },
+      },
+    ]);
     await tFarm.deposit(depositParams);
     await tFarm.updateStorage({
       users_info: [[depositParams.fid, alice.pkh]],
       farms: [depositParams.fid],
     });
-    await fa12LP.updateStorage({
-      ledger: [tFarm.contract.address, alice.pkh],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 2],
+        [tFarm.contract.address, 2],
+      ],
     });
 
     const finalFarm: Farm = tFarm.storage.storage.farms[depositParams.fid];
     const finalFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${depositParams.fid},${alice.pkh}`];
-    const finalTokenAliceRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[alice.pkh];
-    const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[tFarm.contract.address];
+    const finalTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},2`];
+    const finalTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},2`];
 
     strictEqual(+finalFarm.staked, depositParams.amt);
     strictEqual(+finalFarm.claimed, 0);
     strictEqual(+finalFarmAliceRecord.staked, depositParams.amt);
     strictEqual(
-      +finalTokenAliceRecord.balance,
-      +initialTokenAliceRecord.balance - depositParams.amt
+      +finalTokenAliceBalance,
+      +initialTokenAliceBalance - depositParams.amt,
     );
-    strictEqual(+finalTokenFarmRecord.balance, 0);
-    strictEqual(+finalTokenFarmRecord.frozen_balance, depositParams.amt);
+    strictEqual(+finalTokenFarmBalance, depositParams.amt);
   });
 
   it("should fail if user's candidate for voting is banned (only for LP farms)", async () => {
@@ -1551,7 +1578,7 @@ describe("TFarm tests (section 1)", async () => {
 
   it("should deposit single FA2 token", async () => {
     let newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
-      utils
+      utils,
     );
     const lifetime: number = 600; // 10 minutes
 
@@ -1565,7 +1592,7 @@ describe("TFarm tests (section 1)", async () => {
     newFarmParams.reward_token = { fA12: fa12.contract.address };
     newFarmParams.end_time = String(
       Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
-        lifetime
+        lifetime,
     );
 
     const rewardsAmount: number =
@@ -1625,26 +1652,26 @@ describe("TFarm tests (section 1)", async () => {
     strictEqual(+finalFarmAliceRecord.staked, depositParams.amt);
     strictEqual(
       +(await finalTokenAliceRecord.balances.get("0")),
-      +(await initialTokenAliceRecord.balances.get("0")) - depositParams.amt
+      +(await initialTokenAliceRecord.balances.get("0")) - depositParams.amt,
     );
     strictEqual(
       +(await finalTokenFarmRecord.balances.get("0")),
-      depositParams.amt
+      depositParams.amt,
     );
   });
 
   it("should deposit LP FA2 token", async () => {
     let newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
-      utils
+      utils,
     );
     const lifetime: number = 1200; // 20 minutes
 
     newFarmParams.fees.harvest_fee = 15 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 21 * feePrecision;
     newFarmParams.stake_params.staked_token = {
-      fA2: { token: fa2LP.contract.address, id: 0 },
+      fA2: { token: dexCore.contract.address, id: 1 },
     };
-    newFarmParams.stake_params.is_v1_lp = true;
+    newFarmParams.stake_params.is_v2_lp = true;
     newFarmParams.reward_per_second = 10 * precision;
     newFarmParams.timelock = 0;
     newFarmParams.reward_token = {
@@ -1652,7 +1679,7 @@ describe("TFarm tests (section 1)", async () => {
     };
     newFarmParams.end_time = String(
       Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
-        lifetime
+        lifetime,
     );
 
     await utils.setProvider(bob.sk);
@@ -1667,47 +1694,51 @@ describe("TFarm tests (section 1)", async () => {
       candidate: bob.pkh,
     };
 
-    await fa2LP.updateStorage({
-      ledger: [alice.pkh],
+    await dexCore.updateStorage({
+      ledger: [[alice.pkh, 1]],
     });
 
-    const initialTokenAliceRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[alice.pkh];
+    const initialTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},1`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${alice.pkh},1`];
     const updateOperatorParam: UpdateOperatorParam = {
       add_operator: {
         owner: alice.pkh,
         operator: tFarm.contract.address,
-        token_id: 0,
+        token_id: 1,
       },
     };
 
-    await fa2LP.updateOperators([updateOperatorParam]);
+    await dexCore.updateOperators([updateOperatorParam]);
     await tFarm.deposit(depositParams);
     await tFarm.updateStorage({
       users_info: [[depositParams.fid, alice.pkh]],
       farms: [depositParams.fid],
     });
-    await fa2LP.updateStorage({
-      ledger: [tFarm.contract.address, alice.pkh],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 1],
+        [tFarm.contract.address, 1],
+      ],
     });
 
     const finalFarm: Farm = tFarm.storage.storage.farms[depositParams.fid];
     const finalFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${depositParams.fid},${alice.pkh}`];
-    const finalTokenAliceRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[alice.pkh];
-    const finalTokenFarmRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[tFarm.contract.address];
+    const finalTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},1`];
+    const finalTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},1`];
 
     strictEqual(+finalFarm.staked, depositParams.amt);
     strictEqual(+finalFarm.claimed, 0);
     strictEqual(+finalFarmAliceRecord.staked, depositParams.amt);
     strictEqual(
-      +finalTokenAliceRecord.balance,
-      +initialTokenAliceRecord.balance - depositParams.amt
+      +finalTokenAliceBalance,
+      +initialTokenAliceBalance - depositParams.amt,
     );
-    strictEqual(+finalTokenFarmRecord.balance, 0);
-    strictEqual(+finalTokenFarmRecord.frozen_balance, depositParams.amt);
+    strictEqual(+finalTokenFarmBalance, depositParams.amt);
   });
 
   it("should claim user's rewards (in farms without timelock)", async () => {
@@ -1761,7 +1792,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(finalFarmAliceRecord.last_staked > initialFarmAliceRecord.last_staked);
@@ -1770,46 +1801,46 @@ describe("TFarm tests (section 1)", async () => {
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
-        res.expectedShareReward
-      )
+        res.expectedShareReward,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
-        res.expectedUserPrevEarned
-      )
+        res.expectedUserPrevEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
-        res.expectedUserEarnedAfterHarvest
-      )
+        res.expectedUserEarnedAfterHarvest,
+      ),
     );
     ok(
       new BigNumber(
-        +(await finalRewTokAliceRecord.balances.get("0"))
+        +(await finalRewTokAliceRecord.balances.get("0")),
       ).isEqualTo(
         new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokBobRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokBobRecord.balances.get("0"))).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
   });
 
@@ -1860,7 +1891,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(finalFarmAliceRecord.last_staked > initialFarmAliceRecord.last_staked);
@@ -1869,44 +1900,44 @@ describe("TFarm tests (section 1)", async () => {
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
-        res.expectedShareReward
-      )
+        res.expectedShareReward,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
-        res.expectedUserPrevEarned
-      )
+        res.expectedUserPrevEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
-        res.expectedUserEarnedAfterHarvest
-      )
+        res.expectedUserEarnedAfterHarvest,
+      ),
     );
     ok(
       new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokAliceRecord.balance).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokBobRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokBobRecord.balance).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokFarmRecord.balance)
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
   });
 
@@ -1957,7 +1988,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     strictEqual(+finalFarm.claimed, +initialFarm.claimed);
@@ -1966,33 +1997,33 @@ describe("TFarm tests (section 1)", async () => {
     ok(finalFarm.upd > initialFarm.upd);
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
-        res.expectedShareReward
-      )
+        res.expectedShareReward,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
-        res.expectedUserPrevEarned
-      )
+        res.expectedUserPrevEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
-        res.expectedUserEarned
-      )
+        res.expectedUserEarned,
+      ),
     );
     ok(
       new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
-        new BigNumber(+initialRewTokAliceRecord.balance)
-      )
+        new BigNumber(+initialRewTokAliceRecord.balance),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokBobRecord.balance).isEqualTo(
-        new BigNumber(+initialRewTokBobRecord.balance)
-      )
+        new BigNumber(+initialRewTokBobRecord.balance),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
-        new BigNumber(+initialRewTokFarmRecord.balance)
-      )
+        new BigNumber(+initialRewTokFarmRecord.balance),
+      ),
     );
   });
 
@@ -2022,7 +2053,6 @@ describe("TFarm tests (section 1)", async () => {
     const initialRewTokFarmRecord: UserFA12Info =
       fa12.storage.ledger[tFarm.contract.address];
 
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
     await tFarm.deposit(depositParams);
     await tFarm.updateStorage({
       users_info: [[depositParams.fid, alice.pkh]],
@@ -2044,36 +2074,36 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokAliceRecord.balance).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokBobRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokBobRecord.balance).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokFarmRecord.balance)
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -2127,38 +2157,38 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(
-        +(await finalRewTokAliceRecord.balances.get("0"))
+        +(await finalRewTokAliceRecord.balances.get("0")),
       ).isEqualTo(
         new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokBobRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokBobRecord.balances.get("0"))).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -2188,7 +2218,6 @@ describe("TFarm tests (section 1)", async () => {
     const initialRewTokFarmRecord: UserFA12Info =
       fa12.storage.ledger[tFarm.contract.address];
 
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
     await tFarm.deposit(depositParams);
     await tFarm.updateStorage({
       users_info: [[depositParams.fid, alice.pkh]],
@@ -2210,36 +2239,36 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokAliceRecord.balance).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokBobRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokBobRecord.balance).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokFarmRecord.balance)
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -2293,38 +2322,38 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(
-        +(await finalRewTokAliceRecord.balances.get("0"))
+        +(await finalRewTokAliceRecord.balances.get("0")),
       ).isEqualTo(
         new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokBobRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokBobRecord.balances.get("0"))).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -2353,7 +2382,6 @@ describe("TFarm tests (section 1)", async () => {
     const initialRewTokFarmRecord: UserFA12Info =
       fa12.storage.ledger[tFarm.contract.address];
 
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
     await tFarm.deposit(depositParams);
     await tFarm.updateStorage({
       users_info: [[depositParams.fid, alice.pkh]],
@@ -2376,34 +2404,34 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokAliceRecord.balance).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokZeroRecord.balance).isEqualTo(
-        res.referralCommission
-      )
+        res.referralCommission,
+      ),
     );
     ok(
       new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokFarmRecord.balance)
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -2457,38 +2485,38 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(
-        +(await finalRewTokAliceRecord.balances.get("0"))
+        +(await finalRewTokAliceRecord.balances.get("0")),
       ).isEqualTo(
         new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokZeroRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialQsGovZeroRecord.balances.get("0"))).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -2543,38 +2571,38 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(
-        +(await finalRewTokAliceRecord.balances.get("0"))
+        +(await finalRewTokAliceRecord.balances.get("0")),
       ).isEqualTo(
         new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokBobRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokBobRecord.balances.get("0"))).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -2587,10 +2615,24 @@ describe("TFarm tests (section 1)", async () => {
       rewards_receiver: dev.pkh,
       candidate: bob.pkh,
     };
+    await dexCore.transfer([
+      {
+        from_: alice.pkh,
+        txs: [{ to_: dev.pkh, amount: transferAmt, token_id: 2 }],
+      },
+    ]);
 
-    await fa12LP.transfer(alice.pkh, dev.pkh, transferAmt);
     await utils.setProvider(dev.sk);
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
+
+    await dexCore.updateOperators([
+      {
+        add_operator: {
+          owner: dev.pkh,
+          operator: tFarm.contract.address,
+          token_id: 2,
+        },
+      },
+    ]);
     await tFarm.deposit(depositParams);
     await tFarm.updateStorage({
       users_info: [[depositParams.fid, dev.pkh]],
@@ -2635,7 +2677,6 @@ describe("TFarm tests (section 1)", async () => {
     const initialFarmBobVotes: number =
       tFarm.storage.storage.votes[`${depositParams.fid},${bob.pkh}`];
 
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
     await tFarm.deposit(depositParams);
     await tFarm.updateStorage({
       users_info: [[depositParams.fid, dev.pkh]],
@@ -2664,7 +2705,7 @@ describe("TFarm tests (section 1)", async () => {
     strictEqual(+finalFarmAliceVotes, depositParams.amt * 2);
     strictEqual(
       +finalFarmBobVotes,
-      +initialFarmBobVotes - initialFarmDevRecord.prev_staked
+      +initialFarmBobVotes - initialFarmDevRecord.prev_staked,
     );
   });
 
@@ -2726,7 +2767,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
@@ -2735,44 +2776,44 @@ describe("TFarm tests (section 1)", async () => {
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
-        res.expectedShareReward
-      )
+        res.expectedShareReward,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
-        res.expectedUserPrevEarned
-      )
+        res.expectedUserPrevEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
-        res.expectedUserEarnedAfterHarvest
-      )
+        res.expectedUserEarnedAfterHarvest,
+      ),
     );
     ok(
       new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokAliceRecord.balance).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokBobRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokBobRecord.balance).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokFarmRecord.balance)
           .minus(res.referralCommission)
-          .minus(res.actualUserEarned)
-      )
+          .minus(res.actualUserEarned),
+      ),
     );
   });
 
@@ -2842,36 +2883,36 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokAliceRecord.balance).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokBobRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokBobRecord.balance).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokFarmRecord.balance)
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -2922,38 +2963,38 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(
-        +(await finalRewTokAliceRecord.balances.get("0"))
+        +(await finalRewTokAliceRecord.balances.get("0")),
       ).isEqualTo(
         new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokBobRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokBobRecord.balances.get("0"))).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -3001,36 +3042,36 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokAliceRecord.balance).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokBobRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokBobRecord.balance).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokFarmRecord.balance)
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -3081,38 +3122,38 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(
-        +(await finalRewTokAliceRecord.balances.get("0"))
+        +(await finalRewTokAliceRecord.balances.get("0")),
       ).isEqualTo(
         new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokBobRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokBobRecord.balances.get("0"))).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -3129,7 +3170,6 @@ describe("TFarm tests (section 1)", async () => {
       rewards_receiver: alice.pkh,
     };
 
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
     await tFarm.deposit(depositParams);
     await utils.bakeBlocks(1);
     await tFarm.updateStorage({
@@ -3172,36 +3212,36 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokAliceRecord.balance).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokZeroRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokZeroRecord.balance).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokFarmRecord.balance)
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -3252,38 +3292,38 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(
-        +(await finalRewTokAliceRecord.balances.get("0"))
+        +(await finalRewTokAliceRecord.balances.get("0")),
       ).isEqualTo(
         new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokZeroRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokZeroRecord.balances.get("0"))).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -3334,38 +3374,38 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(
-        +(await finalRewTokAliceRecord.balances.get("0"))
+        +(await finalRewTokAliceRecord.balances.get("0")),
       ).isEqualTo(
         new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokZeroRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokZeroRecord.balances.get("0"))).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -3443,29 +3483,29 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
     strictEqual(
       +finalFarmAliceRecord.staked,
-      +initialFarmAliceRecord.staked - withdrawParams.amt
+      +initialFarmAliceRecord.staked - withdrawParams.amt,
     );
     strictEqual(
       +finalTokenAliceRecord.balance,
-      +initialTokenAliceRecord.balance + withdrawParams.amt
+      +initialTokenAliceRecord.balance + withdrawParams.amt,
     );
     strictEqual(
       +finalTokenFarmRecord.balance,
-      +initialTokenFarmRecord.balance - withdrawParams.amt
+      +initialTokenFarmRecord.balance - withdrawParams.amt,
     );
 
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -3481,63 +3521,78 @@ describe("TFarm tests (section 1)", async () => {
       users_info: [[withdrawParams.fid, alice.pkh]],
       farms: [withdrawParams.fid],
     });
-    await fa12LP.updateStorage({
-      ledger: [tFarm.contract.address, alice.pkh],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 2],
+        [tFarm.contract.address, 2],
+      ],
     });
 
     const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
     const initialFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
-    const initialTokenAliceRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[alice.pkh];
-    const initialTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[tFarm.contract.address];
+    const initialTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${carol.pkh},2`];
+    const initialTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},2`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${tFarm.contract.address},2`];
 
     await tFarm.withdraw(withdrawParams);
     await tFarm.updateStorage({
       users_info: [[withdrawParams.fid, alice.pkh]],
       farms: [withdrawParams.fid],
     });
-    await fa12LP.updateStorage({
-      ledger: [tFarm.contract.address, alice.pkh],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 2],
+        [tFarm.contract.address, 2],
+      ],
     });
 
     const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
     const finalFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
-    const finalTokenAliceRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[alice.pkh];
-    const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[tFarm.contract.address];
+    const finalTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${carol.pkh},2`];
+    const finalTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},2`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${tFarm.contract.address},2`];
     const res: FarmData = TFarmUtils.getFarmData(
       initialFarm,
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
     strictEqual(
       +finalFarmAliceRecord.staked,
-      +initialFarmAliceRecord.staked - withdrawParams.amt
+      +initialFarmAliceRecord.staked - withdrawParams.amt,
     );
     strictEqual(
-      +finalTokenAliceRecord.balance,
-      +initialTokenAliceRecord.balance + withdrawParams.amt
+      +finalTokenAliceBalance,
+      +initialTokenAliceBalance + withdrawParams.amt,
     );
-    strictEqual(+finalTokenFarmRecord.balance, 0);
     strictEqual(
-      +finalTokenFarmRecord.frozen_balance,
-      +initialTokenFarmRecord.frozen_balance - withdrawParams.amt
+      +finalTokenFarmBalance,
+      initialTokenFarmBalance - withdrawParams.amt,
     );
 
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -3586,29 +3641,29 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
     strictEqual(
       +finalFarmAliceRecord.staked,
-      +initialFarmAliceRecord.staked - withdrawParams.amt
+      +initialFarmAliceRecord.staked - withdrawParams.amt,
     );
     strictEqual(
       +(await finalTokenAliceRecord.balances.get("0")),
-      +(await initialTokenAliceRecord.balances.get("0")) + withdrawParams.amt
+      +(await initialTokenAliceRecord.balances.get("0")) + withdrawParams.amt,
     );
     strictEqual(
       +(await finalTokenFarmRecord.balances.get("0")),
-      +(await initialTokenFarmRecord.balances.get("0")) - withdrawParams.amt
+      +(await initialTokenFarmRecord.balances.get("0")) - withdrawParams.amt,
     );
 
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -3624,63 +3679,82 @@ describe("TFarm tests (section 1)", async () => {
       users_info: [[withdrawParams.fid, alice.pkh]],
       farms: [withdrawParams.fid],
     });
-    await fa2LP.updateStorage({
-      ledger: [tFarm.contract.address, alice.pkh],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 1],
+        [tFarm.contract.address, 1],
+      ],
     });
 
     const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
     const initialFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
-    const initialTokenAliceRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[alice.pkh];
-    const initialTokenFarmRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[tFarm.contract.address];
-
+    const initialTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},1`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${carol.pkh},1`];
+    const initialTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},1`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${tFarm.contract.address},1`];
     await tFarm.withdraw(withdrawParams);
     await tFarm.updateStorage({
       users_info: [[withdrawParams.fid, alice.pkh]],
       farms: [withdrawParams.fid],
     });
-    await fa2LP.updateStorage({
-      ledger: [tFarm.contract.address, alice.pkh],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 1],
+        [tFarm.contract.address, 1],
+      ],
     });
 
     const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
     const finalFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
-    const finalTokenAliceRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[alice.pkh];
-    const finalTokenFarmRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[tFarm.contract.address];
+    const finalTokenAliceBalance: number =
+      dexCore.storage.storage.ledger[`${alice.pkh},1`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${carol.pkh},1`];
+    const finalTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},1`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${tFarm.contract.address},1`];
+
     const res: FarmData = TFarmUtils.getFarmData(
       initialFarm,
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
     strictEqual(
       +finalFarmAliceRecord.staked,
-      +initialFarmAliceRecord.staked - withdrawParams.amt
+      +initialFarmAliceRecord.staked - withdrawParams.amt,
     );
     strictEqual(
-      +finalTokenAliceRecord.balance,
-      +initialTokenAliceRecord.balance + withdrawParams.amt
+      +finalTokenAliceBalance,
+      +initialTokenAliceBalance + withdrawParams.amt,
     );
-    strictEqual(+finalTokenFarmRecord.balance, 0);
     strictEqual(
-      +finalTokenFarmRecord.frozen_balance,
-      +initialTokenFarmRecord.frozen_balance - withdrawParams.amt
+      +finalTokenFarmBalance,
+      initialTokenFarmBalance - withdrawParams.amt,
+    );
+    strictEqual(
+      +finalTokenFarmBalance,
+      +initialTokenFarmBalance - withdrawParams.amt,
     );
 
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -3696,58 +3770,72 @@ describe("TFarm tests (section 1)", async () => {
       users_info: [[withdrawParams.fid, alice.pkh]],
       farms: [withdrawParams.fid],
     });
-    await fa2LP.updateStorage({
-      ledger: [tFarm.contract.address],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 1],
+        [tFarm.contract.address, 1],
+      ],
     });
 
     const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
     const initialFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
-    const initialTokenFarmRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[tFarm.contract.address];
+    const initialTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},1`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${tFarm.contract.address},1`];
 
     await tFarm.withdraw(withdrawParams);
     await tFarm.updateStorage({
       users_info: [[withdrawParams.fid, alice.pkh]],
       farms: [withdrawParams.fid],
     });
-    await fa2LP.updateStorage({
-      ledger: [tFarm.contract.address, dev.pkh],
+    await dexCore.updateStorage({
+      ledger: [
+        [alice.pkh, 1],
+        [tFarm.contract.address, 1],
+      ],
     });
 
     const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams.fid];
     const finalFarmAliceRecord: UserInfoType =
       tFarm.storage.storage.users_info[`${withdrawParams.fid},${alice.pkh}`];
-    const finalTokenDevRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[dev.pkh];
-    const finalTokenFarmRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[tFarm.contract.address];
+    const finalTokenDevBalance: number =
+      dexCore.storage.storage.ledger[`${dev.pkh},2`] === undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${carol.pkh},2`];
+    const finalTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},1`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${tFarm.contract.address},1`];
+
     const res: FarmData = TFarmUtils.getFarmData(
       initialFarm,
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
     strictEqual(
       +finalFarmAliceRecord.staked,
-      +initialFarmAliceRecord.staked - withdrawParams.amt
+      +initialFarmAliceRecord.staked - withdrawParams.amt,
     );
-    strictEqual(+finalTokenDevRecord.balance, withdrawParams.amt);
-    strictEqual(+finalTokenFarmRecord.balance, 0);
+    strictEqual(+finalTokenDevBalance, 0);
     strictEqual(
-      +finalTokenFarmRecord.frozen_balance,
-      +initialTokenFarmRecord.frozen_balance - withdrawParams.amt
+      +finalTokenFarmBalance,
+      initialTokenFarmBalance - withdrawParams.amt,
     );
 
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -3800,7 +3888,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
@@ -3809,46 +3897,46 @@ describe("TFarm tests (section 1)", async () => {
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
-        res.expectedShareReward
-      )
+        res.expectedShareReward,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
-        res.expectedUserPrevEarned
-      )
+        res.expectedUserPrevEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
-        res.expectedUserEarnedAfterHarvest
-      )
+        res.expectedUserEarnedAfterHarvest,
+      ),
     );
     ok(
       new BigNumber(
-        +(await finalRewTokAliceRecord.balances.get("0"))
+        +(await finalRewTokAliceRecord.balances.get("0")),
       ).isEqualTo(
         new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokZeroRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokZeroRecord.balances.get("0"))).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
   });
 
@@ -3895,7 +3983,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
@@ -3904,37 +3992,37 @@ describe("TFarm tests (section 1)", async () => {
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
-        res.expectedShareReward
-      )
+        res.expectedShareReward,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
-        res.expectedUserPrevEarned
-      )
+        res.expectedUserPrevEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
-        res.expectedUserEarnedAfterHarvest
-      )
+        res.expectedUserEarnedAfterHarvest,
+      ),
     );
     ok(
       new BigNumber(+finalQsGovAliceRecord.balance).isEqualTo(
         new BigNumber(+initialQsGovAliceRecord.balance).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalQsGovZeroRecord.balance).isEqualTo(
         new BigNumber(+initialQsGovZeroRecord.balance).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
   });
 
@@ -3989,7 +4077,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
@@ -3998,39 +4086,41 @@ describe("TFarm tests (section 1)", async () => {
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
-        res.expectedShareReward
-      )
+        res.expectedShareReward,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
-        res.expectedUserPrevEarned
-      )
+        res.expectedUserPrevEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
-        res.expectedUserEarnedAfterHarvest
-      )
+        res.expectedUserEarnedAfterHarvest,
+      ),
     );
     ok(
       new BigNumber(+finalQsGovAliceRecord.balance).isEqualTo(
-        new BigNumber(+initialQsGovAliceRecord.balance)
-      )
+        new BigNumber(+initialQsGovAliceRecord.balance),
+      ),
     );
     ok(
       new BigNumber(+finalQsGovBobRecord.balance).isEqualTo(
-        new BigNumber(+initialQsGovBobRecord.balance).plus(res.actualUserBurned)
-      )
+        new BigNumber(+initialQsGovBobRecord.balance).plus(
+          res.actualUserBurned,
+        ),
+      ),
     );
   });
 
   it("should transfer FA2 user's rewards to admin if timelock is not finished (in farms with timelock)", async () => {
     let newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
-      utils
+      utils,
     );
     const lifetime: number = 300; // 5 minutes
 
@@ -4043,7 +4133,7 @@ describe("TFarm tests (section 1)", async () => {
     };
     newFarmParams.end_time = String(
       Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
-        lifetime
+        lifetime,
     );
     newFarmParams.reward_per_second = 3 * precision;
 
@@ -4105,7 +4195,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(finalFarmAliceRecord.last_staked === initialFarmAliceRecord.last_staked);
@@ -4114,35 +4204,35 @@ describe("TFarm tests (section 1)", async () => {
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
-        res.expectedShareReward
-      )
+        res.expectedShareReward,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
-        res.expectedUserPrevEarned
-      )
+        res.expectedUserPrevEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
-        res.expectedUserEarnedAfterHarvest
-      )
+        res.expectedUserEarnedAfterHarvest,
+      ),
     );
     ok(
       new BigNumber(+(await finalQsGovAliceRecord.balances.get("0"))).isEqualTo(
-        new BigNumber(+(await initialQsGovAliceRecord.balances.get("0")))
-      )
+        new BigNumber(+(await initialQsGovAliceRecord.balances.get("0"))),
+      ),
     );
     ok(
       new BigNumber(+(await finalQsGovBobRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialQsGovBobRecord.balances.get("0"))).plus(
-          res.actualUserBurned
-        )
-      )
+          res.actualUserBurned,
+        ),
+      ),
     );
   });
 
@@ -4202,40 +4292,40 @@ describe("TFarm tests (section 1)", async () => {
     const res: WithdrawData = TFarmUtils.getWithdrawData(
       initialFarm,
       withdrawParams.amt,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(+finalFarm.staked).isEqualTo(
-        new BigNumber(+initialFarm.staked).minus(res.actualUserWithdraw)
-      )
+        new BigNumber(+initialFarm.staked).minus(res.actualUserWithdraw),
+      ),
     );
     ok(
       new BigNumber(finalTokenAliceRecord.balance).isEqualTo(
         new BigNumber(+initialTokenAliceRecord.balance).plus(
-          res.actualUserWithdraw
-        )
-      )
+          res.actualUserWithdraw,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalTokenFarmRecord.balance).isEqualTo(
         new BigNumber(+initialTokenFarmRecord.balance).minus(
-          res.actualUserWithdraw
-        )
-      )
+          res.actualUserWithdraw,
+        ),
+      ),
     );
     ok(finalFarmFarmRecord.last_staked > initialFarmFarmRecord.last_staked);
     ok(
       new BigNumber(+finalFarmFarmRecord.staked).isEqualTo(
         new BigNumber(+initialFarmFarmRecord.staked).plus(
-          res.wirthdrawCommission
-        )
-      )
+          res.wirthdrawCommission,
+        ),
+      ),
     );
 
     strictEqual(
       +finalFarmAliceRecord.staked,
-      +initialFarmAliceRecord.staked - withdrawParams.amt
+      +initialFarmAliceRecord.staked - withdrawParams.amt,
     );
   });
 
@@ -4285,36 +4375,36 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokAliceRecord.balance).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokBobRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokBobRecord.balance).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokFarmRecord.balance)
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -4364,36 +4454,36 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokAliceRecord.balance).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokBobRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokBobRecord.balance).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokFarmRecord.balance)
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -4443,36 +4533,36 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokAliceRecord.balance).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokBobRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokBobRecord.balance).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokFarmRecord.balance)
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -4525,38 +4615,38 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(
-        +(await finalRewTokAliceRecord.balances.get("0"))
+        +(await finalRewTokAliceRecord.balances.get("0")),
       ).isEqualTo(
         new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokBobRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokBobRecord.balances.get("0"))).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -4575,7 +4665,6 @@ describe("TFarm tests (section 1)", async () => {
       rewards_receiver: alice.pkh,
     };
 
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
     await tFarm.deposit(depositParams);
     await utils.bakeBlocks(1);
     await tFarm.updateStorage({
@@ -4618,36 +4707,36 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(+finalRewTokAliceRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokAliceRecord.balance).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokZeroRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokZeroRecord.balance).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+finalRewTokFarmRecord.balance).isEqualTo(
         new BigNumber(+initialRewTokFarmRecord.balance)
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -4700,38 +4789,38 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(
-        +(await finalRewTokAliceRecord.balances.get("0"))
+        +(await finalRewTokAliceRecord.balances.get("0")),
       ).isEqualTo(
         new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokZeroRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokZeroRecord.balances.get("0"))).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -4784,38 +4873,38 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     ok(
       new BigNumber(
-        +(await finalRewTokAliceRecord.balances.get("0"))
+        +(await finalRewTokAliceRecord.balances.get("0")),
       ).isEqualTo(
         new BigNumber(+(await initialRewTokAliceRecord.balances.get("0"))).plus(
-          res.actualUserEarned
-        )
-      )
+          res.actualUserEarned,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokZeroRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokZeroRecord.balances.get("0"))).plus(
-          res.referralCommission
-        )
-      )
+          res.referralCommission,
+        ),
+      ),
     );
     ok(
       new BigNumber(+(await finalRewTokFarmRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialRewTokFarmRecord.balances.get("0")))
           .minus(res.actualUserEarned)
-          .minus(res.referralCommission)
-      )
+          .minus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
   });
 
@@ -4872,7 +4961,7 @@ describe("TFarm tests (section 1)", async () => {
     strictEqual(finalFarmDevCandidate, undefined);
     strictEqual(
       +finalFarmAliceVotes,
-      +initialFarmAliceVotes - initialFarmDevRecord.prev_staked
+      +initialFarmAliceVotes - initialFarmDevRecord.prev_staked,
     );
     strictEqual(+finalFarmBobVotes, +initialFarmBobVotes);
   });
@@ -4903,54 +4992,94 @@ describe("TFarm tests (section 1)", async () => {
   });
 
   it("should withdraw bakers rewards in TEZ from the QS pool, swap for QS GOV tokens and burn them", async () => {
-    await fa12LP.updateStorage({
-      ledger: [alice.pkh],
+    await tFarm.setBurner(carol.pkh);
+    await dexCore.updateStorage({
+      ledger: [[alice.pkh, 2]],
     });
     await qsGov.updateStorage({
       account_info: [zeroAddress],
     });
+    let newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
+      utils,
+    );
+    const lifetime: number = 600;
+
+    newFarmParams.fees.harvest_fee = 1 * feePrecision;
+    newFarmParams.fees.withdrawal_fee = 6 * feePrecision;
+    newFarmParams.stake_params.staked_token = {
+      fA2: { token: dexCore.contract.address, id: 2 },
+    };
+    newFarmParams.stake_params.is_v2_lp = true;
+    newFarmParams.reward_per_second = 4 * precision;
+    newFarmParams.timelock = 0;
+    newFarmParams.reward_token = {
+      fA2: { token: qsGov.contract.address, id: 0 },
+    };
+    newFarmParams.end_time = String(
+      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
+        lifetime,
+    );
+
+    const rewardsAmount: number =
+      (lifetime * newFarmParams.reward_per_second) / precision;
+
+    await utils.setProvider(bob.sk);
+    await qsGov.updateOperators([
+      {
+        add_operator: {
+          owner: bob.pkh,
+          operator: tFarm.contract.address,
+          token_id: 0,
+        },
+      },
+    ]);
+    await tFarm.addNewFarm(newFarmParams);
 
     const depositParams: DepositParams = {
-      fid: 3,
-      amt: +fa12LP.storage.storage.ledger[alice.pkh].balance / 2,
+      fid: 7,
+      amt: +dexCore.storage.storage.ledger[`${alice.pkh},2`] / 2,
       referrer: bob.pkh,
       rewards_receiver: alice.pkh,
       candidate: alice.pkh,
     };
-    const initialQsGovZeroRecord: UserFA2Info =
-      qsGov.storage.account_info[zeroAddress];
 
     await utils.setProvider(alice.sk);
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
+    await dexCore.updateOperators([
+      {
+        add_operator: {
+          owner: alice.pkh,
+          operator: tFarm.contract.address,
+          token_id: 2,
+        },
+      },
+    ]);
+
     await tFarm.deposit(depositParams);
+
     await tFarm.updateStorage({
       farms: [depositParams.fid],
     });
     await utils.setProvider(bob.sk);
-
+    const pair: any = await dexCore.storage.storage.pairs.get("2");
     const operation = await utils.tezos.contract.transfer({
-      to: tFarm.storage.storage.farms[depositParams.fid].stake_params
-        .staked_token["fA12"],
-      amount: 500,
+      to: pair.bucket,
+      amount: 5000,
       mutez: true,
+      gasLimit: 120000,
+      fee: 200000,
     });
-
+    const prevCarolBalance = await utils.tezos.tz.getBalance(carol.pkh);
     await confirmOperation(utils.tezos, operation.hash);
-    await utils.bakeBlocks(1);
+    await utils.bakeBlocks(13);
+
     await tFarm.burnTEZRewards(depositParams.fid);
     await qsGov.updateStorage({
       account_info: [zeroAddress],
     });
 
-    const finalQsGovZeroRecord: UserFA2Info =
-      qsGov.storage.account_info[zeroAddress];
-
-    ok(
-      +(await finalQsGovZeroRecord.balances.get("0")) >
-        +(await initialQsGovZeroRecord.balances.get("0"))
-    );
+    const carolBalance = await utils.tezos.tz.getBalance(carol.pkh);
+    strictEqual(carolBalance > prevCarolBalance, true);
   });
-
   it("should fail if not admin is trying to claim farm rewards", async () => {
     await utils.setProvider(alice.sk);
     await rejects(tFarm.claimFarmRewards(0), (err: Error) => {
@@ -5003,7 +5132,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmFarmRecord,
       finalFarmFarmRecord,
-      precision
+      precision,
     );
 
     ok(finalFarmFarmRecord.last_staked === initialFarmFarmRecord.last_staked);
@@ -5012,32 +5141,32 @@ describe("TFarm tests (section 1)", async () => {
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
-        res.expectedShareReward
-      )
+        res.expectedShareReward,
+      ),
     );
     ok(
       new BigNumber(finalFarmFarmRecord.prev_earned).isEqualTo(
-        res.expectedUserPrevEarned
-      )
+        res.expectedUserPrevEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmFarmRecord.earned).isEqualTo(
-        res.expectedUserEarnedAfterHarvest
-      )
+        res.expectedUserEarnedAfterHarvest,
+      ),
     );
     ok(
       new BigNumber(+finalQsGovBobRecord.balance).isEqualTo(
         new BigNumber(+initialQsGovBobRecord.balance).plus(
           res.expectedUserEarned
             .div(precision)
-            .integerValue(BigNumber.ROUND_DOWN)
-        )
-      )
+            .integerValue(BigNumber.ROUND_DOWN),
+        ),
+      ),
     );
   });
 
@@ -5077,7 +5206,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmFarmRecord,
       finalFarmFarmRecord,
-      precision
+      precision,
     );
 
     ok(finalFarmFarmRecord.last_staked === initialFarmFarmRecord.last_staked);
@@ -5086,32 +5215,32 @@ describe("TFarm tests (section 1)", async () => {
       new BigNumber(+finalFarm.claimed).isEqualTo(
         new BigNumber(+initialFarm.claimed)
           .plus(res.actualUserEarned)
-          .plus(res.referralCommission)
-      )
+          .plus(res.referralCommission),
+      ),
     );
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
-        res.expectedShareReward
-      )
+        res.expectedShareReward,
+      ),
     );
     ok(
       new BigNumber(finalFarmFarmRecord.prev_earned).isEqualTo(
-        res.expectedUserPrevEarned
-      )
+        res.expectedUserPrevEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmFarmRecord.earned).isEqualTo(
-        res.expectedUserEarnedAfterHarvest
-      )
+        res.expectedUserEarnedAfterHarvest,
+      ),
     );
     ok(
       new BigNumber(+(await finalQsGovBobRecord.balances.get("0"))).isEqualTo(
         new BigNumber(+(await initialQsGovBobRecord.balances.get("0"))).plus(
           res.expectedUserEarned
             .div(precision)
-            .integerValue(BigNumber.ROUND_DOWN)
-        )
-      )
+            .integerValue(BigNumber.ROUND_DOWN),
+        ),
+      ),
     );
   });
 
@@ -5194,114 +5323,15 @@ describe("TFarm tests (section 1)", async () => {
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
     strictEqual(
       +finalFarmFarmRecord.staked,
-      +initialFarmFarmRecord.staked - withdrawParams.amt
+      +initialFarmFarmRecord.staked - withdrawParams.amt,
     );
     strictEqual(
       +finalTokenBobRecord.balance,
-      +initialTokenBobRecord.balance + withdrawParams.amt
+      +initialTokenBobRecord.balance + withdrawParams.amt,
     );
     strictEqual(
       +finalTokenFarmRecord.balance,
-      +initialTokenFarmRecord.balance - withdrawParams.amt
-    );
-  });
-
-  it("should withdraw LP FA1.2 token", async () => {
-    let newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
-      utils
-    );
-    const lifetime: number = 120; // 2 minutes
-
-    newFarmParams.fees.harvest_fee = 21 * feePrecision;
-    newFarmParams.fees.withdrawal_fee = 60 * feePrecision;
-    newFarmParams.stake_params.staked_token = { fA12: fa12LP.contract.address };
-    newFarmParams.stake_params.is_v1_lp = true;
-    newFarmParams.reward_per_second = 2 * precision;
-    newFarmParams.timelock = 5;
-    newFarmParams.reward_token = { fA12: fa12.contract.address };
-    newFarmParams.end_time = String(
-      Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
-        lifetime
-    );
-
-    const rewardsAmount: number =
-      (lifetime * newFarmParams.reward_per_second) / precision;
-
-    await fa12.approve(tFarm.contract.address, rewardsAmount);
-    await tFarm.addNewFarm(newFarmParams);
-
-    const depositParams: DepositParams = {
-      fid: 7,
-      amt: 100,
-      referrer: undefined,
-      rewards_receiver: alice.pkh,
-      candidate: bob.pkh,
-    };
-
-    await utils.setProvider(alice.sk);
-    await fa12LP.approve(tFarm.contract.address, depositParams.amt);
-    await tFarm.deposit(depositParams);
-
-    const withdrawParams1: WithdrawParams = {
-      fid: depositParams.fid,
-      amt: depositParams.amt,
-      receiver: alice.pkh,
-      rewards_receiver: alice.pkh,
-    };
-
-    await tFarm.withdraw(withdrawParams1);
-    await utils.setProvider(bob.sk);
-
-    const withdrawParams2: WithdrawFarmDepoParams = {
-      fid: depositParams.fid,
-      amt: 10,
-    };
-
-    await tFarm.updateStorage({
-      users_info: [[withdrawParams2.fid, tFarm.contract.address]],
-      farms: [withdrawParams2.fid],
-    });
-    await fa12LP.updateStorage({
-      ledger: [tFarm.contract.address],
-    });
-
-    const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams2.fid];
-    const initialFarmFarmRecord: UserInfoType =
-      tFarm.storage.storage.users_info[
-        `${withdrawParams2.fid},${tFarm.contract.address}`
-      ];
-    const initialTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[tFarm.contract.address];
-
-    await tFarm.withdrawFarmDepo(withdrawParams2);
-    await tFarm.updateStorage({
-      users_info: [[withdrawParams2.fid, tFarm.contract.address]],
-      farms: [withdrawParams2.fid],
-    });
-    await fa12LP.updateStorage({
-      ledger: [tFarm.contract.address, bob.pkh],
-    });
-
-    const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams2.fid];
-    const finalFarmFarmRecord: UserInfoType =
-      tFarm.storage.storage.users_info[
-        `${withdrawParams2.fid},${tFarm.contract.address}`
-      ];
-    const finalTokenBobRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[bob.pkh];
-    const finalTokenFarmRecord: UserFA12Info =
-      fa12LP.storage.storage.ledger[tFarm.contract.address];
-
-    strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams2.amt);
-    strictEqual(
-      +finalFarmFarmRecord.staked,
-      +initialFarmFarmRecord.staked - withdrawParams2.amt
-    );
-    strictEqual(+finalTokenBobRecord.balance, withdrawParams2.amt);
-    strictEqual(+finalTokenFarmRecord.balance, 5100);
-    strictEqual(
-      +finalTokenFarmRecord.frozen_balance,
-      +initialTokenFarmRecord.frozen_balance - withdrawParams2.amt
+      +initialTokenFarmRecord.balance - withdrawParams.amt,
     );
   });
 
@@ -5351,36 +5381,36 @@ describe("TFarm tests (section 1)", async () => {
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams.amt);
     strictEqual(
       +finalFarmFarmRecord.staked,
-      +initialFarmFarmRecord.staked - withdrawParams.amt
+      +initialFarmFarmRecord.staked - withdrawParams.amt,
     );
     strictEqual(
       +(await finalTokenBobRecord.balances.get("0")),
-      +(await initialTokenBobRecord.balances.get("0")) + withdrawParams.amt
+      +(await initialTokenBobRecord.balances.get("0")) + withdrawParams.amt,
     );
     strictEqual(
       +(await finalTokenFarmRecord.balances.get("0")),
-      +(await initialTokenFarmRecord.balances.get("0")) - withdrawParams.amt
+      +(await initialTokenFarmRecord.balances.get("0")) - withdrawParams.amt,
     );
   });
 
   it("should withdraw LP FA2 token", async () => {
     let newFarmParams: NewFarmParams = await TFarmUtils.getMockNewFarmParams(
-      utils
+      utils,
     );
     const lifetime: number = 30; // 30 seconds
 
     newFarmParams.fees.harvest_fee = 21 * feePrecision;
     newFarmParams.fees.withdrawal_fee = 60 * feePrecision;
     newFarmParams.stake_params.staked_token = {
-      fA2: { token: fa2LP.contract.address, id: 0 },
+      fA2: { token: dexCore.contract.address, id: 1 },
     };
-    newFarmParams.stake_params.is_v1_lp = true;
+    newFarmParams.stake_params.is_v2_lp = true;
     newFarmParams.reward_per_second = 2 * precision;
     newFarmParams.timelock = 5;
     newFarmParams.reward_token = { fA12: fa12.contract.address };
     newFarmParams.end_time = String(
       Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000 +
-        lifetime
+        lifetime,
     );
 
     const rewardsAmount: number =
@@ -5419,8 +5449,8 @@ describe("TFarm tests (section 1)", async () => {
       users_info: [[withdrawParams2.fid, tFarm.contract.address]],
       farms: [withdrawParams2.fid],
     });
-    await fa2LP.updateStorage({
-      ledger: [tFarm.contract.address],
+    await dexCore.updateStorage({
+      ledger: [[tFarm.contract.address, 1]],
     });
 
     const initialFarm: Farm = tFarm.storage.storage.farms[withdrawParams2.fid];
@@ -5428,16 +5458,22 @@ describe("TFarm tests (section 1)", async () => {
       tFarm.storage.storage.users_info[
         `${withdrawParams2.fid},${tFarm.contract.address}`
       ];
-    const initialTokenFarmRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[tFarm.contract.address];
+    const initialTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},1`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${tFarm.contract.address},1`];
 
     await tFarm.withdrawFarmDepo(withdrawParams2);
     await tFarm.updateStorage({
       users_info: [[withdrawParams2.fid, tFarm.contract.address]],
       farms: [withdrawParams2.fid],
     });
-    await fa2LP.updateStorage({
-      ledger: [tFarm.contract.address, bob.pkh],
+    await dexCore.updateStorage({
+      ledger: [
+        [tFarm.contract.address, 1],
+        [bob.pkh, 1],
+      ],
     });
 
     const finalFarm: Farm = tFarm.storage.storage.farms[withdrawParams2.fid];
@@ -5445,21 +5481,26 @@ describe("TFarm tests (section 1)", async () => {
       tFarm.storage.storage.users_info[
         `${withdrawParams2.fid},${tFarm.contract.address}`
       ];
-    const finalTokenBobRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[bob.pkh];
-    const finalTokenFarmRecord: UserFA2LPInfo =
-      fa2LP.storage.storage.ledger[tFarm.contract.address];
+    const finalTokenBobBalance: UserFA2LPInfo =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},1`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${bob.pkh},1`];
+    const finalTokenFarmBalance: number =
+      dexCore.storage.storage.ledger[`${tFarm.contract.address},1`] ===
+      undefined
+        ? 0
+        : dexCore.storage.storage.ledger[`${tFarm.contract.address},1`];
 
     strictEqual(+finalFarm.staked, +initialFarm.staked - withdrawParams2.amt);
     strictEqual(
       +finalFarmFarmRecord.staked,
-      +initialFarmFarmRecord.staked - withdrawParams2.amt
+      +initialFarmFarmRecord.staked - withdrawParams2.amt,
     );
-    strictEqual(+finalTokenBobRecord.balance, withdrawParams2.amt);
-    strictEqual(+finalTokenFarmRecord.balance, 330);
+    strictEqual(+finalTokenBobBalance, withdrawParams2.amt);
     strictEqual(
-      +finalTokenFarmRecord.frozen_balance,
-      +initialTokenFarmRecord.frozen_balance - withdrawParams2.amt
+      +finalTokenFarmBalance,
+      initialTokenFarmBalance - withdrawParams2.amt,
     );
   });
 
@@ -5517,51 +5558,51 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
     const resBob: FarmData = TFarmUtils.getFarmData(
       initialFarm,
       finalFarm,
       initialFarmBobRecord,
       finalFarmBobRecord,
-      precision
+      precision,
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked);
     strictEqual(
       +finalFarmAliceRecord.staked,
-      +initialFarmAliceRecord.staked - amount
+      +initialFarmAliceRecord.staked - amount,
     );
     strictEqual(
       +finalFarmBobRecord.staked,
-      +initialFarmBobRecord.staked + amount
+      +initialFarmBobRecord.staked + amount,
     );
 
     ok(finalFarm.upd > initialFarm.upd);
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
-        resAlice.expectedShareReward
-      )
+        resAlice.expectedShareReward,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
-        resAlice.expectedUserPrevEarned
-      )
+        resAlice.expectedUserPrevEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
-        resAlice.expectedUserEarned
-      )
+        resAlice.expectedUserEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmBobRecord.prev_earned).isEqualTo(
-        resBob.expectedUserPrevEarned
-      )
+        resBob.expectedUserPrevEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmBobRecord.earned).isEqualTo(
-        resBob.expectedUserEarned
-      )
+        resBob.expectedUserEarned,
+      ),
     );
   });
 
@@ -5643,72 +5684,72 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
     const resBob: FarmData = TFarmUtils.getFarmData(
       initialFarm,
       finalFarm,
       initialFarmBobRecord,
       finalFarmBobRecord,
-      precision
+      precision,
     );
     const resCarol: FarmData = TFarmUtils.getFarmData(
       initialFarm,
       finalFarm,
       initialFarmCarolRecord,
       finalFarmCarolRecord,
-      precision
+      precision,
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked);
     strictEqual(
       +finalFarmAliceRecord.staked,
-      +initialFarmAliceRecord.staked - amount * 2
+      +initialFarmAliceRecord.staked - amount * 2,
     );
     strictEqual(
       +finalFarmBobRecord.staked,
-      +initialFarmBobRecord.staked + amount
+      +initialFarmBobRecord.staked + amount,
     );
     strictEqual(
       +finalFarmCarolRecord.staked,
-      +initialFarmCarolRecord.staked + amount
+      +initialFarmCarolRecord.staked + amount,
     );
 
     ok(finalFarm.upd > initialFarm.upd);
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
-        resAlice.expectedShareReward
-      )
+        resAlice.expectedShareReward,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
-        resAlice.expectedUserPrevEarned
-      )
+        resAlice.expectedUserPrevEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
-        resAlice.expectedUserEarned
-      )
+        resAlice.expectedUserEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmBobRecord.prev_earned).isEqualTo(
-        resBob.expectedUserPrevEarned
-      )
+        resBob.expectedUserPrevEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmBobRecord.earned).isEqualTo(
-        resBob.expectedUserEarned
-      )
+        resBob.expectedUserEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmCarolRecord.prev_earned).isEqualTo(
-        resCarol.expectedUserPrevEarned
-      )
+        resCarol.expectedUserPrevEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmCarolRecord.earned).isEqualTo(
-        resCarol.expectedUserEarned
-      )
+        resCarol.expectedUserEarned,
+      ),
     );
   });
 
@@ -5738,16 +5779,18 @@ describe("TFarm tests (section 1)", async () => {
 
     ok(
       new BigNumber(+farmFirstAliceRecord.staked).isEqualTo(
-        balanceOfResult[2].balance
-      )
+        balanceOfResult[2].balance,
+      ),
     );
     ok(
       new BigNumber(+farmSecondAliceRecord.staked).isEqualTo(
-        balanceOfResult[1].balance
-      )
+        balanceOfResult[1].balance,
+      ),
     );
     ok(
-      new BigNumber(+farmBobRecord.staked).isEqualTo(balanceOfResult[0].balance)
+      new BigNumber(+farmBobRecord.staked).isEqualTo(
+        balanceOfResult[0].balance,
+      ),
     );
   });
 
@@ -5806,7 +5849,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmAliceRecord,
       finalFarmAliceRecord,
-      precision
+      precision,
     );
 
     initialFarm = tFarm.storage.storage.farms[harvestParams.fid];
@@ -5827,7 +5870,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmBobRecord,
       finalFarmBobRecord,
-      precision
+      precision,
     );
 
     initialFarm = tFarm.storage.storage.farms[harvestParams.fid];
@@ -5848,7 +5891,7 @@ describe("TFarm tests (section 1)", async () => {
       finalFarm,
       initialFarmCarolRecord,
       finalFarmCarolRecord,
-      precision
+      precision,
     );
 
     strictEqual(+finalFarm.staked, +initialFarm.staked);
@@ -5859,38 +5902,38 @@ describe("TFarm tests (section 1)", async () => {
     ok(finalFarm.upd > initialFarm.upd);
     ok(
       new BigNumber(finalFarm.reward_per_share).isEqualTo(
-        resCarol.expectedShareReward
-      )
+        resCarol.expectedShareReward,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.prev_earned).isEqualTo(
-        resAlice.expectedUserPrevEarned
-      )
+        resAlice.expectedUserPrevEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmAliceRecord.earned).isEqualTo(
-        resAlice.expectedUserEarnedAfterHarvest
-      )
+        resAlice.expectedUserEarnedAfterHarvest,
+      ),
     );
     ok(
       new BigNumber(finalFarmBobRecord.prev_earned).isEqualTo(
-        resBob.expectedUserPrevEarned
-      )
+        resBob.expectedUserPrevEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmBobRecord.earned).isEqualTo(
-        resBob.expectedUserEarnedAfterHarvest
-      )
+        resBob.expectedUserEarnedAfterHarvest,
+      ),
     );
     ok(
       new BigNumber(finalFarmCarolRecord.prev_earned).isEqualTo(
-        resCarol.expectedUserPrevEarned
-      )
+        resCarol.expectedUserPrevEarned,
+      ),
     );
     ok(
       new BigNumber(finalFarmCarolRecord.earned).isEqualTo(
-        resCarol.expectedUserEarnedAfterHarvest
-      )
+        resCarol.expectedUserEarnedAfterHarvest,
+      ),
     );
   });
 
@@ -5914,7 +5957,7 @@ describe("TFarm tests (section 1)", async () => {
       .integerValue(BigNumber.ROUND_DOWN)
       .multipliedBy(
         Date.parse(initialFarm.end_time) / 1000 -
-          Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000
+          Date.parse((await utils.tezos.rpc.getBlockHeader()).timestamp) / 1000,
       )
       .toNumber();
     const bobInitialBalance: number = +fa12.storage.ledger[bob.pkh].balance;

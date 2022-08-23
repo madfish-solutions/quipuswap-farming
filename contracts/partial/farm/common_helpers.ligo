@@ -74,19 +74,46 @@ function get_votes(
   | Some(amt) -> amt
   end
 
+function get_vote_entrypoint(
+  const qs_pool         : address)
+                        : contract(dex_vote_t) is
+  case (
+    Tezos.get_entrypoint_opt("%vote", qs_pool)
+                        : option(contract(dex_vote_t))
+  ) of
+  |  Some(contr) -> contr
+  | None        -> (
+    failwith("Farm/vote-entrypoint-404")
+                        : contract(dex_vote_t)
+  )
+  end
+
+function get_withdraw_profit_entrypoint(
+  const qs_pool         : address)
+                        : contract(withdraw_profit_t) is
+  case (
+    Tezos.get_entrypoint_opt("%withdraw_profit", qs_pool)
+                        : option(contract(withdraw_profit_t))
+  ) of
+  |  Some(contr) -> contr
+  | None        -> (
+    failwith("Farm/withdraw-profit-entrypoint-404")
+                        : contract(withdraw_profit_t)
+  )
+  end
+
 function get_vote_operation(
   const qs_pool         : address;
   const candidate       : key_hash;
-  const votes_amt       : nat)
+  const pair_id         : nat)
                         : operation is
   Tezos.transaction(
-    Vote(record [
+    record [
       candidate = candidate;
-      value     = votes_amt;
-      voter     = Tezos.self_address;
-    ]),
+      pair_id = pair_id;
+    ],
     0mutez,
-    get_quipuswap_use_entrypoint(qs_pool)
+    get_vote_entrypoint(qs_pool)
   )
 
 function get_baker_registry_validate_entrypoint(
@@ -109,6 +136,14 @@ function get_token_address(
   case token of
     FA12(token_address) -> token_address
   | FA2(token_info)     -> token_info.token
+  end
+
+function get_pool_id(
+  const token           : token_type)
+                        : nat is
+  case token of
+  | FA2(token_info)     -> token_info.id
+  | FA12(_) -> failwith("QSystem/not-v2-lp")
   end
 
 function vote(
@@ -191,10 +226,15 @@ function form_vote_ops(
     then farm.current_delegated := farm.next_candidate;
     else skip;
 
+    if not farm.stake_params.is_v2_lp
+    then failwith("QSystem/not-v2-lp")
+    else skip;
+
+    const pool_id = get_pool_id(farm.stake_params.staked_token);
     const vote_op : operation = get_vote_operation(
       get_token_address(farm.stake_params.staked_token),
       farm.current_delegated,
-      votes
+      pool_id
     );
     const validate_baker_op : operation = Tezos.transaction(
       farm.current_delegated,

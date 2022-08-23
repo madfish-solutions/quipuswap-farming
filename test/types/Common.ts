@@ -6,17 +6,17 @@ export type FA2Token = {
   token: string;
   id: number;
 };
-
-export type Token = { fA12: FA12Token } | { fA2: FA2Token };
-
+export type Tez = undefined;
+export type Token = { tez: Tez } | { fa12: FA12Token } | { fa2: FA2Token };
+export type FarmToken = { fA12: FA12Token } | { fA2: FA2Token };
 export type PauseFarmParam = {
   fid: number;
   pause: boolean;
 };
 
 export type StakeParams = {
-  staked_token: Token;
-  is_v1_lp: boolean;
+  staked_token: FarmToken;
+  is_v2_lp: boolean;
 };
 
 export type DepositParams = {
@@ -74,7 +74,7 @@ export type UpdTokMetaParams = {
   token_info: Meta[];
 };
 
-export type IsV1LP = {
+export type IsV2LP = {
   fid: number;
-  is_v1_lp: boolean;
+  is_v2_lp: boolean;
 };

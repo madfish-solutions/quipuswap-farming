@@ -56,7 +56,7 @@ function iterate_transfer(
 
         s.farms[dst.token_id] := farm;
 
-        if farm.stake_params.is_v1_lp
+        if farm.stake_params.is_v2_lp
         then {
           s := vote(
             get_user_candidate(farm, params.from_, s.candidates),
